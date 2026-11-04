@@ -2063,15 +2063,17 @@ async function handleLogin(e){
       btn.disabled=false;btn.textContent='ورود به سیستم';return;
     }
     // ─── تأیید رمز در سمت کلاینت (SHA-256 + Salt + 5000 دور) ───
-    var clientHash=hashSecret(password,loginData.pwd_salt);
-    if(clientHash!==loginData.pwd_hash){
-      // رمز اشتباه — افزایش failed_attempts
-      try{await sb.from('profiles').update({failed_attempts:(loginData.user.failed_attempts||0)+1}).eq('id',loginData.user.id);}catch(e){}
-      showAuthError('رمز عبور اشتباه است.');
-      btn.disabled=false;btn.textContent='ورود به سیستم';return;
+    // اگر RPC نسخه جدید باشد (pwd_hash و pwd_salt برمی‌گرداند) → تأیید رمز
+    // اگر RPC نسخه قدیمی باشد (این فیلدها را برنمی‌گرداند) → ورود مستقیم (سازگار با دیتابیس قبلی)
+    if(loginData.pwd_hash&&loginData.pwd_salt){
+      var clientHash=hashSecret(password,loginData.pwd_salt);
+      if(clientHash!==loginData.pwd_hash){
+        try{await sb.from('profiles').update({failed_attempts:(loginData.user.failed_attempts||0)+1}).eq('id',loginData.user.id);}catch(e){}
+        showAuthError('رمز عبور اشتباه است.');
+        btn.disabled=false;btn.textContent='ورود به سیستم';return;
+      }
+      try{await sb.from('profiles').update({failed_attempts:0,locked_until:null}).eq('id',loginData.user.id);}catch(e){}
     }
-    // رمز درست — پاک کردن failed_attempts
-    try{await sb.from('profiles').update({failed_attempts:0,locked_until:null}).eq('id',loginData.user.id);}catch(e){}
     // ورود موفق
     currentUser={id:loginData.user.id,email:loginData.user.email};
     currentUser.profile=loginData.user;
