@@ -3212,7 +3212,7 @@ function showSection(id,skipHistory){
     currentLogPerson=$('log_person_id').value;
     updateDelegateBox();toggleLogFields();syncLog();
   }
-  if(id==='leave_req'){populatePersonDropdown('lv_person_id',false);$('lv_person_id').value=currentUser.id;renderLeaves();}
+  /* leave_req section removed */
   if(id==='my_tasks')renderMyTasks();
   if(id==='programs')renderPrograms();
   if(id==='records'){populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();if($('rep_mode').value==='table')renderRecords();}
@@ -5305,9 +5305,10 @@ function openTimepicker(e){
 }
 function setTimepickerValue(targetId,t){var input=$(targetId);if(input)input.value=t;var w=document.querySelector('.time-picker-widget[data-target="'+targetId+'"]');if(w)w.textContent=t||'--:--';}
 
-/* ═════ Leave Requests ═════ */
-function toggleLeaveTimes(){var hourly=$('lv_type').value==='hourly';$('lv_times_box').classList.toggle('hidden',!hourly);$('lv_end_date_box').classList.toggle('hidden',hourly);}
+/* ═════ Leave Requests (بخش حذف شده — توابع برای جلوگیری از خطا نگه‌داشته شده‌اند) ═════ */
+function toggleLeaveTimes(){if(!$('lv_type'))return;var hourly=$('lv_type').value==='hourly';if($('lv_times_box'))$('lv_times_box').classList.toggle('hidden',!hourly);if($('lv_end_date_box'))$('lv_end_date_box').classList.toggle('hidden',hourly);}
 async function saveLeave(){
+  if(!$('lv_id'))return;
   var id=$('lv_id').value,personId=$('lv_person_id').value,startDate=$('lv_start_date').value,type=$('lv_type').value;
   if(!personId){showAlert('پرسنل را انتخاب کنید.','error');return;}
   if(!isValidJalaliDate(startDate)){showAlert('تاریخ شروع نامعتبر است.','error');return;}
@@ -5361,7 +5362,7 @@ async function saveLeave(){
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
 }
-async function editLeave(id){
+async function editLeave(id){if(!$('lv_id'))return;
   try{
     var all=await loadLeaves();
     var l=all.filter(function(x){return x.id===id;})[0];
@@ -5380,7 +5381,7 @@ async function deleteLeave(id){
   hideLoading();
 }
 function leavePeriod(l){return l.type==='daily'?l.start_date+' تا '+(l.end_date||''):l.start_date+' ('+l.start_time+' - '+l.end_time+')';}
-async function renderLeaves(){
+async function renderLeaves(){if(!$('leave_list_container'))return;
   var c=$('leave_list_container');
   try{
     var leaves=currentRole==='user'?await loadLeaves(currentUser.id):await loadLeaves();
@@ -5400,7 +5401,7 @@ async function renderLeaves(){
     c.innerHTML=h+'</table>';
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
-function resetLeaveForm(){
+function resetLeaveForm(){if(!$('lv_id'))return;
   $('lv_id').value='';$('lv_start_date').value='';$('lv_end_date').value='';$('lv_reason').value='';
   $('lv_person_id').value=currentUser.id;
   setTimepickerValue('lv_start_time','');setTimepickerValue('lv_end_time','');
