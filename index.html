@@ -1911,13 +1911,16 @@ button,.btn{-webkit-touch-callout:none}
         <option value="stations">پایگاه‌های تابعه</option>
       </select>
     </div>
-    <div class="form-group" id="role_station_group" style="flex:0 0 180px;display:none">
+    <div class="form-group" id="role_station_group" style="flex:0 0 200px;display:none">
       <label>پایگاه:</label>
-      <select id="role_station">
-        <option value="hadiabad">پایگاه هادی‌آباد</option>
-        <option value="kooye_mohsen">پایگاه کوی محسن</option>
-        <option value="kooye_basij">پایگاه کوی بسیج</option>
-      </select>
+      <input type="text" id="role_station" list="station_list" placeholder="انتخاب یا تایپ پایگاه جدید" autocomplete="off">
+      <datalist id="station_list">
+        <option value="پایگاه ضمیمه">
+        <option value="پایگاه هادی‌آباد">
+        <option value="پایگاه کوی محسن">
+        <option value="پایگاه کوی بسیج">
+      </datalist>
+      <small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">می‌توانید پایگاه جدید تایپ کنید.</small>
     </div>
     <div class="form-group" style="flex:1;min-width:220px">
       <label>توضیحات (اختیاری):</label>
@@ -2229,34 +2232,36 @@ var DEFAULT_ROLES_TREE=[
   {role_key:'super_admin',label:'سوپرادمین',color:'#e74c3c',is_protected:true,description:'مدیر کل سامانه',category:'',station:'',sort_order:1},
   {role_key:'admin',label:'مدیر',color:'#9b59b6',is_protected:true,description:'مدیر بهداشت',category:'management',station:'',sort_order:2},
   // ─── مدیریت مرکز ───
-  {role_key:'center_doctor',label:'پزشک (مسئول مرکز)',color:'#e74c3c',is_protected:false,description:'پزشک مسئول مرکز بهداشت شماره یک',category:'management',station:'',sort_order:11},
-  // ─── واحدهای مرکز (۱۳ نقش) ───
-  {role_key:'midwife',label:'ماما',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:21},
-  {role_key:'health_worker',label:'مراقب سلامت',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:22},
-  {role_key:'reception',label:'پذیرش',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:23},
-  {role_key:'hypothyroid_expert',label:'کارشناس هیپوتیروئید',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:24},
-  {role_key:'nutrition_expert',label:'کارشناس تغذیه',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:25},
-  {role_key:'psychology_expert',label:'کارشناس روان‌شناسی',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:26},
-  {role_key:'services',label:'خدمات',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:27},
-  {role_key:'dentist',label:'دندان‌پزشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:28},
-  {role_key:'dentist_assistant',label:'دستیار دندان‌پزشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:29},
-  {role_key:'breastfeeding_commission',label:'کارشناس کمیسیون شیرخشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:30},
-  {role_key:'prevention_expert',label:'کارشناس پیشگیری',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:31},
-  {role_key:'occupational_health',label:'کارشناس بهداشت حرفه‌ای',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:32},
-  {role_key:'occupational_medicine',label:'کارشناس طب کار',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:33},
+  {role_key:'center_doctor',label:'پزشک (مسئول مرکز شماره یک)',color:'#e74c3c',is_protected:false,description:'پزشک مسئول مرکز بهداشت شماره یک',category:'management',station:'',sort_order:11},
+  // ─── واحدهای مرکز (۱۱ نقش) ───
+  {role_key:'reception',label:'پذیرش',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:21},
+  {role_key:'hypothyroid_expert',label:'کارشناس هیپوتیروئید',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:22},
+  {role_key:'nutrition_expert',label:'کارشناس تغذیه',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:23},
+  {role_key:'psychology_expert',label:'کارشناس روان‌شناسی',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:24},
+  {role_key:'services',label:'خدمات',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:25},
+  {role_key:'dentist',label:'دندان‌پزشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:26},
+  {role_key:'dentist_assistant',label:'دستیار دندان‌پزشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:27},
+  {role_key:'breastfeeding_commission',label:'کارشناس کمیسیون شیرخشک',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:28},
+  {role_key:'prevention_expert',label:'کارشناس پیشگیری',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:29},
+  {role_key:'occupational_health',label:'کارشناس بهداشت حرفه‌ای',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:30},
+  {role_key:'occupational_medicine',label:'کارشناس طب کار',color:'#3498db',is_protected:false,description:'',category:'units',station:'',sort_order:31},
+  // ─── پایگاه ضمیمه (پزشک همان مسئول مرکز) ───
+  {role_key:'annex_doctor',label:'پزشک (همان مسئول مرکز)',color:'#8e44ad',is_protected:false,description:'پزشک مسئول مرکز شماره یک — در پایگاه ضمیمه نیز فعالیت می‌کند',category:'stations',station:'پایگاه ضمیمه',sort_order:41},
+  {role_key:'annex_midwife',label:'ماما',color:'#8e44ad',is_protected:false,description:'',category:'stations',station:'پایگاه ضمیمه',sort_order:42},
+  {role_key:'annex_health_worker',label:'مراقب سلامت',color:'#8e44ad',is_protected:false,description:'',category:'stations',station:'پایگاه ضمیمه',sort_order:43},
   // ─── پایگاه هادی‌آباد ───
-  {role_key:'hadiabad_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'hadiabad',sort_order:41},
-  {role_key:'hadiabad_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'hadiabad',sort_order:42},
-  {role_key:'hadiabad_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'hadiabad',sort_order:43},
+  {role_key:'hadiabad_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه هادی‌آباد',sort_order:51},
+  {role_key:'hadiabad_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه هادی‌آباد',sort_order:52},
+  {role_key:'hadiabad_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه هادی‌آباد',sort_order:53},
   // ─── پایگاه کوی محسن ───
-  {role_key:'kooye_mohsen_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_mohsen',sort_order:51},
-  {role_key:'kooye_mohsen_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_mohsen',sort_order:52},
-  {role_key:'kooye_mohsen_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_mohsen',sort_order:53},
-  // ─── پایگاه کوی بسیج ───
-  {role_key:'kooye_basij_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_basij',sort_order:61},
-  {role_key:'kooye_basij_second_doctor',label:'پزشک دوم',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_basij',sort_order:62},
-  {role_key:'kooye_basij_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_basij',sort_order:63},
-  {role_key:'kooye_basij_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'kooye_basij',sort_order:64},
+  {role_key:'kooye_mohsen_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی محسن',sort_order:61},
+  {role_key:'kooye_mohsen_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی محسن',sort_order:62},
+  {role_key:'kooye_mohsen_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی محسن',sort_order:63},
+  // ─── پایگاه کوی بسیج (پزشک مسئول + پزشک دوم مستقل) ───
+  {role_key:'kooye_basij_doctor',label:'پزشک (مسئول پایگاه)',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:71},
+  {role_key:'kooye_basij_second_doctor',label:'پزشک دوم',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:72},
+  {role_key:'kooye_basij_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:73},
+  {role_key:'kooye_basij_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:74},
   // ─── نقش‌های مستقل (بدون دسته) ───
   {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'دسترسی محدود با انقضا',category:'',station:'',sort_order:90},
   {role_key:'coordinator',label:'مسئول واحد',color:'#16a085',is_protected:false,description:'مسئول واحد هماهنگ‌کننده',category:'',station:'',sort_order:91}
@@ -2468,7 +2473,6 @@ function renderRolesList(){
   if(!cachedRoles.length){c.innerHTML='<p style="color:var(--c-text-muted)">هنوز نقشی تعریف نشده است.</p>';return;}
   var h='<table><thead><tr><th>کلید فنی</th><th>برچسب</th><th>دسته</th><th>پایگاه</th><th>توضیحات</th><th>نمونه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>';
   var CAT_LABEL={management:'مدیریت مرکز',units:'واحدهای مرکز',stations:'پایگاه‌های تابعه'};
-  var STATION_LABEL={hadiabad:'هادی‌آباد',kooye_mohsen:'کوی محسن',kooye_basij:'کوی بسیج'};
   cachedRoles.forEach(function(r){
     var sample='<span style="background:'+(r.color||'#3498db')+';color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">'+esc(r.label)+'</span>';
     var statusBadge=r.is_protected?'<span class="badge badge-absence">محفوظ</span>':'<span class="badge badge-normal">سفارشی</span>';
@@ -2482,7 +2486,7 @@ function renderRolesList(){
     h+='<tr><td dir="ltr" style="font-family:monospace;font-size:12px">'+esc(r.role_key)+'</td>'+
        '<td><b>'+esc(r.label)+'</b></td>'+
        '<td style="font-size:12px">'+(CAT_LABEL[r.category]||'—')+'</td>'+
-       '<td style="font-size:12px">'+(STATION_LABEL[r.station]||'—')+'</td>'+
+       '<td style="font-size:12px">'+esc(r.station||'—')+'</td>'+
        '<td style="font-size:12px;color:var(--c-text-muted)">'+esc(r.description||'—')+'</td>'+
        '<td>'+sample+'</td>'+
        '<td>'+statusBadge+'</td>'+
@@ -2491,27 +2495,31 @@ function renderRolesList(){
   h+='</tbody></table>';
   c.innerHTML=h;
 }
-// نمایش نمودار درختی نقش‌ها
+// نمایش نمودار درختی نقش‌ها — پویا بر اساس داده‌های موجود
 function renderRolesTree(){
   var c=$('roles_tree_container');
   if(!c)return;
   if(!cachedRoles.length){c.innerHTML='';return;}
-  var CAT_LABEL={management:'مدیریت مرکز',units:'واحدهای مرکز',stations:'پایگاه‌های تابعه'};
-  var STATION_LABEL={hadiabad:'پایگاه هادی‌آباد',kooye_mohsen:'پایگاه کوی محسن',kooye_basij:'پایگاه کوی بسیج'};
-  // گروه‌بندی نقش‌ها بر اساس category و station
+  // گروه‌بندی نقش‌ها بر اساس category
   var management=cachedRoles.filter(function(r){return r.category==='management';});
   var units=cachedRoles.filter(function(r){return r.category==='units';});
   var stations=cachedRoles.filter(function(r){return r.category==='stations';});
-  // نقش‌های محفوظ (مدیر/سوپرادمین) در شاخه مدیریت مرکز نمایش داده می‌شوند
-  var protectedRoles=cachedRoles.filter(function(r){return r.is_protected&&r.role_key==='admin';});
-  management=protectedRoles.concat(management);
-  // پایگاه‌ها را بر اساس station گروه‌بندی
+  // نقش محفوظ «مدیر» در شاخه مدیریت مرکز نمایش داده می‌شود
+  var protectedAdmin=cachedRoles.filter(function(r){return r.is_protected&&r.role_key==='admin';});
+  management=protectedAdmin.concat(management);
+  // پایگاه‌ها را بر اساس station گروه‌بندی — پویا (هر station که در داده‌ها باشد)
   var stationsByLoc={};
+  var stationOrder=[]; // ترتیب نمایش پایگاه‌ها بر اساس sort_order اولین نقش هر پایگاه
   stations.forEach(function(r){
-    var loc=r.station||'other';
-    if(!stationsByLoc[loc])stationsByLoc[loc]=[];
+    var loc=r.station||'سایر';
+    if(!stationsByLoc[loc]){
+      stationsByLoc[loc]=[];
+      stationOrder.push({name:loc,minSort:r.sort_order||999});
+    }
     stationsByLoc[loc].push(r);
   });
+  // مرتب‌سازی پایگاه‌ها بر اساس sort_order
+  stationOrder.sort(function(a,b){return a.minSort-b.minSort;});
   // ساخت HTML درخت
   function roleNode(r){
     var badge='<span style="background:'+(r.color||'#3498db')+';color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;display:inline-block">'+esc(r.label)+'</span>';
@@ -2549,11 +2557,12 @@ function renderRolesTree(){
     html+='<div class="tree-branch">'+
       '<div class="tree-node tree-branch-node">🏘️ پایگاه‌های تابعه</div>'+
       '<div class="tree-children">';
-    // هر پایگاه به‌عنوان زیرشاخه
-    ['hadiabad','kooye_mohsen','kooye_basij'].forEach(function(loc){
+    // هر پایگاه به‌عنوان زیرشاخه — پویا بر اساس داده‌ها
+    stationOrder.forEach(function(s){
+      var loc=s.name;
       if(stationsByLoc[loc]&&stationsByLoc[loc].length){
         html+='<div class="tree-branch">'+
-          '<div class="tree-node tree-station-node">'+esc(STATION_LABEL[loc]||loc)+'</div>'+
+          '<div class="tree-node tree-station-node">'+esc(loc)+'</div>'+
           '<div class="tree-children">'+branchNodes(stationsByLoc[loc])+'</div>'+
         '</div>';
       }
