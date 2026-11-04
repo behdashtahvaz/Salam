@@ -779,11 +779,11 @@ button,.btn{-webkit-touch-callout:none}
     </div>
     <!-- ۳. وظایف و برنامه‌ها -->
     <div class="nav-section">
-      <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">🎯 وظایف و برنامه‌ها <span class="nav-chevron">▾</span></div>
+      <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">🎯 مأموریت‌ها <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
-        <button class="nav-item" data-target="my_tasks"><span class="ico">✅</span><span class="lbl">وظایف و فعالیت‌های من</span><span class="nav-badge hidden" id="tasks_badge">۰</span></button>
-        <button class="nav-item" data-target="programs"><span class="ico">🗂</span><span class="lbl">مدیریت برنامه‌ها</span><span class="nav-badge hidden" id="programs_badge">۰</span></button>
-        <button class="nav-item" data-target="program_reports"><span class="ico">📋</span><span class="lbl">گزارش و تاریخچه برنامه‌ها</span></button>
+        <button class="nav-item" data-target="my_tasks"><span class="ico">✅</span><span class="lbl">مأموریت‌های من</span><span class="nav-badge hidden" id="tasks_badge">۰</span></button>
+        <button class="nav-item" data-target="shift_schedule"><span class="ico">📅</span><span class="lbl">لوح شیفت</span></button>
+
       </div>
     </div>
     <!-- ۴. هماهنگی و تأیید -->
@@ -1065,18 +1065,40 @@ button,.btn{-webkit-touch-callout:none}
 
 <!-- بخش درخواست مرخصی حذف شد -->
 
+<!-- ═══ لوح شیفت — تقویم خام برای تخصیص مأموریت ═══ -->
+<div id="section-shift_schedule" class="card hidden">
+  <h2>📅 لوح شیفت</h2>
+  <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px">
+    روی هر روز کلیک کنید تا مشخص کنید چه کسی، کجا، چه کاری و در چه ساعتی انجام دهد. مأموریت‌های ثبت‌شده در کارکرد پرسنل و تقویم هر نفر نمایش داده می‌شوند.
+  </p>
+  <div class="form-row" style="align-items:flex-end;margin-bottom:12px">
+    <div class="form-group" style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-secondary" onclick="shiftCalNav(-1)">‹ ماه قبل</button>
+      <select id="shift_cal_month" style="width:auto"><option value="1">فروردین</option><option value="2">اردیبهشت</option><option value="3">خرداد</option><option value="4">تیر</option><option value="5">مرداد</option><option value="6">شهریور</option><option value="7">مهر</option><option value="8">آبان</option><option value="9">آذر</option><option value="10">دی</option><option value="11">بهمن</option><option value="12">اسفند</option></select>
+      <input type="number" id="shift_cal_year" value="1405" style="width:80px">
+      <button class="btn btn-sm btn-secondary" onclick="shiftCalNav(1)">ماه بعد ›</button>
+      <button class="btn btn-sm btn-info" onclick="shiftCalToday()">امروز</button>
+    </div>
+    <div class="form-group" style="flex:1;min-width:200px">
+      <label>فیلتر پرسنل:</label>
+      <select id="shift_cal_person" class="person-dropdown"><option value="">همه پرسنل</option></select>
+    </div>
+  </div>
+  <div id="shift_calendar_container"></div>
+</div>
+
 <!-- وظایف من -->
 <div id="section-my_tasks" class="card hidden">
-  <h2>✅ وظایف و فعالیت‌های من</h2>
-  <p>تمام کارهای محول‌شده به شما — شامل وظایف مستقل و فعالیت‌های برنامه‌ها. پس از انجام، گزارش مأموریت را ثبت کنید.</p>
+  <h2>✅ مأموریت‌های من</h2>
+  <p>تمام مأموریت‌های محول‌شده به شما. پس از انجام، گزارش مأموریت را ثبت کنید.</p>
   <!-- زبانه‌های تغییر نمای وظایف/فعالیت‌ها -->
   <div class="form-row" style="margin-bottom:12px">
     <div class="form-group" style="flex:0 0 auto">
       <label>نوع:</label>
       <select id="my_tasks_type" onchange="renderMyTasks()">
-        <option value="all">همه (وظایف + فعالیت‌ها)</option>
-        <option value="tasks">فقط وظایف مستقل</option>
-        <option value="activities">فقط فعالیت‌های برنامه‌ها</option>
+        <option value="all">همه مأموریت‌ها</option>
+        <option value="tasks">فقط مأموریت‌های مستقل</option>
+        <option value="activities">فعالیت‌ها</option>
       </select>
     </div>
     <div class="form-group">
@@ -1551,17 +1573,21 @@ button,.btn{-webkit-touch-callout:none}
   <!-- ═══ ساعات کاری استاندارد ═══ -->
   <div id="work_hours_section" class="admin-only">
     <h3>⏰ ساعات کاری استاندارد</h3>
-    <p style="font-size:12px;color:var(--c-text-muted);margin-bottom:12px">
-      ساعت ورود و خروج استاندارد مرکز را تنظیم کنید. هر بار تغییر، یک رکورد جدید با تاریخ اعمال ایجاد می‌کند و از آن تاریخ به بعد اعمال می‌شود.
-      این ساعات برای تشخیص خودکار انحرافات (اضافه‌کاری، خروج زودهنگام) در فرم خوداظهاری استفاده می‌شود.
-    </p>
+    <div style="background:var(--c-info-light,#e0f2fe);border-right:4px solid var(--c-info,#0284c7);padding:10px 12px;border-radius:var(--c-radius-sm);margin-bottom:12px;font-size:12px;line-height:1.7">
+      <b>پیش‌فرض سیستم:</b> ۰۷:۰۰ تا ۱۳:۰۰، شنبه تا چهارشنبه (پنجشنبه و جمعه تعطیل)<br>
+      <b>نحوه عملکرد:</b> هر بار تنظیم جدید، یک رکورد با تاریخ اعمال ایجاد می‌کند و <b>از آن تاریخ به بعد</b> اعمال می‌شود. این تنظیم تا زمان تعریف تنظیم جدید یا فشردن دکمه «ریست» معتبر باقی می‌ماند.<br>
+      <b>دکمه ریست:</b> با ریست، تمام رکوردها حذف و سیستم به پیش‌فرض (۰۷:۰۰ تا ۱۳:۰۰) بازمی‌گردد.
+    </div>
     <div class="form-row">
       <div class="form-group"><label>ساعت ورود استاندارد:</label><input type="hidden" id="wh_start_time"><div class="time-picker-widget" data-target="wh_start_time">--:--</div></div>
       <div class="form-group"><label>ساعت خروج استاندارد:</label><input type="hidden" id="wh_end_time"><div class="time-picker-widget" data-target="wh_end_time">--:--</div></div>
       <div class="form-group"><label>تاریخ اعمال (شمسی):</label><input type="text" id="wh_effective_from" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
       <div class="form-group" style="flex:1;min-width:200px"><label>توضیحات (اختیاری):</label><input type="text" id="wh_note" placeholder="مثلاً: تغییر ساعات تابستانی"></div>
     </div>
-    <button class="btn btn-success" onclick="saveWorkHoursSetting()">💾 ذخیره تنظیمات ساعات کاری</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-success" onclick="saveWorkHoursSetting()">💾 ذخیره تنظیمات ساعات کاری</button>
+      <button class="btn btn-warning" onclick="resetWorkHours()">↻ ریست به پیش‌فرض (۰۷:۰۰ تا ۱۳:۰۰)</button>
+    </div>
     <hr style="margin:16px 0;border:0;border-top:1px solid var(--c-border)">
     <h4>📋 تاریخچه تنظیمات</h4>
     <div id="work_hours_history_container" class="table-wrap"></div>
@@ -3216,6 +3242,13 @@ function showSection(id,skipHistory){
   }
   /* leave_req section removed */
   if(id==='my_tasks')renderMyTasks();
+  if(id==='shift_schedule'){
+    populatePersonDropdown('shift_cal_person',false);
+    var t=getTodayJalali().split('/');
+    $('shift_cal_month').value=parseInt(t[1],10);
+    $('shift_cal_year').value=parseInt(t[0],10);
+    renderShiftCalendar();
+  }
   if(id==='programs')renderPrograms();
   if(id==='records'){populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();if($('rep_mode').value==='table')renderRecords();}
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
@@ -3533,6 +3566,36 @@ async function renderDashboard(){
       '</div>'+
     '</div>';
 
+    // ─── خلاصه ماهیانه مأموریت‌ها (باز در داشبورد) ───
+    html+='<div style="background:var(--c-card-alt);border:1px solid var(--c-border);border-radius:10px;padding:16px;margin-bottom:16px">'+
+      '<h3 style="margin:0 0 10px">📋 مأموریت‌های ماه '+esc(MONTH_NAMES[parseInt(month[1],10)-1]||'')+'</h3>';
+    try{
+      var monthTasks=await loadMyTasks('all');
+      var thisMonthTasks=monthTasks.filter(function(t){
+        var tp=parseJalali(t.task_date);
+        return tp.jy===parseInt(month[0],10)&&tp.jm===parseInt(month[1],10);
+      });
+      if(thisMonthTasks.length){
+        html+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+        thisMonthTasks.forEach(function(t){
+          var stIcon=t.status==='done'?'✅':t.status==='in_progress'?'🔄':'⬜';
+          var stColor=t.status==='done'?'var(--c-success)':t.status==='cancelled'?'var(--c-danger)':'var(--c-info)';
+          // استخراج ساعت از توضیحات
+          var tDesc=t.description||'';
+          var tMatch=tDesc.match(/ساعت:\s*(\d{2}:\d{2})\s*تا\s*(\d{2}:\d{2})/);
+          var timeStr=tMatch?' '+tMatch[1]+'-'+tMatch[2]:'';
+          html+='<div style="background:var(--c-card);border:1px solid var(--c-border);border-right:3px solid '+stColor+';border-radius:8px;padding:8px 12px;font-size:13px;flex:1;min-width:200px">'+
+            '<div style="font-weight:600">'+stIcon+' '+esc(t.title)+'</div>'+
+            '<div style="font-size:11px;color:var(--c-text-muted);margin-top:2px">📅 '+esc(t.task_date)+timeStr+'</div>'+
+          '</div>';
+        });
+        html+='</div>';
+      }else{
+        html+='<p style="color:var(--c-text-muted);font-size:13px">مأموریتی برای این ماه ثبت نشده است.</p>';
+      }
+    }catch(e){html+='<p style="color:var(--c-text-muted);font-size:12px">خطا در بارگذاری مأموریت‌ها</p>';}
+    html+='</div>';
+
     // ─── عملیات سریع ───
     html+='<h3 style="margin:16px 0 10px">⚡ عملیات سریع</h3>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap">'+
@@ -3540,7 +3603,7 @@ async function renderDashboard(){
       (currentRole!=='super_admin'?'<button class="btn btn-warning" onclick="showSection(\'leave_req\')">✈️ درخواست مرخصی</button>':'')+
       '<button class="btn btn-success" onclick="showSection(\'reports\')">📊 گزارش ماهانه</button>'+
       (currentRole!=='super_admin'?'<button class="btn btn-purple" onclick="showSection(\'my_tasks\')">✅ وظایف و فعالیت‌ها ('+totalPending+')</button>':'')+
-      (currentUser.profile&&(currentUser.profile.can_create_programs||currentRole==='admin'||currentRole==='super_admin')?'<button class="btn btn-info" onclick="showSection(\'programs\')">🗂 مدیریت برنامه‌ها</button>':'')+
+      (currentRole==='admin'||currentRole==='super_admin'?'<button class="btn btn-info" onclick="showSection(\'calendar\')">📅 تقویم و مأموریت</button>':'')+
       (currentRole==='admin'||currentRole==='super_admin'?'<button class="btn btn-danger" onclick="showSection(\'approvals\')">✅ تأیید درخواست‌ها</button><button class="btn btn-danger" onclick="showSection(\'send_notification\')">📢 ارسال پیام</button><button class="btn btn-danger" onclick="showSection(\'users\')">👥 مدیریت کاربران</button>':'')+
     '</div>';
 
@@ -3657,7 +3720,7 @@ function showDayDetail(dateStr,personId){
       // ─── بخش ۱: مناسبت‌ها و رویدادها ───
       html+='<div style="margin-bottom:16px">';
       var canManageEvents=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_events);
-      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0;font-size:15px">📅 مناسبت‌ها و رویدادهای روز</h3>'+(canManageEvents?'<button class="btn btn-sm btn-info" onclick="addManualEvent(\''+dateStr+'\')">➕ رویداد جدید</button>':'')+'</div>';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0;font-size:15px">📅 مناسبت‌ها و رویدادهای روز</h3></div>';
       if(dayEvents.length===0&&dayPrograms.length===0){
         html+='<p style="color:var(--c-text-muted);font-size:13px;padding:8px 0">مناسبتی برای این روز ثبت نشده.</p>';
       }else{
@@ -3671,7 +3734,7 @@ function showDayDetail(dateStr,personId){
             (ev.description?'<div style="font-size:12px;color:var(--c-text-muted);margin-top:4px">'+esc(ev.description)+'</div>':'')+
             (isPast?'<div style="font-size:11px;color:var(--c-danger);margin-top:4px">⏰ رویداد گذشته — امکان مأموریت وجود ندارد</div>':'')+
             '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+
-              (!isPast?'<button class="btn btn-sm btn-info" onclick="createEventAction(\''+ev.id+'\',\''+dateStr+'\')">➕ ساخت مأموریت</button>':'')+
+              (!isPast?'<button class="btn btn-sm btn-info" onclick="createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>':'')+
             '</div>'+
             // مأموریت‌ها این رویداد
             '<div id="event_acts_'+ev.id+'" style="margin-top:8px"></div>'+
@@ -3713,6 +3776,11 @@ function showDayDetail(dateStr,personId){
         html+='<button class="btn btn-sm btn-success" style="margin-top:8px" onclick="closeDayDetail();goToDailyLog(\''+dateStr+'\',\''+personId+'\')">📝 ثبت/ویرایش اظهار</button>';
       }else{
         html+='<p style="margin-top:8px;font-size:12px;color:var(--c-text-muted)">سوپرادمین خوداظهاری ثبت نمی‌کند.</p>';
+      }
+      // دکمه ساخت مأموریت برای این روز
+      var todayTs2=jalaliToTimestamp(getTodayJalali());
+      if(jalaliToTimestamp(dateStr)>=todayTs2){
+        html+='<button class="btn btn-sm btn-info" style="margin-top:8px;margin-right:8px" onclick="closeDayDetail();createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>';
       }
       html+='</div>';
       // ─── بخش ۳: وظایف و فعالیت‌های برنامه ───
@@ -3803,6 +3871,170 @@ async function saveManualEvent(dateStr,year){
     setTimeout(function(){showDayDetail(dateStr,personId);},100);
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
+}
+// ═══ ساخت مأموریت مستقیم روی یک روز (بدون برنامه) ═══
+function createDayMission(dateStr){
+  var todayTs=jalaliToTimestamp(getTodayJalali());
+  var dayTs=jalaliToTimestamp(dateStr);
+  if(dayTs<todayTs){
+    showAlert('⚠️ امکان تعریف مأموریت برای روزهای گذشته وجود ندارد.','warning');
+    return;
+  }
+  var personId=$('cal_person')?$('cal_person').value:currentUser.id;
+  var p=parseJalali(dateStr);
+  var dayName=DAY_NAMES[getJalaliDayOfWeek(p.jy,p.jm,p.jd)];
+  // ساعات کاری استاندارد این روز — پیش‌فرض مأموریت
+  var wh=getStandardWorkHours(dateStr);
+  var overlay=document.createElement('div');
+  overlay.id='day_mission_overlay';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  overlay.innerHTML='<div style="background:var(--c-card);border-radius:12px;padding:20px;max-width:520px;width:100%;box-sizing:border-box">'+
+    '<h3 style="margin:0 0 8px">➕ مأموریت جدید — '+esc(dayName)+' '+esc(dateStr)+'</h3>'+
+    '<div style="background:var(--c-info-light);padding:6px 10px;border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--c-info)">⏰ ساعات کاری استاندارد این روز: <b>'+esc(wh.start_time)+' تا '+esc(wh.end_time)+'</b> — پیش‌فرض مأموریت (قابل تغییر)</div>'+
+    '<div class="form-group"><label>عنوان مأموریت (الزامی):</label><input type="text" id="dm_title" placeholder="مثلاً: ویزیت خانگی، کشیک، بازدید..."></div>'+
+    '<div class="form-row">'+
+      '<div class="form-group" style="flex:0 0 120px"><label>از ساعت:</label><input type="hidden" id="dm_start_time"><div class="time-picker-widget" data-target="dm_start_time">'+esc(wh.start_time)+'</div></div>'+
+      '<div class="form-group" style="flex:0 0 120px"><label>تا ساعت:</label><input type="hidden" id="dm_end_time"><div class="time-picker-widget" data-target="dm_end_time">'+esc(wh.end_time)+'</div></div>'+
+    '</div>'+
+    '<div class="form-group"><label>محل / توضیحات:</label><textarea id="dm_desc" rows="2" placeholder="محل مأموریت یا توضیحات..."></textarea></div>'+
+    '<div class="form-group"><label>👤 مسئولان اجرا (می‌توانید چند نفر انتخاب کنید):</label>'+
+      '<div id="dm_users_list" style="max-height:180px;overflow-y:auto;border:1px solid var(--c-border);border-radius:8px;padding:8px;background:var(--c-bg-alt)"></div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px">'+
+        '<button type="button" class="btn btn-sm btn-info" onclick="dmSelectAll(true)">انتخاب همه</button>'+
+        '<button type="button" class="btn btn-sm btn-secondary" onclick="dmSelectAll(false)">لغو همه</button>'+
+      '</div>'+
+      '<small id="dm_users_count" style="color:var(--c-text-muted);font-size:11px;display:block;margin-top:4px">۰ نفر انتخاب شده</small>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button type="button" class="btn btn-success" id="btn_save_day_mission">✅ ثبت مأموریت</button>'+
+      '<button type="button" class="btn btn-secondary" id="btn_cancel_day_mission">انصراف</button>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  // مقداردهی اولیه ساعت‌ها به پیش‌فرض ساعات کاری
+  setTimepickerValue('dm_start_time',wh.start_time);
+  setTimepickerValue('dm_end_time',wh.end_time);
+  // ساخت لیست چک‌باکس کاربران
+  var usersList=$('dm_users_list');
+  var usersHtml='';
+  cachedPersons.forEach(function(u){
+    if(u.role==='super_admin')return;
+    if(u.status&&u.status!=='active')return;
+    var roleTag=u.role==='admin'?' [مدیر]':u.can_approve_leaves?' [مسئول کارکرد]':'';
+    usersHtml+='<label style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'var(--c-primary-light)\'" onmouseout="this.style.background=\'\'">'+
+      '<input type="checkbox" class="dm-user-check" value="'+u.id+'" onchange="dmUpdateCount()">'+
+      '<span>'+esc(u.first_name+' '+u.last_name+' - '+u.personnel_id)+roleTag+'</span>'+
+    '</label>';
+  });
+  usersList.innerHTML=usersHtml;
+  // پیش‌انتخاب کاربر فعلی
+  var meCb=usersList.querySelector('.dm-user-check[value="'+personId+'"]');
+  if(meCb)meCb.checked=true;
+  dmUpdateCount();
+  // اتصال دکمه‌ها
+  $('btn_save_day_mission').onclick=async function(){
+    var title=val('dm_title'),desc=val('dm_desc');
+    var sTime=$('dm_start_time').value,eTime=$('dm_end_time').value;
+    if(!title){showAlert('عنوان مأموریت الزامی است.','error');return;}
+    if(!sTime||!eTime){showAlert('ساعت شروع و پایان الزامی است.','error');return;}
+    // اعتبارسنجی ساعت شروع قبل از پایان
+    if(!validateTimeOrder(sTime,eTime,'ساعات مأموریت'))return;
+    // دریافت کاربران انتخاب‌شده
+    var selectedUsers=[];
+    document.querySelectorAll('.dm-user-check:checked').forEach(function(cb){selectedUsers.push(cb.value);});
+    if(!selectedUsers.length){showAlert('حداقل یک مسئول اجرا انتخاب کنید.','error');return;}
+    // ─── بررسی تداخل زمانی برای هر کاربر ───
+    showLoading('بررسی تداخل...');
+    var conflicts=[];
+    for(var ci=0;ci<selectedUsers.length;ci++){
+      var uid=selectedUsers[ci];
+      try{
+        var existing=await loadLogs(uid,dateStr,dateStr);
+        // بررسی تداخل با مأموریت‌های موجود
+        var tasks=await loadTasksForDate(uid,dateStr);
+        if(tasks&&tasks.length){
+          for(var ti=0;ti<tasks.length;ti++){
+            var t=tasks[ti];
+            if(t.status==='cancelled')continue;
+            // اگر task قبلی هم ساعت دارد → تداخل
+            var tDesc=t.description||'';
+            var tMatch=tDesc.match(/ساعت:\s*(\d{2}:\d{2})\s*تا\s*(\d{2}:\d{2})/);
+            if(tMatch){
+              var tS=timeToMinutes(tMatch[1]),tE=timeToMinutes(tMatch[2]);
+              var nS=timeToMinutes(sTime),nE=timeToMinutes(eTime);
+              if(tS<nE&&tE>nS){
+                conflicts.push({user:getPersonName(uid),existing:t.title,time:tMatch[1]+'-'+tMatch[2]});
+              }
+            }
+          }
+        }
+      }catch(e){}
+    }
+    hideLoading();
+    if(conflicts.length){
+      var conflictMsg='⚠️ تداخل زمانی выявил شد:\n\n';
+      conflicts.forEach(function(c){
+        conflictMsg+='👤 '+c.user+' — مأموریت موجود: «'+c.existing+'» ('+c.time+')\n';
+      });
+      conflictMsg+='\nبا این حال ادامه می‌دهید؟';
+      if(!confirm(conflictMsg))return;
+    }
+    // ─── ثبت مأموریت برای هر کاربر ───
+    showLoading('ثبت مأموریت برای '+selectedUsers.length+' نفر...');
+    try{
+      var errors=[];
+      for(var i=0;i<selectedUsers.length;i++){
+        var uid=selectedUsers[i];
+        try{
+          var task={creator_id:currentUser.id,assignee_id:uid,title:title,description:desc+'\nساعت: '+sTime+' تا '+eTime,task_date:normJ(dateStr),priority:'normal',status:'pending'};
+          var saved=await createTaskInDB(task);
+          await recordAudit('create','tasks',saved.id,{title:title,assignee_id:uid,date:dateStr,start_time:sTime,end_time:eTime});
+          // اعلان به مسئول
+          if(uid!==currentUser.id){
+            try{
+              await sendNotificationDB({sender_id:currentUser.id,recipient_id:uid,
+                title:'📋 مأموریت جدید: '+title,
+                body:'شما یک مأموریت برای تاریخ '+dateStr+' ('+dayName+') دارید.\n\nعنوان: '+title+'\nساعت: '+sTime+' تا '+eTime+(desc?'\nتوضیحات: '+desc:''),
+                priority:'normal',related_type:'task'});
+            }catch(e){}
+          }
+        }catch(e){errors.push(getPersonName(uid)+': '+e.message);}
+      }
+      if(errors.length){
+        showAlert('برای برخی خطا داشت: '+errors.join('; '),'error');
+      }else{
+        showAlert('✅ مأموریت برای '+selectedUsers.length+' نفر در تاریخ '+dateStr+' ثبت شد.','success');
+      }
+      overlay.remove();
+      closeDayDetail();
+      if(typeof renderCalendar==='function')renderCalendar();
+      if(typeof renderDashboardCalendar==='function')renderDashboardCalendar();
+    }catch(e){showAlert('خطا: '+e.message,'error');}
+    hideLoading();
+  };
+  $('btn_cancel_day_mission').onclick=function(){overlay.remove();};
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  initDatepickers();initTimepickers();
+}
+// توابع کمکی مأموریت روزانه
+function dmSelectAll(val){
+  document.querySelectorAll('.dm-user-check').forEach(function(cb){cb.checked=val;});
+  dmUpdateCount();
+}
+function dmUpdateCount(){
+  var checks=document.querySelectorAll('.dm-user-check:checked');
+  var el=$('dm_users_count');
+  if(el)el.textContent=checks.length+' نفر انتخاب شده';
+}
+// اعتبارسنجی ساعت شروع قبل از پایان
+function validateTimeOrder(startStr,endStr,label){
+  if(!startStr||!endStr)return true;
+  var sMin=timeToMinutes(startStr),eMin=timeToMinutes(endStr);
+  if(sMin>=eMin){
+    showAlert('⚠️ '+label+': ساعت شروع ('+startStr+') باید قبل از ساعت پایان ('+endStr+') باشد.','error');
+    return false;
+  }
+  return true;
 }
 function createEventAction(eventId,dateStr){
   // جلوگیری از مأموریت روی رویدادهای گذشته
@@ -4528,7 +4760,7 @@ async function saveDailyLog(){
     // ─── اعتبارسنجی: اضافه‌کاری نباید در ساعات کارکرد عادی باشد ───
     var otS=timeToMinutes(s),otE=timeToMinutes(e);
     if(isWorkDay){
-      // روز کاری: اضافه‌کاری باید قبل از 07:30 یا بعد از 16:30 باشد
+      // روز کاری: اضافه‌کاری باید قبل از شروع یا بعد از پایان ساعات استاندارد باشد
       var overlapsWork=(otS<WORK_END_MIN&&otE>WORK_START_MIN);
       if(overlapsWork){
         var inWorkStart=Math.max(otS,WORK_START_MIN),inWorkEnd=Math.min(otE,WORK_END_MIN);
@@ -4868,6 +5100,9 @@ function updateDeclarationModeBanner(){
   }
 }
 // ═════ ساعات کاری استاندارد ═════
+// پیش‌فرض سیستم: ۰۷:۰۰ تا ۱۳:۰۰، شنبه تا چهارشنبه (پنجشنبه و جمعه تعطیل)
+var DEFAULT_WORK_START='07:00';
+var DEFAULT_WORK_END='13:00';
 var cachedWorkHours=[];
 async function loadWorkHoursSettings(){
   try{
@@ -4877,17 +5112,36 @@ async function loadWorkHoursSettings(){
     return cachedWorkHours;
   }catch(e){console.warn('loadWorkHoursSettings:',e);cachedWorkHours=[];return[];}
 }
-// دریافت ساعات استاندارد برای یک تاریخ (آخرین رکورد قبل از این تاریخ)
+// دریافت ساعات استاندارد برای یک تاریخ:
+//   - اگر رکوردی وجود ندارد یا تاریخ قبل از نخستین رکورد است → پیش‌فرض سیستم (۰۷:۰۰ تا ۱۳:۰۰)
+//   - در غیر این صورت آخرین رکوردی که effective_from ≤ این تاریخ باشد اعمال می‌شود
+//   - هر رکورد از تاریخ اعمالش تا ظهور رکورد بعدی معتبر است؛ با فشردن دکمه ریست،
+//     همه رکوردها حذف و سیستم به پیش‌فرض برمی‌گردد.
 function getStandardWorkHours(dateStr){
-  if(!cachedWorkHours.length)return{start_time:'07:30',end_time:'16:30'};
+  if(!cachedWorkHours.length)return{start_time:DEFAULT_WORK_START,end_time:DEFAULT_WORK_END};
   var targetTs=jalaliToTimestamp(dateStr);
   var effective=cachedWorkHours.filter(function(w){
     return jalaliToTimestamp(w.effective_from)<=targetTs;
   });
-  if(!effective.length)return{start_time:'07:30',end_time:'16:30'};
+  if(!effective.length)return{start_time:DEFAULT_WORK_START,end_time:DEFAULT_WORK_END};
   // مرتب‌سازی بر اساس تاریخ اعمال (نزولی) و گرفتن اولین
   effective.sort(function(a,b){return jalaliToTimestamp(b.effective_from)-jalaliToTimestamp(a.effective_from);});
   return{start_time:effective[0].start_time,end_time:effective[0].end_time};
+}
+// ریست ساعات کاری استاندارد به پیش‌فرض (حذف همه رکوردها)
+async function resetWorkHours(){
+  if(!confirm('⚠️ ریست ساعات کاری استاندارد\n\nبا تأیید، تمام تنظیمات ذخیره‌شده حذف شده و سیستم به پیش‌فرض (۰۷:۰۰ تا ۱۳:۰۰، شنبه تا چهارشنبه) برمی‌گردد.\n\nآیا مطمئن هستید؟'))return;
+  showLoading('ریست به پیش‌فرض...');
+  try{
+    const{error}=await sb.from('work_hours_settings').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    if(error)throw error;
+    await recordAudit('delete','work_hours_settings','all',{reason:'reset_to_default'});
+    cachedWorkHours=[];
+    renderWorkHoursHistory();
+    updateStandardHoursDisplay();
+    showAlert('✅ ساعات کاری به پیش‌فرض سیستم (۰۷:۰۰ تا ۱۳:۰۰) بازگشت.','success');
+  }catch(e){showAlert('خطا در ریست: '+e.message,'error');}
+  hideLoading();
 }
 // نمایش ساعات استاندارد در فرم
 function updateStandardHoursDisplay(){
@@ -4921,11 +5175,20 @@ async function saveWorkHoursSetting(){
 function renderWorkHoursHistory(){
   var c=$('work_hours_history_container');
   if(!c)return;
-  if(!cachedWorkHours.length){c.innerHTML='<p style="color:var(--c-text-muted)">هنوز تنظیماتی ثبت نشده است. پیش‌فرض: ۰۷:۳۰ تا ۱۶:۳۰</p>';return;}
-  var h='<table><tr><th>ساعت ورود</th><th>ساعت خروج</th><th>تاریخ اعمال</th><th>توضیحات</th><th>تاریخ ثبت</th></tr>';
-  cachedWorkHours.forEach(function(w){
-    var isCurrent=(w.id===(cachedWorkHours[0]||{}).id);
-    h+='<tr><td><b>'+esc(w.start_time)+'</b></td><td><b>'+esc(w.end_time)+'</b></td><td>'+esc(w.effective_from)+(isCurrent?' <span class="badge badge-normal">جاری</span>':'')+'</td><td>'+esc(w.note||'—')+'</td><td style="font-size:11px">'+esc(w.created_at?w.created_at.slice(0,10):'—')+'</td></tr>';
+  if(!cachedWorkHours.length){c.innerHTML='<p style="color:var(--c-text-muted)">هنوز تنظیماتی ثبت نشده است. پیش‌فرض سیستم: ۰۷:۰۰ تا ۱۳:۰۰ (شنبه تا چهارشنبه)</p>';return;}
+  // cachedWorkHours از جدیدترین effective_from به قدیمی‌ترین مرتب شده است
+  // برای نمایش، به ترتیب زمانی (قدیمی→جدید) مرتب می‌کنیم
+  var sorted=cachedWorkHours.slice().sort(function(a,b){return jalaliToTimestamp(a.effective_from)-jalaliToTimestamp(b.effective_from);});
+  var todayTs=jalaliToTimestamp(getTodayJalali());
+  var h='<table><tr><th>ساعت ورود</th><th>ساعت خروج</th><th>اعمال از تاریخ</th><th>معتبر تا</th><th>توضیحات</th><th>تاریخ ثبت</th></tr>';
+  sorted.forEach(function(w,i){
+    var next=sorted[i+1];
+    var validUntil=next?esc(next.effective_from):'<span style="color:var(--c-text-muted)">تا زمان تغییر بعدی</span>';
+    var fromTs=jalaliToTimestamp(w.effective_from);
+    var isCurrent=(!next||fromTs<=todayTs)&&fromTs<=todayTs;
+    // این رکورد «جاری» است اگر effective_from≤today و رکورد بعدی effective_from>today باشد
+    isCurrent=fromTs<=todayTs&&(!next||jalaliToTimestamp(next.effective_from)>todayTs);
+    h+='<tr><td><b>'+esc(w.start_time)+'</b></td><td><b>'+esc(w.end_time)+'</b></td><td>'+esc(w.effective_from)+(isCurrent?' <span class="badge badge-normal">جاری</span>':'')+'</td><td>'+validUntil+'</td><td>'+esc(w.note||'—')+'</td><td style="font-size:11px">'+esc(w.created_at?w.created_at.slice(0,10):'—')+'</td></tr>';
   });
   h+='</table>';
   c.innerHTML=h;
@@ -5080,7 +5343,7 @@ async function disputeLog(logId){
   var reason=prompt('علت اعتراض را توضیح دهید:');
   if(!reason)return;
   var correctEntry=prompt('ساعت ورود صحیح (اختیاری، مثلاً 08:00):','');
-  var correctExit=prompt('ساعت خروج صحیح (اختیاری، مثلاً 16:30):','');
+  var correctExit=prompt('ساعت خروج صحیح (اختیاری، مثلاً 13:00):','');
   showLoading('در حال ثبت اعتراض...');
   try{
     var log=await loadLogById(logId);
@@ -8239,6 +8502,133 @@ function clearProgramReportFilters(){
 
 
 // تقویم ماهانه در داشبورد — نمایش همه کارها و اطلاعات
+// ═════ لوح شیفت — تقویم خام برای تخصیص مأموریت ═════
+function shiftCalNav(dir){
+  var m=parseInt($('shift_cal_month').value,10);
+  var y=parseInt($('shift_cal_year').value,10);
+  m+=dir;
+  if(m>12){m=1;y++;}
+  if(m<1){m=12;y--;}
+  $('shift_cal_month').value=m;
+  $('shift_cal_year').value=y;
+  renderShiftCalendar();
+}
+function shiftCalToday(){
+  var t=getTodayJalali().split('/');
+  $('shift_cal_month').value=parseInt(t[1],10);
+  $('shift_cal_year').value=parseInt(t[0],10);
+  renderShiftCalendar();
+}
+async function renderShiftCalendar(){
+  var c=$('shift_calendar_container');
+  if(!c)return;
+  var month=parseInt($('shift_cal_month').value,10);
+  var year=parseInt($('shift_cal_year').value,10);
+  var filterPerson=$('shift_cal_person')?$('shift_cal_person').value:'';
+  if(isNaN(year)||year<1300||year>1500){c.innerHTML='<p>سال نامعتبر.</p>';return;}
+  c.innerHTML='<p style="color:var(--c-text-muted)">در حال بارگذاری...</p>';
+  try{
+    var days=jalaliMonthLength(year,month),first=getJalaliDayOfWeek(year,month,1);
+    var fromStr=fmtJalali(year,month,1),toStr=fmtJalali(year,month,days);
+    // بارگذاری همه مأموریت‌های این ماه
+    var allTasks=[];
+    if(filterPerson){
+      // فقط مأموریت‌های یک نفر
+      var tasks=await loadTasksForDate(filterPerson,fromStr);
+      if(tasks)allTasks=tasks.filter(function(t){return t.task_date>=fromStr&&t.task_date<=toStr;});
+    }else{
+      // همه پرسنل
+      for(var pi=0;pi<cachedPersons.length;pi++){
+        if(cachedPersons[pi].role==='super_admin')continue;
+        var ptasks=await loadTasksForDate(cachedPersons[pi].id,fromStr);
+        if(ptasks)allTasks=allTasks.concat(ptasks.filter(function(t){return t.task_date>=fromStr&&t.task_date<=toStr;}));
+      }
+    }
+    // رویدادهای ماه (برای نمایش تعطیلات)
+    var monthEvents=[];
+    try{
+      const{data,error}=await sb.from('calendar_events').select('*').eq('event_year',year);
+      if(!error)monthEvents=(data||[]).filter(function(e){
+        try{var p=parseJalali(e.date);return p.jy===year&&p.jm===month;}catch(x){return false;}
+      });
+    }catch(e){}
+    // ساخت جدول تقویم
+    var h='<table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>';
+    ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'].forEach(function(d){
+      h+='<th style="background:var(--c-primary);color:#fff;padding:8px;border:1px solid var(--c-border);font-size:12px">'+d+'</th>';
+    });
+    h+='</tr></thead><tbody><tr>';
+    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:80px"></td>';
+    var todayJ=getTodayJalali();
+    for(var day=1;day<=days;day++){
+      var ds=fmtJalali(year,month,day),dow=(first+day-1)%7;
+      var isHol=isHolidayDow(dow);
+      var dayTasks=allTasks.filter(function(t){return t.task_date===ds;});
+      var dayEvents=monthEvents.filter(function(e){
+        try{return e.date===ds||normJ(e.date)===ds;}catch(x){return false;}
+      });
+      var isToday=ds===todayJ;
+      var isPast=jalaliToTimestamp(ds)<jalaliToTimestamp(todayJ);
+      // محتوای سلول
+      var cellBg=isHol?var_c_danger_light:var_c_card;
+      if(dayEvents.length&&!isHol)cellBg='#fef3c7';
+      if(isToday)cellBg='var(--c-primary-light)';
+      var cellContent='<div style="font-weight:bold;font-size:13px;color:'+var_c_text+'">'+day+(isHol?' <span style="color:'+var_c_danger+';font-size:10px">تعطیل</span>':'')+'</div>';
+      // رویدادها
+      dayEvents.forEach(function(e){
+        cellContent+='<div style="font-size:9px;color:'+(e.is_holiday?var_c_danger:var_c_warning)+';margin-top:1px;padding:0 2px;background:'+(e.is_holiday?var_c_danger_light:var_c_warning_light)+';border-radius:2px">'+(e.is_holiday?'🔴':'📌')+' '+esc((e.title||'').slice(0,12))+'</div>';
+      });
+      // مأموریت‌های روز
+      dayTasks.forEach(function(t){
+        var stIcon=t.status==='done'?'✅':t.status==='cancelled'?'🚫':'📋';
+        var stColor=t.status==='done'?var_c_success:t.status==='cancelled'?var_c_danger:var_c_info;
+        // استخراج ساعت
+        var tDesc=t.description||'';
+        var tMatch=tDesc.match(/ساعت:\s*(\d{2}:\d{2})\s*تا\s*(\d{2}:\d{2})/);
+        var timeStr=tMatch?tMatch[1]+'-'+tMatch[2]:'';
+        var personName=getPersonName(t.assignee_id);
+        cellContent+='<div style="font-size:9px;color:'+stColor+';margin-top:1px;padding:1px 3px;border-radius:3px;background:'+var_c_info_light+';cursor:pointer;border-right:2px solid '+stColor+'" onclick="event.stopPropagation();editShiftTask(\''+t.id+'\')">'+stIcon+' '+esc(personName.split(' ')[0])+' '+esc(timeStr)+'</div>';
+      });
+      // دکمه افزودن مأموریت (فقط برای روزهای آینده و فقط مدیر)
+      var isAdmin=currentRole==='admin'||currentRole==='super_admin';
+      if(!isPast&&isAdmin){
+        cellContent+='<div style="margin-top:2px"><button class="btn btn-sm" style="padding:2px 8px;font-size:10px;min-height:auto" onclick="event.stopPropagation();createDayMission(\''+ds+'\')">➕</button></div>';
+      }
+      var cellStyle='border:1px solid var(--c-border);height:80px;vertical-align:top;padding:4px;cursor:'+(isPast?'default':'pointer')+';background:'+cellBg;
+      if(isToday)cellStyle+=';box-shadow:inset 0 0 0 2px var(--c-primary)';
+      if(!isPast&&isAdmin)cellStyle+=';cursor:pointer';
+      if(!isPast&&isAdmin){
+        h+='<td style="'+cellStyle+'" onclick="createDayMission(\''+ds+'\')">'+cellContent+'</td>';
+      }else{
+        h+='<td style="'+cellStyle+'">'+cellContent+'</td>';
+      }
+      if((first+day)%7===0&&day!==days)h+='</tr><tr>';
+    }
+    var rem=(7-((first+days)%7))%7;
+    for(var k=0;k<rem;k++)h+='<td style="border:1px solid var(--c-border)"></td>';
+    h+='</tr></tbody></table>';
+    // خلاصه
+    var totalTasks=allTasks.length;
+    var doneTasks=allTasks.filter(function(t){return t.status==='done';}).length;
+    h+='<div style="margin-top:12px;padding:10px;background:var(--c-bg-alt);border-radius:8px;font-size:13px">'+
+      '📊 <b>خلاصه ماه:</b> '+totalTasks+' مأموریت ثبت شده | '+doneTasks+' انجام‌شده | '+(totalTasks-doneTasks)+' در انتظار'+
+      '</div>';
+    c.innerHTML=h;
+  }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
+}
+// ویرایش/حذف مأموریت از لوح شیفت
+async function editShiftTask(taskId){
+  if(!confirm('این مأموریت را ویرایش یا حذف می‌کنید?\n\nOK = حذف\nCancel = بازگشت'))return;
+  showLoading('حذف...');
+  try{
+    const{error}=await sb.from('tasks').delete().eq('id',taskId);
+    if(error)throw error;
+    await recordAudit('delete','tasks',taskId,{});
+    showAlert('مأموریت حذف شد.','success');
+    await renderShiftCalendar();
+  }catch(e){showAlert('خطا: '+e.message,'error');}
+  hideLoading();
+}
 function dashCalNav(dir){
   var m=parseInt($('dash_cal_month').value,10);
   var y=parseInt($('dash_cal_year').value,10);
