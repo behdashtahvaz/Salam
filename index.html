@@ -826,6 +826,11 @@ input:focus,select:focus,textarea:focus{
 /* ─── جداول ─── */
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:var(--c-table-head-bg);padding:12px;text-align:right;font-weight:600;color:var(--c-text);font-size:12px;border-bottom:2px solid var(--c-border)}
+th.sortable{cursor:pointer;user-select:none;position:relative}
+th.sortable:hover{background:var(--c-primary-light,var(--c-info-light,#e8f4f8))}
+th.sortable::after{content:'';display:inline-block;width:16px;text-align:center;font-size:10px;color:var(--c-text-muted,#888)}
+th.sortable.sort-asc::after{content:'▲';color:var(--c-success,#2ecc71)}
+th.sortable.sort-desc::after{content:'▼';color:var(--c-danger,#e74c3c)}
 td{padding:10px 12px;border-bottom:1px solid var(--c-border);color:var(--c-text)}
 tr:hover td{background:var(--c-table-hover)}
 .table-wrap{overflow-x:auto;border-radius:var(--c-radius);box-shadow:var(--c-shadow);background:var(--c-card)}
@@ -1682,7 +1687,6 @@ button,.btn{-webkit-touch-callout:none}
     </select></div>
     <div class="form-group"><label>نقش نمایش:</label><select id="approval_role_view" onchange="renderApprovals()">
       <option value="auto">خودکار (بر اساس نقش من)</option>
-      <option value="coordinator">نمای هماهنگ‌کننده (مشاوره)</option>
       <option value="admin">نمای مدیر (تأیید نهایی)</option>
     </select></div>
   </div>
@@ -1848,9 +1852,17 @@ button,.btn{-webkit-touch-callout:none}
     </div>
   </div>
   <div class="form-row">
+    <div class="form-group" style="flex:0 0 180px">
+      <label>نوع استخدام:</label>
+      <select id="inv_employment_type" onchange="onEmploymentTypeChange()">
+        <option value="contract">📝 قراردادی (بدون انتقال مرخصی)</option>
+        <option value="official">🏛️ رسمی (انتقال مرخصی به سال بعد)</option>
+        <option value="tarhi">📋 طرحی</option>
+      </select>
+    </div>
     <div class="form-group" style="flex:0 0 150px"><label>سهمیه مرخصی سالانه (روز):</label><input type="number" id="inv_annual_leave" min="0" step="0.5" value="30" placeholder="30"></div>
-    <div class="form-group" style="flex:0 0 150px"><label>انتقال از سال قبل:</label><input type="number" id="inv_carry_over" min="0" step="0.5" value="0" placeholder="0"></div>
-    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small style="color:var(--c-text-muted);font-size:11px">📅 سهمیه ماهانه خودکار محاسبه می‌شود (سالانه ÷ ۱۲). پیش‌فرض: ۳۰ روز در سال = ۲.۵ روز در ماه. مرخصی تدریجی تعلق می‌گیرد و کاربر نمی‌تواند بیشتر از تعلق‌گرفته تا آن ماه استفاده کند.</small></div>
+    <div class="form-group" style="flex:0 0 150px" id="inv_carry_over_group"><label>انتقال از سال قبل (روز):</label><input type="number" id="inv_carry_over" min="0" step="0.5" value="0" placeholder="0"></div>
+    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small id="employment_help" style="color:var(--c-text-muted);font-size:11px">📅 رسمی: مرخصی استفاده‌نشده به سال بعد منتقل می‌شود. قراردادی/طرحی: بدون انتقال — هر سال از ۳۰ روز شروع می‌شود.</small></div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -1926,6 +1938,14 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group" style="flex:0 0 auto">
       <button class="btn btn-success" id="btn_save_role" onclick="saveRole()">➕ افزودن نقش</button>
       <button class="btn hidden" id="btn_cancel_edit_role" onclick="cancelEditRole()" style="margin-right:6px">انصراف</button>
+    </div>
+  </div>
+
+  <!-- ═══ پیش‌نمایش محل قرارگیری نقش در چارت ═══ -->
+  <div id="role_chart_preview" style="background:var(--c-card-alt,var(--c-bg-alt,#f1f5f9));border:1px solid var(--c-border,#e2e8f0);border-radius:8px;padding:12px;margin-top:12px">
+    <div style="font-size:12px;color:var(--c-text-muted);margin-bottom:6px">📍 محل قرارگیری در چارت سازمانی:</div>
+    <div id="role_chart_preview_content" style="font-size:13px;font-weight:600;color:var(--c-primary,#1769AA);padding:6px 10px;background:var(--c-card,#fff);border-radius:6px;border-right:3px solid var(--c-primary,#1769AA)">
+      — انتخاب دسته کنید —
     </div>
   </div>
 
@@ -2191,6 +2211,53 @@ function val(id){var e=$(id);return e?String(e.value).trim():'';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function pad2(n){n=String(n);return n.length<2?'0'+n:n;}
 function fireChange(el){var ev;try{ev=new Event('change',{bubbles:true});}catch(e){ev=document.createEvent('Event');ev.initEvent('change',true,true);}el.dispatchEvent(ev);}
+// ═══ مرتب‌سازی جداول — همه thهای .sortable قابل کلیک هستند ═══
+function makeTableSortable(table){
+  if(!table||table.dataset.sortableInit==='1')return;
+  table.dataset.sortableInit='1';
+  var headers=table.querySelectorAll('th.sortable');
+  if(!headers.length)return;
+  var sortDir={}; // col→'asc'|'desc'
+  headers.forEach(function(th,colIdx){
+    th.addEventListener('click',function(){
+      var tbody=table.querySelector('tbody');
+      if(!tbody)return;
+      var rows=Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+      // تشخیص جهت: اگر همین ستون بود، برعکس کن؛ اگر ستون جدید، asc
+      var currentDir=sortDir[colIdx]||'none';
+      var newDir=currentDir==='asc'?'desc':'asc';
+      sortDir={};sortDir[colIdx]=newDir;
+      // آیکون مرتب‌سازی
+      headers.forEach(function(h,i){h.classList.remove('sort-asc','sort-desc');});
+      th.classList.add(newDir==='asc'?'sort-asc':'sort-desc');
+      // مرتب‌سازی ردیف‌ها
+      rows.sort(function(a,b){
+        var aCell=a.children[colIdx];
+        var bCell=b.children[colIdx];
+        if(!aCell||!bCell)return 0;
+        // تلاش برای خواندن data-sort-value، در غیر اینصورت textContent
+        var aVal=aCell.getAttribute('data-sort-value')||aCell.textContent.trim();
+        var bVal=bCell.getAttribute('data-sort-value')||bCell.textContent.trim();
+        // تشخیص عدد
+        var aNum=parseFloat(aVal.replace(/[^\d.-]/g,''));
+        var bNum=parseFloat(bVal.replace(/[^\d.-]/g,''));
+        var comparison;
+        if(!isNaN(aNum)&&!isNaN(bNum)&&aVal.match(/\d/)&&bVal.match(/\d/)){
+          comparison=aNum-bNum;
+        }else{
+          comparison=aVal.localeCompare(bVal,'fa');
+        }
+        return newDir==='asc'?comparison:-comparison;
+      });
+      // بازچینش ردیف‌ها در tbody
+      rows.forEach(function(r){tbody.appendChild(r);});
+    });
+  });
+}
+// فعال‌سازی خودکار مرتب‌سازی برای همه جداول با th.sortable
+function initAllSortableTables(){
+  document.querySelectorAll('table').forEach(function(t){makeTableSortable(t);});
+}
 function showLoading(t){var o=$('loading_overlay');o.textContent=t||'در حال پردازش...';o.classList.remove('hidden');}
 function hideLoading(){$('loading_overlay').classList.add('hidden');}
 var alertTimer=null;
@@ -2432,11 +2499,42 @@ function populateRoleDropdown(selectId,currentValue,includeSuperAdmin){
   }
   sel.innerHTML=opts;
 }
-// نمایش/مخفی کردن فیلد پایگاه بر اساس دسته
+// نمایش/مخفی کردن فیلد پایگاه بر اساس دسته + به‌روزرسانی پیش‌نمایش
 function onRoleCategoryChange(){
   var cat=$('role_category')?$('role_category').value:'';
   var stGroup=$('role_station_group');
   if(stGroup)stGroup.style.display=(cat==='stations')?'block':'none';
+  updateRoleChartPreview();
+}
+// به‌روزرسانی پیش‌نمایش محل قرارگیری نقش در چارت
+function updateRoleChartPreview(){
+  var el=$('role_chart_preview_content');
+  if(!el)return;
+  var label=$('role_label')?$('role_label').value.trim():'';
+  var cat=$('role_category')?$('role_category').value:'';
+  var station=$('role_station')?$('role_station').value.trim():'';
+  var roleDisplay=label?'«'+esc(label)+'»':'نقش جدید';
+  if(!cat){
+    el.innerHTML='🏥 مرکز بهداشت شماره یک کوت‌عبدالله ← ⚙️ مستقل ← '+roleDisplay;
+  }else if(cat==='management'){
+    el.innerHTML='🏥 مرکز بهداشت شماره یک کوت‌عبدالله ← 📋 مدیریت مرکز ← '+roleDisplay;
+  }else if(cat==='units'){
+    el.innerHTML='🏥 مرکز بهداشت شماره یک کوت‌عبدالله ← 🏢 واحدهای مرکز ← '+roleDisplay;
+  }else if(cat==='stations'){
+    var stDisplay=station?esc(station):'(پایگاه انتخاب کنید)';
+    el.innerHTML='🏥 مرکز بهداشت شماره یک کوت‌عبدالله ← 🏘️ پایگاه‌های تابعه ← '+stDisplay+' ← '+roleDisplay;
+  }
+}
+// اتصال رویدادها برای به‌روزرسانی زنده پیش‌نمایش
+function initRoleFormPreview(){
+  var fields=['role_label','role_category','role_station'];
+  fields.forEach(function(id){
+    var el=$(id);
+    if(el){
+      el.addEventListener('input',updateRoleChartPreview);
+      el.addEventListener('change',updateRoleChartPreview);
+    }
+  });
 }
 // ذخیره/به‌روزرسانی یک نقش
 async function saveRole(){
@@ -2542,6 +2640,48 @@ function copyRLSSQL(btn,tableName){
   });
 }
 // ═══ مودال راهنمای جدول موجود نیست ═══
+// ═══ مودال راهنمای خطای تکراری بودن ایمیل ═══
+function showEmailConstraintGuide(){
+  var old=document.getElementById('email_constraint_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='email_constraint_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  var sqlText='ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_email_key;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)">'+
+    '<h2 style="margin:0 0 12px;color:#e74c3c;font-size:18px">⚠️ خطای تکراری بودن ایمیل</h2>'+
+    '<div style="background:#fadbd8;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#922b21">'+
+      'ستون <code>email</code> در جدول <code>profiles</code> دارای محدودیت <code>UNIQUE</code> است.<br>'+
+      'چون ایمیل به‌صورت خودکار از شماره پرسنلی تولید می‌شود، اگر قبلاً کاربری با همین شماره پرسنلی ساخته شده باشد، خطا می‌دهد.<br><br>'+
+      '<b>راه‌حل:</b> محدودیت UNIQUE را حذف کنید — ایمیل دیگر برای احراز هویت استفاده نمی‌شود.'+
+    '</div>'+
+    '<div style="margin-bottom:12px">'+
+      '<a href="https://supabase.com/dashboard/project/rlekagcnmfghxycrwenf/sql/new" target="_blank" style="display:inline-block;background:#3498db;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">🌐 باز کردن Supabase SQL Editor</a>'+
+    '</div>'+
+    '<div style="margin-bottom:8px;font-size:13px;font-weight:600">سپس این دستور را کپی و اجرا کنید:</div>'+
+    '<div style="position:relative">'+
+      '<button class="btn btn-sm" style="position:absolute;top:8px;left:8px;background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;z-index:1" onclick="copyTextToClipboard(this,\''+esc(sqlText)+'\')">📋 کپی SQL</button>'+
+      '<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-family:monospace;font-size:14px;direction:ltr;text-align:left;overflow-x:auto;white-space:pre-wrap;margin:0">'+esc(sqlText)+'</pre>'+
+    '</div>'+
+    '<div style="margin-top:16px;padding:12px;background:#d5f5e3;border:1px solid #2ecc71;border-radius:8px;font-size:13px;color:#196f3d">'+
+      '✅ پس از اجرای SQL، به اینجا برگردید و دوباره کاربر را ایجاد کنید.'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:12px"><button class="btn" style="background:#95a5a6;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer" onclick="document.getElementById(\'email_constraint_modal\').remove()">بستن</button></div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+// تابع کمکی کپی متن
+function copyTextToClipboard(btn,text){
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent='✅ کپی شد!';btn.style.background='#2ecc71';
+    setTimeout(function(){btn.textContent='📋 کپی SQL';btn.style.background='#3498db';},2000);
+  }).catch(function(){
+    var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');btn.textContent='✅ کپی شد!';}catch(e){}
+    document.body.removeChild(ta);
+  });
+}
 function showTableMissingGuide(){
   var old=document.getElementById('table_missing_modal');
   if(old)old.remove();
@@ -2584,6 +2724,7 @@ function editRole(roleKey){
   if($('role_category'))$('role_category').value=r.category||'';
   if($('role_station'))$('role_station').value=r.station||'';
   onRoleCategoryChange();
+  updateRoleChartPreview();
   $('btn_save_role').textContent='💾 به‌روزرسانی نقش';
   $('btn_cancel_edit_role').classList.remove('hidden');
   // اسکرول به فرم
@@ -2651,7 +2792,7 @@ function renderRolesList(){
   var c=$('roles_list_container');
   if(!c)return;
   if(!cachedRoles.length){c.innerHTML='<p style="color:var(--c-text-muted)">هنوز نقشی تعریف نشده است.</p>';return;}
-  var h='<table><thead><tr><th>کلید فنی</th><th>برچسب</th><th>دسته</th><th>پایگاه</th><th>توضیحات</th><th>نمونه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th class="sortable">کلید فنی</th><th class="sortable">برچسب</th><th class="sortable">دسته</th><th class="sortable">پایگاه</th><th>توضیحات</th><th>نمونه</th><th class="sortable">وضعیت</th><th>عملیات</th></tr></thead><tbody>';
   var CAT_LABEL={management:'مدیریت مرکز',units:'واحدهای مرکز',stations:'پایگاه‌های تابعه'};
   cachedRoles.forEach(function(r){
     var sample='<span style="background:'+(r.color||'#3498db')+';color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">'+esc(r.label)+'</span>';
@@ -2674,6 +2815,8 @@ function renderRolesList(){
   });
   h+='</tbody></table>';
   c.innerHTML=h;
+  var tbl=c.querySelector('table');
+  if(tbl)makeTableSortable(tbl);
 }
 // نمایش نمودار درختی نقش‌ها — پویا بر اساس داده‌های موجود
 function renderRolesTree(){
@@ -4196,7 +4339,7 @@ function showSection(id,skipHistory){
     });
   }
   if(id==='roles'){
-    loadRoles().then(function(){renderRolesList();renderRolesTree();cancelEditRole();});
+    loadRoles().then(function(){renderRolesList();renderRolesTree();cancelEditRole();initRoleFormPreview();updateRoleChartPreview();});
   }
   if(id==='audit_log')renderAuditLog();
   window.scrollTo(0,0);
@@ -4436,6 +4579,62 @@ async function renderDashboard(){
       '</div>'+
       '<span class="score-badge '+(myScore>0?'':myScore<0?'negative':'zero')+'" style="font-size:16px">🏆 '+myScore+'</span>'+
     '</div>';
+
+    // ═══ هدر وضعیت مرخصی (زنده، اتوماتیک) ═══
+    if(currentRole!=='admin'&&currentRole!=='super_admin'){
+      try{
+        var bal=await getLeaveBalance(currentUser.id,todayStr);
+        var empType=bal.employmentType||'contract';
+        var EMP_LABEL={official:'🏛️ رسمی',contract:'📝 قراردادی',tarhi:'📋 طرحی'};
+        var empLabel=EMP_LABEL[empType]||empType;
+        var empColor=empType==='official'?'#9b59b6':empType==='tarhi'?'#e67e22':'#3498db';
+        var availColor=bal.accrued.available<=0?'#e74c3c':bal.accrued.available<1?'#f39c12':'#2ecc71';
+        var totalColor=bal.annual.remaining<0?'#e74c3c':bal.annual.remaining<3?'#f39c12':'#2ecc71';
+        var usedPct=Math.min(100,(bal.annual.used/(bal.annual.total||1))*100);
+        html+='<div id="leave_status_header" style="background:var(--c-card);border:1px solid var(--c-border);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--c-shadow,0 2px 8px rgba(0,0,0,.08))">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<span style="background:'+empColor+';color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">'+empLabel+'</span>'+
+              '<span style="font-size:14px;font-weight:700;color:var(--c-text)">📋 وضعیت مرخصی</span>'+
+            '</div>'+
+            '<span style="font-size:11px;color:var(--c-text-muted)">به‌روزرسانی خودکار</span>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">'+
+            '<div style="text-align:center;padding:8px;background:var(--c-bg-alt,#f8fafc);border-radius:8px">'+
+              '<div style="font-size:11px;color:var(--c-text-muted)">سهمیه سالانه</div>'+
+              '<div style="font-size:18px;font-weight:700;color:var(--c-info)">'+bal.annual.total.toFixed(1)+'<span style="font-size:11px"> روز</span></div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:8px;background:var(--c-bg-alt,#f8fafc);border-radius:8px">'+
+              '<div style="font-size:11px;color:var(--c-text-muted)">تعلق‌گرفته (تا این ماه)</div>'+
+              '<div style="font-size:18px;font-weight:700;color:var(--c-info)">'+bal.accrued.total.toFixed(1)+'<span style="font-size:11px"> روز</span></div>'+
+              '<div style="font-size:10px;color:var(--c-text-muted)">'+bal.accrued.rate.toFixed(2)+' روز/ماه</div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:8px;background:var(--c-bg-alt,#f8fafc);border-radius:8px">'+
+              '<div style="font-size:11px;color:var(--c-text-muted)">قابل استفاده</div>'+
+              '<div style="font-size:18px;font-weight:700;color:'+availColor+'">'+bal.accrued.available.toFixed(1)+'<span style="font-size:11px"> روز</span></div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:8px;background:var(--c-bg-alt,#f8fafc);border-radius:8px">'+
+              '<div style="font-size:11px;color:var(--c-text-muted)">استفاده‌شده</div>'+
+              '<div style="font-size:18px;font-weight:700;color:var(--c-warning,#f39c12)">'+bal.annual.used.toFixed(1)+'<span style="font-size:11px"> روز</span></div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:8px;background:var(--c-bg-alt,#f8fafc);border-radius:8px">'+
+              '<div style="font-size:11px;color:var(--c-text-muted)">باقیمانده سال</div>'+
+              '<div style="font-size:18px;font-weight:700;color:'+totalColor+'">'+bal.annual.remaining.toFixed(1)+'<span style="font-size:11px"> روز</span></div>'+
+            '</div>'+
+          '</div>'+
+          // نوار پیشرفت
+          '<div style="margin-top:10px">'+
+            '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--c-text-muted);margin-bottom:4px">'+
+              '<span>استفاده‌شده: '+bal.annual.used.toFixed(1)+' / '+bal.annual.total.toFixed(1)+' روز</span>'+
+              '<span>'+usedPct.toFixed(0)+'٪</span>'+
+            '</div>'+
+            '<div style="height:8px;background:var(--c-bg-alt,#e2e8f0);border-radius:4px;overflow:hidden">'+
+              '<div style="height:100%;width:'+usedPct+'%;background:linear-gradient(90deg,var(--c-success,#2ecc71),var(--c-warning,#f39c12),var(--c-danger,#e74c3c));transition:width .5s"></div>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }catch(e){console.warn('leave status header:',e);}
+    }
 
     // بنر تاریخ انقضا برای مهمان
     if(currentRole==='guest'&&currentUser.profile.expires_at){
@@ -6163,17 +6362,19 @@ function renderWorkHoursHistory(){
 async function getLeaveBalance(personId,dateStr){
   var person=cachedPersons.filter(function(x){return x.id===personId;})[0];
   var annualTotal=person?(parseFloat(person.annual_leave_days)||30):30;
-  var carryOver=person?(parseFloat(person.carry_over_days)||0):0;
+  var employmentType=person?(person.employment_type||'contract'):'contract';
+  // فقط رسمی انتقال مرخصی دارد — قراردادی و طرحی بدون انتقال
+  var carryOver=(employmentType==='official')?(person?parseFloat(person.carry_over_days)||0:0):0;
+  // مرخصی استفاده‌شده دستی (تنظیم شده توسط مسئول کارکرد)
+  var manualUsed=person?parseFloat(person.manual_leave_used)||0:0;
   if(!dateStr)dateStr=getTodayJalali();
   var p=parseJalali(dateStr);
   // ─── مدل تعلق تدریجی ماهیانه ───
-  // نرخ ماهیانه = سهمیه سالانه / ۱۲
   var monthlyRate=annualTotal/12;
-  // تعداد ماه‌های سپری‌شده از اول سال (شامل ماه جاری)
-  var monthsElapsed=p.jm; // فروردین=1 ... اسفند=12
-  // تعلق‌گرفته تا این ماه = monthsElapsed × monthlyRate (+ انتقال از سال قبل)
+  var monthsElapsed=p.jm;
+  // تعلق‌گرفته = monthsElapsed × monthlyRate + انتقال (انتقال فقط برای رسمی، علاوه بر سهمیه ماهیانه)
   var accrued=Math.min(monthsElapsed*monthlyRate,annualTotal)+carryOver;
-  // ─── محاسبه استفاده‌شده ───
+  // ─── محاسبه استفاده‌شده از لاگ‌ها ───
   var usedAnnual=0,usedThisMonth=0;
   try{
     var logs=await loadLogs(personId,null,null);
@@ -6186,7 +6387,6 @@ async function getLeaveBalance(personId,dateStr){
       else if(l.data.absence_type==='hourly_leave'){
         var f=(l.data.fields)||{};
         if(f.start_time&&f.end_time){
-          // استفاده از ساعت کاری استاندارد برای تبدیل ساعتی به روز
           var _wh=getStandardWorkHours(l.date);
           var workMins=calcDuration(_wh.start_time,_wh.end_time);
           days=calcDuration(f.start_time,f.end_time)/(workMins||480);
@@ -6196,12 +6396,13 @@ async function getLeaveBalance(personId,dateStr){
       if(logP.jm===p.jm)usedThisMonth+=days;
     });
   }catch(e){console.warn('getLeaveBalance:',e);}
-  // قابل استفاده = تعلق‌گرفته - استفاده‌شده (حداقل 0)
-  var available=Math.max(0,accrued-usedAnnual);
-  // باقیمانده سالانه = کل سالانه - استفاده‌شده
-  var annualRemaining=(annualTotal+carryOver)-usedAnnual;
+  // استفاده مؤثر = ماکزیمم (دستی، خودکار) — اگر دستی > خودکار، از دستی استفاده می‌شود
+  var effectiveUsed=Math.max(usedAnnual,manualUsed);
+  var available=Math.max(0,accrued-effectiveUsed);
+  var annualRemaining=(annualTotal+carryOver)-effectiveUsed;
   return{
-    annual:{total:annualTotal+carryOver,used:usedAnnual,remaining:annualRemaining},
+    employmentType:employmentType,
+    annual:{total:annualTotal+carryOver,used:effectiveUsed,remaining:annualRemaining,manualUsed:manualUsed,autoUsed:usedAnnual},
     accrued:{rate:monthlyRate,months:monthsElapsed,total:accrued,available:available},
     monthly:{used:usedThisMonth,rate:monthlyRate}
   };
@@ -6275,6 +6476,33 @@ function onDeclarationModeChange(){
   }
 }
 // onApproveCheck حذف شد — چک‌باکس «تفویض تأیید کارکرد» از فرم حذف شده است
+// ═══ نوع استخدام: نمایش/مخفی فیلد انتقال مرخصی ═══
+function onEmploymentTypeChange(){
+  var type=$('inv_employment_type')?$('inv_employment_type').value:'contract';
+  var carryGroup=$('inv_carry_over_group');
+  var help=$('employment_help');
+  if(carryGroup){
+    carryGroup.style.display=(type==='official')?'block':'none';
+  }
+  if(help){
+    if(type==='official'){
+      help.innerHTML='🏛️ رسمی: مرخصی استفاده‌نشده به سال بعد منتقل می‌شود. مسئول کارکرد باید مقدار انتقال‌یافته را مشخص کند. این مقدار علاوه بر سهمیه ماهیانه در دسترس است.';
+    }else if(type==='contract'){
+      help.innerHTML='📝 قراردادی: مرخصی استفاده‌نشده به سال بعد منتقل نمی‌شود. هر سال از ۳۰ روز (= ۲.۵ روز/ماه) شروع می‌شود.';
+    }else{
+      help.innerHTML='📋 طرحی: مشابه قراردادی — بدون انتقال مرخصی. هر سال از ۳۰ روز شروع می‌شود.';
+    }
+  }
+}
+// نسخه ویرایش کاربر
+function onEdEmploymentTypeChange(){
+  var type=$('ed_employment_type')?$('ed_employment_type').value:'contract';
+  var carryGroup=$('ed_carry_over_group');
+  if(carryGroup){
+    carryGroup.style.display=(type==='official')?'block':'none';
+    if(type!=='official'&&$('ed_carry_over'))$('ed_carry_over').value='0';
+  }
+}
 // ═══ تأیید کارکرد رسمی توسط کاربر ═══
 async function verifyLog(logId){
   if(!confirm('آیا این کارکرد رسمی را تأیید می‌کنید؟\n\nبا تأیید، شما مغایرتی را گزارش نمی‌دهید.'))return;
@@ -7184,9 +7412,11 @@ async function createInvitation(){
       can_approve_leaves:canApproveLeaves,
       can_schedule_tasks:canScheduleTasks,
       declaration_mode:val('inv_declaration_mode')||'time_based',
+      employment_type:val('inv_employment_type')||'contract',
       annual_leave_days:parseFloat(val('inv_annual_leave'))||30,
       monthly_leave_quota:parseFloat(val('inv_monthly_quota'))||2.5,
-      carry_over_days:parseFloat(val('inv_carry_over'))||0,
+      carry_over_days:(val('inv_employment_type')||'contract')==='official'?(parseFloat(val('inv_carry_over'))||0):0,
+      manual_leave_used:0,
       failed_attempts:0,
       expires_at:expiresAt
     };
@@ -7194,7 +7424,10 @@ async function createInvitation(){
     if(profError){
       console.warn('profile insert error:',profError);
       var errMsg=profError.message||'';
-      if(errMsg.indexOf('profiles_role_check')!==-1||errMsg.indexOf('check constraint')!==-1){
+      if(errMsg.indexOf('profiles_email_key')!==-1||errMsg.indexOf('duplicate key value')!==-1){
+        // خطای تکراری بودن ایمیل — حذف محدودیت UNIQUE از ستون email
+        showEmailConstraintGuide();
+      }else if(errMsg.indexOf('profiles_role_check')!==-1||errMsg.indexOf('check constraint')!==-1){
         // نمایش مودال راهنمای مهاجرت با لینک مستقیم
         showMigrationGuide();
       }else if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
@@ -7235,7 +7468,7 @@ async function renderUsers(){
     }else{
       visibleUsers=cachedPersons;
     }
-    var h='<table><tr><th>نام</th><th>نام خانوادگی</th><th>شماره پرسنلی</th><th>نقش</th><th>نوع خوداظهاری</th><th>مسئول واحد</th><th>دسترسی‌ها</th><th>وضعیت</th><th>عملیات</th></tr>';
+    var h='<table><tr><th class="sortable">نام</th><th class="sortable">نام خانوادگی</th><th class="sortable">شماره پرسنلی</th><th class="sortable">نقش</th><th class="sortable">نوع خوداظهاری</th><th>مسئول واحد</th><th>دسترسی‌ها</th><th class="sortable">وضعیت</th><th>عملیات</th></tr>';
     visibleUsers.forEach(function(p){
       var coord=p.parent_id?getPersonName(p.parent_id):'—';
       var isSelf=(p.id===currentUser.id);
@@ -7279,6 +7512,9 @@ async function renderUsers(){
         '</tr>';
     });
     c.innerHTML=h+'</table>';
+    // فعال‌سازی مرتب‌سازی
+    var tbl=c.querySelector('table');
+    if(tbl)makeTableSortable(tbl);
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
 async function changeParent(userId,parentVal){
@@ -7447,13 +7683,28 @@ function editUserDetails(userId){
       '</div>'+
       '<small style="display:block;margin-top:6px;color:var(--c-text-muted);font-size:10px">📊 با فعال‌سازی «گزارش کارکرد»، این کاربر می‌تواند گزارش کارکرد همه پرسنل را تولید و مشاهده کند (در هر سطحی).</small>'+
     '</div>'+
-    // ─── وضعیت ───
+    // ─── نوع استخدام + نوع کارکرد + وضعیت ───
     '<div class="form-row">'+
+      '<div class="form-group"><label>نوع استخدام:</label><select id="ed_employment_type" onchange="onEdEmploymentTypeChange()">'+
+        '<option value="contract"'+((p.employment_type||'contract')==='contract'?' selected':'')+'>📝 قراردادی</option>'+
+        '<option value="official"'+(p.employment_type==='official'?' selected':'')+'>🏛️ رسمی</option>'+
+        '<option value="tarhi"'+(p.employment_type==='tarhi'?' selected':'')+'>📋 طرحی</option>'+
+      '</select></div>'+
+      '<div class="form-group"><label>نوع کارکرد:</label><select id="ed_declaration_mode">'+
+        '<option value="time_based"'+((p.declaration_mode||'time_based')==='time_based'?' selected':'')+'>⏰ دستی (ورود/خروج)</option>'+
+        '<option value="verification"'+(p.declaration_mode==='verification'?' selected':'')+'>🔍 مکمل (کارت‌زنی)</option>'+
+      '</select></div>'+
       '<div class="form-group"><label>وضعیت حساب:</label><select id="ed_status">'+
         '<option value="active"'+(p.status==='active'?' selected':'')+'>✅ فعال</option>'+
         '<option value="inactive"'+(p.status==='inactive'?' selected':'')+'>⏸ غیرفعال</option>'+
         '<option value="archived"'+(p.status==='archived'?' selected':'')+'>📦 بایگانی</option>'+
       '</select></div>'+
+    '</div>'+
+    // ─── سهمیه مرخصی (قابل ویرایش) ───
+    '<div class="form-row" id="ed_leave_group">'+
+      '<div class="form-group" style="flex:0 0 140px"><label>سهمیه سالانه (روز):</label><input type="number" id="ed_annual_leave" min="0" step="0.5" value="'+esc(String(p.annual_leave_days||30))+'"></div>'+
+      '<div class="form-group" style="flex:0 0 140px" id="ed_carry_over_group"><label>انتقال از سال قبل:</label><input type="number" id="ed_carry_over" min="0" step="0.5" value="'+esc(String(p.carry_over_days||0))+'"></div>'+
+      '<div class="form-group" style="flex:0 0 140px"><label>مرخصی استفاده‌شده (دستی):</label><input type="number" id="ed_manual_leave_used" min="0" step="0.5" value="'+esc(String(p.manual_leave_used||0))+'"><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">تنظیم دستی توسط مسئول کارکرد</small></div>'+
     '</div>'+
     '<div style="display:flex;gap:8px;margin-top:16px">'+
       '<button type="button" class="btn btn-success" id="ed_save">💾 ذخیره تغییرات</button>'+
@@ -7525,6 +7776,45 @@ function editUserDetails(userId){
     var newStatus=$('ed_status')?$('ed_status').value:'active';
     if(newStatus!==(p.status||'active')){
       updates.status=newStatus;
+    }
+    // نوع کارکرد (declaration_mode)
+    var newDeclMode=$('ed_declaration_mode')?$('ed_declaration_mode').value:'time_based';
+    if(newDeclMode!==(p.declaration_mode||'time_based')){
+      updates.declaration_mode=newDeclMode;
+    }
+    // نوع استخدام (employment_type)
+    var newEmpType=$('ed_employment_type')?$('ed_employment_type').value:'contract';
+    if(newEmpType!==(p.employment_type||'contract')){
+      updates.employment_type=newEmpType;
+    }
+    // سهمیه مرخصی
+    var newAnnual=$('ed_annual_leave')?parseFloat($('ed_annual_leave').value)||30:30;
+    var newCarryOver=$('ed_carry_over')?parseFloat($('ed_carry_over').value)||0:0;
+    var newManualUsed=$('ed_manual_leave_used')?parseFloat($('ed_manual_leave_used').value)||0:0;
+    if(newEmpType!=='official')newCarryOver=0; // فقط رسمی انتقال دارد
+    if(newAnnual!==(p.annual_leave_days||30))updates.annual_leave_days=newAnnual;
+    if(newCarryOver!==(p.carry_over_days||0))updates.carry_over_days=newCarryOver;
+    if(newManualUsed!==(p.manual_leave_used||0)){
+      updates.manual_leave_used=newManualUsed;
+      // ارسال نوتیفیکیشن به کاربر درباره تغییر مرخصی
+      if(userId!==currentUser.id){
+        try{
+          var empLabel={official:'رسمی',contract:'قراردادی',tarhi:'طرحی'}[newEmpType]||'';
+          await sendNotificationDB({
+            sender_id:currentUser.id,
+            recipient_id:userId,
+            title:'📋 به‌روزرسانی وضعیت مرخصی',
+            body:'مسئول کارکرد وضعیت مرخصی شما را به‌روزرسانی کرد:\n\n'+
+                 'نوع استخدام: '+empLabel+'\n'+
+                 'سهمیه سالانه: '+newAnnual+' روز\n'+
+                 (newEmpType==='official'?'انتقال از سال قبل: '+newCarryOver+' روز\n':'')+
+                 'مرخصی استفاده‌شده: '+newManualUsed+' روز\n\n'+
+                 'برای مشاهده جزئیات به داشبورد خود مراجعه کنید.',
+            priority:'high',
+            related_type:'leave_balance_update'
+          });
+        }catch(e){console.warn('leave notif:',e);}
+      }
     }
     if(parentChanged){
       updates.parent_id=newParent||null;
