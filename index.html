@@ -1179,7 +1179,6 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">📝 کارتابل من <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="daily_log"><span class="ico">📝</span><span class="lbl">خوداظهاری و مرخصی</span></button>
-        <button class="nav-item hidden" data-target="leave_req"><span class="ico">✈️</span><span class="lbl">درخواست مرخصی</span></button>
         <button class="nav-item" data-target="calendar"><span class="ico">📅</span><span class="lbl">تقویم ماهانه</span></button>
       </div>
     </div>
@@ -1401,12 +1400,11 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <div id="fields_normal">
     <div style="background:var(--c-success-light);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px;border-right:4px solid var(--c-success);font-size:12px;color:var(--c-success)">
-      ✅ <b>حضور با ساعت ورود/خروج:</b> ساعت ورود و خروج خود را ثبت کنید. در صورت نیاز، مدت استراحت ناهار را نیز وارد کنید تا از کارکرد مفید کسر شود.
+      ✅ <b>حضور با ساعت ورود/خروج:</b> ساعت ورود و خروج خود را ثبت کنید.
     </div>
     <div class="form-row">
       <div class="form-group"><label>ساعت ورود (الزامی):</label><input type="hidden" id="entry_time"><div class="time-picker-widget" data-target="entry_time">--:--</div></div>
       <div class="form-group"><label>ساعت خروج (الزامی):</label><input type="hidden" id="exit_time"><div class="time-picker-widget" data-target="exit_time">--:--</div></div>
-      <div class="form-group" style="flex:0 0 140px"><label>استراحت (دقیقه):</label><input type="number" id="break_minutes" min="0" max="180" step="5" placeholder="0" value="0"></div>
     </div>
     <div class="form-group"><label>موضوع/شرح کارکرد (اختیاری):</label><input type="text" id="normal_topic" placeholder="مثلاً: ویزیت بیماران، واکسیناسیون، آمار..."></div>
   </div>
@@ -2892,11 +2890,8 @@ function describeLog(l){
   if(l.status==='normal'){
     if(f.entry_time&&f.exit_time){
       var mins=calcDuration(f.entry_time,f.exit_time);
-      var breakM=parseInt(f.break_minutes||'0',10)||0;
-      var netMins=mins-breakM;
       var desc='حضور '+f.entry_time+' تا '+f.exit_time;
-      if(breakM>0)desc+=' (استراحت: '+breakM+' دقیقه)';
-      desc+=' — '+formatMins(netMins);
+      desc+=' — '+formatMins(mins);
       if(f.topic)desc+=' — '+f.topic;
       return desc+verBadge;
     }
@@ -3293,8 +3288,9 @@ function applyRoleBasedUI(){
   // مدیر و سوپرادمین کارکرد (خوداظهاری) ندارند — فقط پرسنل ثبت می‌کنند
   if(currentRole==='super_admin'||currentRole==='admin'){
     document.querySelectorAll('#main_nav .nav-item[data-target="daily_log"]').forEach(function(b){b.classList.add('hidden');});
-    document.querySelectorAll('#main_nav .nav-item[data-target="leave_req"]').forEach(function(b){b.classList.add('hidden');});
   }
+  // «درخواست مرخصی» برای همه مخفی است — بخش آن حذف شده، عملکرد در «خوداظهاری و مرخصی» ادغام شده
+  document.querySelectorAll('#main_nav .nav-item[data-target="leave_req"]').forEach(function(b){b.classList.add('hidden');});
   // admin-only: فقط مدیر و سوپرادمین
   var isAdmin=currentRole==='admin'||currentRole==='super_admin';
   document.querySelectorAll('.admin-only').forEach(function(el){el.classList.toggle('hidden',!isAdmin);});
@@ -4603,20 +4599,12 @@ async function renderDashboard(){
       html+='<div class="guest-banner'+(urgent?' urgent':'')+'"><div class="gb-info">'+(urgent?'⏰':'📅')+' حساب مهمان شما در '+daysLeft+' روز ('+expDate.toLocaleDateString('fa-IR')+') منقضی می‌شود.</div></div>';
     }
 
-    // اطلاعات هماهنگ‌کننده
-    var coordInfo='';
-    if(currentUser.profile.parent_id){
-      var coord=cachedPersons.filter(function(p){return p.id===currentUser.profile.parent_id;})[0];
-      if(coord)coordInfo='<div class="coordinator-info"><b>👥 هماهنگ‌کننده شما:</b> '+esc(coord.first_name+' '+coord.last_name)+' ('+esc(coord.personnel_id)+')</div>';
-    }
-    if(cachedSubordinates.length>0){
-      coordInfo+='<div class="coordinator-info" style="background:linear-gradient(135deg,var(--c-info) 0%,#2980b9 100%)"><b>📋 شما هماهنگ‌کننده '+cachedSubordinates.length+' کاربر هستید.</b> <button class="btn btn-sm" style="background:#fff;color:var(--c-info)" onclick="showSection(\'approvals\')">مشاهده تأییدها</button></div>';
-    }
+    // بنر هماهنگ‌کننده حذف شد — سیستم هماهنگ‌کننده فعال نیست
 
     // نوار شمارش معکوس و اعلان‌ها
     var countdown=await renderCountdownBanner();
     var annBanner=await renderAnnouncementsMiniBanner();
-    html+=annBanner+countdown+coordInfo;
+    html+=annBanner+countdown;
 
     // ─── کارت‌های آماری قابل کلیک ───
     var totalPending=myTasks.length+(myActs?myActs.length:0);
@@ -4793,6 +4781,7 @@ function showDayDetail(dateStr,personId){
       // ─── بخش ۱: مناسبت‌ها و رویدادها ───
       html+='<div style="margin-bottom:16px">';
       var canManageEvents=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_events);
+      var _canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
       html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0;font-size:15px">📅 مناسبت‌ها و رویدادهای روز</h3></div>';
       if(dayEvents.length===0&&dayPrograms.length===0){
         html+='<p style="color:var(--c-text-muted);font-size:13px;padding:8px 0">مناسبتی برای این روز ثبت نشده.</p>';
@@ -4807,7 +4796,7 @@ function showDayDetail(dateStr,personId){
             (ev.description?'<div style="font-size:12px;color:var(--c-text-muted);margin-top:4px">'+esc(ev.description)+'</div>':'')+
             (isPast?'<div style="font-size:11px;color:var(--c-danger);margin-top:4px">⏰ رویداد گذشته — امکان مأموریت وجود ندارد</div>':'')+
             '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+
-              (!isPast?'<button class="btn btn-sm btn-info" onclick="createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>':'')+
+              (!isPast&&_canManageShifts?'<button class="btn btn-sm btn-info" onclick="createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>':'')+
             '</div>'+
             // مأموریت‌ها این رویداد
             '<div id="event_acts_'+ev.id+'" style="margin-top:8px"></div>'+
@@ -4850,9 +4839,9 @@ function showDayDetail(dateStr,personId){
       }else{
         html+='<p style="margin-top:8px;font-size:12px;color:var(--c-text-muted)">سوپرادمین خوداظهاری ثبت نمی‌کند.</p>';
       }
-      // دکمه ساخت مأموریت برای این روز
+      // دکمه ساخت مأموریت برای این روز — فقط مدیر یا کاربر با دسترسی لوح شیفت
       var todayTs2=jalaliToTimestamp(getTodayJalali());
-      if(jalaliToTimestamp(dateStr)>=todayTs2){
+      if(jalaliToTimestamp(dateStr)>=todayTs2&&_canManageShifts){
         html+='<button class="btn btn-sm btn-info" style="margin-top:8px;margin-right:8px" onclick="closeDayDetail();createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>';
       }
       html+='</div>';
@@ -4947,6 +4936,12 @@ async function saveManualEvent(dateStr,year){
 }
 // ═══ ساخت مأموریت مستقیم روی یک روز (بدون برنامه) ═══
 function createDayMission(dateStr){
+  // فقط مدیر یا کاربر با دسترسی لوح شیفت می‌تواند مأموریت بسازد
+  var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
+  if(!canManageShifts){
+    showAlert('شما دسترسی تعریف مأموریت ندارید.','error');
+    return;
+  }
   var todayTs=jalaliToTimestamp(getTodayJalali());
   var dayTs=jalaliToTimestamp(dateStr);
   if(dayTs<todayTs){
@@ -5633,7 +5628,6 @@ async function editLog(id){
     }else if(log.status==='normal'){
       // حالت ساعت ورود/خروج
       setTimepickerValue('entry_time',f.entry_time||'');setTimepickerValue('exit_time',f.exit_time||'');
-      if($('break_minutes'))$('break_minutes').value=f.break_minutes||'0';
       if($('normal_topic'))$('normal_topic').value=f.topic||'';
     }else if(log.status==='official_record'){
       // حالت کارکرد رسمی (احراز مغایرت)
@@ -5772,7 +5766,6 @@ async function saveDailyLog(){
   // ═══ حالت ۱: ساعت ورود و خروج (time_based) ═══
   if(status==='normal'){
     var entryT=$('entry_time')?$('entry_time').value:'',exitT=$('exit_time')?$('exit_time').value:'';
-    var breakM=val('break_minutes')||'0';
     var topic=val('normal_topic');
     var personMode=getPersonDeclarationMode(actualPersonId,dateStr);
     if(personMode==='time_based'){
@@ -5780,7 +5773,7 @@ async function saveDailyLog(){
       if(!validateTimeOrder(entryT,exitT,'ساعات ورود/خروج'))return;
       if(!await checkTimeOverlap(actualPersonId,dateStr,entryT,exitT,'حضور'))return;
     }
-    f.entry_time=entryT;f.exit_time=exitT;f.break_minutes=breakM;f.topic=topic;
+    f.entry_time=entryT;f.exit_time=exitT;f.topic=topic;
     s=entryT||'00:00';e=exitT||'23:59';
   }
   // ═══ حالت ۲: کارکرد رسمی (احراز مغایرت — فقط مدیر) ═══
@@ -6026,7 +6019,7 @@ function updateDelegateBox(){
 function resetDailyLogForm(){
   $('log_id').value='';$('log_status').value='normal';$('absence_type').value='hourly_leave';
   ['log_discrepancy','abs_reason','leave_type','m1_location','mout_daily_province','mout_daily_location','mout_h_province','mout_h_location','mout_h_activity','mh_location','mh_activity','other_reason','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
-  if($('break_minutes'))$('break_minutes').value='0';
+  // break_minutes حذف شد — فیلد استراحت از فرم حذف شده است
   if($('official_status'))$('official_status').value='present';
   if($('official_mission_type'))$('official_mission_type').value='home_visit';
   if($('sick_doctor_order'))$('sick_doctor_order').value='unknown';
