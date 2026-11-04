@@ -335,6 +335,8 @@ button{cursor:pointer;background:none;border:none;outline:none;color:inherit}
 input[type="text"],input[type="password"],input[type="email"],input[type="number"],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--c-border,var(--border,#e2e8f0));border-radius:8px;background:var(--c-input-bg,var(--card-bg,#fff));color:var(--c-text,var(--text,#1e293b));-webkit-appearance:none;-moz-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--c-primary,var(--accent,#1769AA));box-shadow:0 0 0 3px rgba(23,105,170,.12)}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 12px center;padding-left:32px}
+optgroup{background:var(--c-card-alt,var(--c-bg-alt,#f1f5f9));color:var(--c-primary,var(--accent,#1769AA));font-weight:700;font-size:13px}
+optgroup option{background:var(--c-card-bg,var(--card-bg,#fff));color:var(--c-text,var(--text,#1e293b));font-weight:400;padding:8px 12px}
 table{border-collapse:collapse;width:100%}
 a{color:inherit;text-decoration:none}
 .hidden{display:none!important}
@@ -1832,9 +1834,6 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <div class="form-row">
     <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">نقش‌ها از منوی «🎭 تعریف نقش‌ها» بارگذاری می‌شوند.</small></div>
-    <div class="form-group" style="flex:0 0 auto;display:flex;align-items:center;padding-top:20px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="inv_can_approve" onchange="onApproveCheck()"> ✅ تفویض تأیید کارکرد</label>
-    </div>
   </div>
   <div class="form-row">
     <div class="form-group" style="flex:0 0 100%">
@@ -2375,16 +2374,61 @@ function roleBadgeHtml(role,extraStyle){
 function populateRoleDropdown(selectId,currentValue,includeSuperAdmin){
   var sel=$(selectId);
   if(!sel)return;
-  // ترتیب: نقش‌های موجود در cachedRoles (شامل admin، بدون super_admin مگر درخواست شده)
-  var opts='';
+  // دسته‌بندی نقش‌ها بر اساس category و station با <optgroup>
+  var CAT_LABELS={
+    'management':'📋 مدیریت مرکز',
+    'units':'🏢 واحدهای مرکز',
+    'stations':'🏘️ پایگاه‌های تابعه',
+    '':'⚙️ سایر نقش‌ها'
+  };
+  // گروه‌بندی نقش‌ها
+  var groups={};
+  var groupOrder=['management','units','stations',''];
   cachedRoles.forEach(function(r){
     if(r.role_key==='super_admin'&&!includeSuperAdmin)return;
-    var selAttr=(currentValue===r.role_key)?' selected':'';
-    opts+='<option value="'+esc(r.role_key)+'"'+selAttr+'>'+esc(r.label)+'</option>';
+    var cat=r.category||'';
+    if(!groups[cat])groups[cat]=[];
+    groups[cat].push(r);
   });
-  // اگر currentValue در cachedRoles نیست (مثلاً نقش قدیمی حذف‌شده)، آن را هم اضافه کن
+  // ساخت HTML با optgroup
+  var opts='';
+  groupOrder.forEach(function(cat){
+    if(!groups[cat]||!groups[cat].length)return;
+    var groupLabel=CAT_LABELS[cat];
+    // برای پایگاه‌ها: زیرگروه بر اساس station
+    if(cat==='stations'){
+      // ابتدا نقش‌های stations را بر اساس station گروه‌بندی کن
+      var byStation={};
+      var stationOrder=[];
+      groups[cat].forEach(function(r){
+        var st=r.station||'سایر پایگاه‌ها';
+        if(!byStation[st]){
+          byStation[st]=[];
+          stationOrder.push(st);
+        }
+        byStation[st].push(r);
+      });
+      // هر پایگاه به‌عنوان optgroup جدا
+      stationOrder.forEach(function(st){
+        opts+='<optgroup label="'+esc(st)+'">';
+        byStation[st].forEach(function(r){
+          var selAttr=(currentValue===r.role_key)?' selected':'';
+          opts+='<option value="'+esc(r.role_key)+'"'+selAttr+'>'+esc(r.label)+'</option>';
+        });
+        opts+='</optgroup>';
+      });
+    }else{
+      opts+='<optgroup label="'+esc(groupLabel)+'">';
+      groups[cat].forEach(function(r){
+        var selAttr=(currentValue===r.role_key)?' selected':'';
+        opts+='<option value="'+esc(r.role_key)+'"'+selAttr+'>'+esc(r.label)+'</option>';
+      });
+      opts+='</optgroup>';
+    }
+  });
+  // اگر currentValue در cachedRoles نیست (نقش قدیمی)، آن را اضافه کن
   if(currentValue&&!cachedRoles.some(function(r){return r.role_key===currentValue;})){
-    opts+='<option value="'+esc(currentValue)+'" selected>'+esc(ROLE_LABEL[currentValue]||currentValue)+'</option>';
+    opts='<optgroup label="⚠️ نقش قدیمی"><option value="'+esc(currentValue)+'" selected>'+esc(ROLE_LABEL[currentValue]||currentValue)+'</option></optgroup>'+opts;
   }
   sel.innerHTML=opts;
 }
@@ -3050,7 +3094,8 @@ function applyRoleBasedUI(){
   document.querySelectorAll('#main_nav button').forEach(function(b){b.classList.remove('hidden');});
   // ─── سوپرادمین: خوداظهاری و مرخصی ندارد ───
   // سوپرادمین فقط مدیریت سامانه را بر عهده دارد و خوداظهاری روزانه ثبت نمی‌کند
-  if(currentRole==='super_admin'){
+  // مدیر و سوپرادمین کارکرد (خوداظهاری) ندارند — فقط پرسنل ثبت می‌کنند
+  if(currentRole==='super_admin'||currentRole==='admin'){
     document.querySelectorAll('#main_nav .nav-item[data-target="daily_log"]').forEach(function(b){b.classList.add('hidden');});
     document.querySelectorAll('#main_nav .nav-item[data-target="leave_req"]').forEach(function(b){b.classList.add('hidden');});
   }
@@ -3980,7 +4025,8 @@ function showSection(id,skipHistory){
   if(id==='coordinator_approvals')id='approvals';
   if(id==='reports')id='records';
   // ─── سوپرادمین: خوداظهاری و مرخصی ندارد ───
-  if(currentRole==='super_admin'&&(id==='daily_log'||id==='leave_req')){
+  // مدیر و سوپرادمین کارکرد ثبت نمی‌کنند
+  if((currentRole==='super_admin'||currentRole==='admin')&&(id==='daily_log'||id==='leave_req')){
     id='dashboard';
   }
   document.querySelectorAll('.container > div.card').forEach(function(c){c.classList.add('hidden');});
@@ -6142,18 +6188,7 @@ function onDeclarationModeChange(){
     help.innerHTML='⏰ مناسب پرسنل حاضر در مرکز (بهورز، کارشناس، اداری) — کاربر هر روز ساعت ورود/خروج را ثبت می‌کند.';
   }
 }
-// هنگام فعال‌سازی checkbox تفویض تأیید کارکرد
-function onApproveCheck(){
-  var cb=$('inv_can_approve');
-  if(!cb)return;
-  if(cb.checked){
-    var role=$('inv_role').value;
-    if(role==='admin'||role==='super_admin'){
-      showAlert('مدیر خودش تأیید کارکرد را دارد — نیازی به تفویض نیست.','warning');
-      cb.checked=false;
-    }
-  }
-}
+// onApproveCheck حذف شد — چک‌باکس «تفویض تأیید کارکرد» از فرم حذف شده است
 // ═══ تأیید کارکرد رسمی توسط کاربر ═══
 async function verifyLog(logId){
   if(!confirm('آیا این کارکرد رسمی را تأیید می‌کنید؟\n\nبا تأیید، شما مغایرتی را گزارش نمی‌دهید.'))return;
@@ -7044,14 +7079,9 @@ async function createInvitation(){
     // ایمیل از فرم حذف شد — به‌صورت خودکار از شماره پرسنلی تولید می‌شود
     var email=pid+'@salam.health';
     var parent=null; // فیلد parent از فرم حذف شد
-    // ─── نقش مستقیم ذخیره می‌شود (coordinator حذف شده — نقش‌های سفارشی مستقیم استفاده می‌شوند) ───
+    // ─── نقش مستقیم ذخیره می‌شود ───
     var actualRole=role;
     var canApproveLeaves=false,canScheduleTasks=false;
-    // خواندن checkbox تفویض تأیید کارکرد
-    var canApproveEl=$('inv_can_approve');
-    if(canApproveEl&&canApproveEl.checked){
-      canApproveLeaves=true; // مسئول کارکرد = نقش فرعی
-    }
     // درج مستقیم در profiles
     var profRow={
       id:newUserId,
@@ -7325,10 +7355,6 @@ function editUserDetails(userId){
       '<label style="color:var(--c-info,#1a5276)">🔑 دسترسی‌های کاربر</label>'+
       '<small style="display:block;margin-bottom:8px;color:var(--c-text-muted);font-size:11px">دسترسی‌های قابل‌تفویض به این کاربر. تغییرات با ذخیره اعمال می‌شود.</small>'+
       '<div style="display:flex;flex-wrap:wrap;gap:6px 16px">'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_approve_leaves" '+(p.can_approve_leaves?'checked':'')+'> تأیید مرخصی</label>'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_schedule_tasks" '+(p.can_schedule_tasks?'checked':'')+'> تعریف وظیفه</label>'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_create_programs" '+(p.can_create_programs?'checked':'')+'> ساخت برنامه</label>'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_events" '+(p.can_manage_events?'checked':'')+'> 📅 رویدادها</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_shifts" '+(p.can_manage_shifts?'checked':'')+'> 📅 لوح شیفت (تعریف مأموریت)</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_view_reports" '+(p.can_view_reports?'checked':'')+'> 📊 گزارش کارکرد همه پرسنل</label>'+
         (currentDisplayRole==='guest'?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_log" '+(p.can_log?'checked':'')+'> 📝 ثبت کارکرد</label>':'')+
@@ -7401,14 +7427,9 @@ function editUserDetails(userId){
         updates.can_schedule_tasks=false;
       }
     }
-    if(!roleChanged||newRole==='coordinator'){
-      updates.can_approve_leaves=$('ed_can_approve_leaves')?$('ed_can_approve_leaves').checked:false;
-      updates.can_schedule_tasks=$('ed_can_schedule_tasks')?$('ed_can_schedule_tasks').checked:false;
-    }
-    updates.can_create_programs=$('ed_can_create_programs')?$('ed_can_create_programs').checked:false;
-    updates.can_manage_events=$('ed_can_manage_events')?$('ed_can_manage_events').checked:false;
+    // دسترسی‌های ساده‌شده — فقط لوح شیفت و گزارش
     updates.can_manage_shifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
-    // can_view_reports فقط اگر ستون در DB وجود داشته باشد (p.can_view_reports تعریف‌شده باشد)
+    // can_view_reports فقط اگر ستون در DB وجود داشته باشد
     if(p.can_view_reports!==undefined){
       updates.can_view_reports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
     }
