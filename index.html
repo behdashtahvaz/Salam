@@ -1372,7 +1372,7 @@ button,.btn{-webkit-touch-callout:none}
   <div class="form-row">
     <div class="form-group"><label>پرسنل:</label><select id="log_person_id" class="person-dropdown" onchange="syncLog()"></select></div>
     <div class="form-group"><label>تاریخ شمسی:</label><input type="text" id="log_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">⏰ حضور با ساعت ورود/خروج</option><option value="absence">عدم حضور (مرخصی/مأموریت/سایر)</option><option value="overtime">حضور همراه با اضافه‌کاری</option><option value="official_record">🔍 کارکرد رسمی (احراز مغایرت — فقط مدیر)</option></select></div>
+    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور</option></select></div>
   </div>
   <!-- بنر نمایش نوع خوداظهاری کاربر انتخاب‌شده -->
   <div id="declaration_mode_banner" style="display:none;background:var(--c-info-light);border-right:4px solid var(--c-info);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px">
@@ -1400,16 +1400,22 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <div id="fields_normal">
     <div style="background:var(--c-success-light);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px;border-right:4px solid var(--c-success);font-size:12px;color:var(--c-success)">
-      ✅ <b>حضور با ساعت ورود/خروج:</b> ساعت ورود و خروج خود را ثبت کنید.
+      ✅ <b>حضور:</b> ساعت ورود و خروج خود را ثبت کنید. سیستم به‌صورت خودکار با ساعت کاری استاندارد مقایسه می‌کند.
     </div>
     <div class="form-row">
-      <div class="form-group"><label>ساعت ورود (الزامی):</label><input type="hidden" id="entry_time"><div class="time-picker-widget" data-target="entry_time">--:--</div></div>
-      <div class="form-group"><label>ساعت خروج (الزامی):</label><input type="hidden" id="exit_time"><div class="time-picker-widget" data-target="exit_time">--:--</div></div>
+      <div class="form-group"><label>ساعت ورود (الزامی):</label><input type="hidden" id="entry_time"><div class="time-picker-widget" data-target="entry_time" onchange="checkTimeDiscrepancy()">--:--</div></div>
+      <div class="form-group"><label>ساعت خروج (الزامی):</label><input type="hidden" id="exit_time"><div class="time-picker-widget" data-target="exit_time" onchange="checkTimeDiscrepancy()">--:--</div></div>
+    </div>
+    <!-- ═══ کادر تشخیص خودکار مغایرت ═══ -->
+    <div id="discrepancy_suggestion" class="hidden" style="background:var(--c-warning-light,#fef3c7);border:1px solid var(--c-warning,#f59e0b);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:8px;font-size:13px">⚠️ مغایرت با ساعت کاری استاندارد شناسایی شد</div>
+      <div id="discrepancy_detail" style="font-size:12px;color:var(--c-text);margin-bottom:10px"></div>
+      <div id="discrepancy_actions"></div>
     </div>
     <div class="form-group"><label>موضوع/شرح کارکرد (اختیاری):</label><input type="text" id="normal_topic" placeholder="مثلاً: ویزیت بیماران، واکسیناسیون، آمار..."></div>
   </div>
   <div id="fields_absence" class="hidden">
-    <div class="form-group"><label>نوع عدم حضور:</label><select id="absence_type"><option value="hourly_leave">مرخصی ساعتی</option><option value="daily_leave">مرخصی روزانه</option><option value="sick_leave_daily">استعلاجی روزانه</option><option value="absence_no_leave">غیبت (بدون مرخصی)</option><option value="1day_mission">مأموریت یک‌روزه</option><option value="out_province_daily">مأموریت خارج از استان (روزانه)</option><option value="out_province_hourly">مأموریت خارج از استان (ساعتی)</option><option value="hourly_mission">مأموریت ساعتی</option><option value="other_absence">سایر علل عدم حضور</option></select></div>
+    <div class="form-group"><label>نوع عدم حضور:</label><select id="absence_type"><option value="daily_leave">📅 مرخصی روزانه</option><option value="sick_leave_daily">🩺 استعلاجی روزانه</option><option value="1day_mission">🔁 مأموریت یک‌روزه</option><option value="absence_no_leave">❌ غیبت (بدون مرخصی)</option><option value="hourly_leave">⏰ مرخصی ساعتی</option><option value="hourly_mission">🔁 مأموریت ساعتی</option><option value="out_province_daily">🗺️ مأموریت خارج از استان (روزانه)</option><option value="out_province_hourly">🗺️ مأموریت خارج از استان (ساعتی)</option><option value="other_absence">📋 سایر علل عدم حضور</option></select></div>
     <div id="abs_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="abs_start_time"><div class="time-picker-widget" data-target="abs_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="abs_end_time"><div class="time-picker-widget" data-target="abs_end_time">--:--</div></div></div><div class="form-group"><label>علت (الزامی):</label><input type="text" id="abs_reason"></div></div>
     <div id="abs_daily_fields" class="hidden"><div class="form-group"><label>نوع مرخصی:</label><input type="text" id="leave_type" placeholder="استحقاقی، استعلاجی..."></div></div>
     <div id="abs_sick_fields" class="hidden">
@@ -5670,7 +5676,114 @@ async function deleteLog(id){
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
 }
-function toggleLogFields(){var st=$('log_status').value;['normal','absence','overtime','official'].forEach(function(k){var el=$('fields_'+k);if(el)el.classList.toggle('hidden',k!==st);});toggleAbsenceFields();if(st==='official')toggleOfficialFields();updateDeclarationModeBanner();}
+function toggleLogFields(){var st=$('log_status').value;['normal','absence','overtime','official'].forEach(function(k){var el=$('fields_'+k);if(el)el.classList.toggle('hidden',k!==st);});toggleAbsenceFields();if(st==='official')toggleOfficialFields();updateDeclarationModeBanner();if(st==='normal')checkTimeDiscrepancy();}
+// ═══ تشخیص خودکار مغایرت با ساعت کاری استاندارد ═══
+function checkTimeDiscrepancy(){
+  var box=$('discrepancy_suggestion');
+  var detail=$('discrepancy_detail');
+  var actions=$('discrepancy_actions');
+  if(!box||!detail||!actions)return;
+  var entryT=$('entry_time')?$('entry_time').value:'';
+  var exitT=$('exit_time')?$('exit_time').value:'';
+  // اگر هر دو ساعت وارد نشده، کادر را مخفی کن
+  if(!entryT||!exitT||entryT==='--:--'||exitT==='--:--'){
+    box.classList.add('hidden');
+    return;
+  }
+  var dateStr=$('log_date')?$('log_date').value:'';
+  if(!dateStr)return;
+  var wh=getStandardWorkHours(dateStr);
+  var stdStart=wh.start_time;
+  var stdEnd=wh.end_time;
+  var entryMin=timeToMinutes(entryT);
+  var exitMin=timeToMinutes(exitT);
+  var stdStartMin=timeToMinutes(stdStart);
+  var stdEndMin=timeToMinutes(stdEnd);
+  var discrepancies=[];
+  var suggestion='';
+  // بررسی تأخیر در ورود (مرخصی ساعتی)
+  if(entryMin>stdStartMin){
+    var lateMins=entryMin-stdStartMin;
+    discrepancies.push('⏰ تأخیر در ورود: '+formatMins(lateMins)+' ('+stdStart+' تا '+entryT+')');
+    suggestion='hourly_leave';
+  }
+  // بررسی خروج زودهنگام (مرخصی ساعتی)
+  if(exitMin<stdEndMin&&exitMin>stdStartMin){
+    var earlyMins=stdEndMin-exitMin;
+    discrepancies.push('🏃 خروج زودهنگام: '+formatMins(earlyMins)+' ('+exitT+' تا '+stdEnd+')');
+    if(suggestion!=='mission')suggestion='hourly_leave';
+  }
+  // بررسی کامل خارج از ساعت اداری (مأموریت ساعتی)
+  if((entryMin>=stdEndMin||exitMin<=stdStartMin)){
+    discrepancies.push('🔄 ساعت‌های خارج از کارکرد استاندارد ('+entryT+' تا '+exitT+')');
+    suggestion='mission';
+  }
+  if(discrepancies.length===0){
+    // بدون مغایرت
+    box.classList.add('hidden');
+    return;
+  }
+  // نمایش کادر مغایرت
+  box.classList.remove('hidden');
+  detail.innerHTML='<b>ساعت استاندارد:</b> '+stdStart+' تا '+stdEnd+'<br>'+
+    discrepancies.join('<br>')+'<br><br>'+
+    '<b>پیشنهاد:</b> ';
+  // دکمه‌های اقدام
+  var btns='';
+  if(suggestion==='hourly_leave'){
+    detail.innerHTML+='ثبت مرخصی ساعتی برای زمان غیبت داخل ساعات اداری';
+    btns='<button class="btn btn-sm btn-warning" onclick="applyDiscrepancySuggestion(\'hourly_leave\')">📝 ثبت مرخصی ساعتی</button>';
+  }else if(suggestion==='mission'){
+    detail.innerHTML+='ثبت مأموریت ساعتی برای زمان خارج از ساعات اداری';
+    btns='<button class="btn btn-sm btn-info" onclick="applyDiscrepancySuggestion(\'hourly_mission\')">🔁 ثبت مأموریت ساعتی</button>';
+  }
+  // همیشه امکان نادیده گرفتن
+  btns+=' <button class="btn btn-sm btn-secondary" onclick="dismissDiscrepancy()">✓ بدون مغایرت — ثبت حضور</button>';
+  actions.innerHTML=btns;
+}
+function applyDiscrepancySuggestion(type){
+  // ذخیره ساعت ورود/خروج فعلی، سپس تغییر به حالت عدم حضور با نوع مناسب
+  var entryT=$('entry_time')?$('entry_time').value:'';
+  var exitT=$('exit_time')?$('exit_time').value:'';
+  var topic=$('normal_topic')?$('normal_topic').value:'';
+  // ابتدا حضور را ثبت می‌کنیم
+  // سپس یک رکورد عدم حضور اضافه می‌کنیم
+  $('log_status').value='absence';
+  toggleLogFields();
+  $('absence_type').value=type;
+  toggleAbsenceFields();
+  // اگر مرخصی ساعتی، ساعت‌های غیبت را تنظیم کن
+  if(type==='hourly_leave'){
+    var dateStr=$('log_date')?$('log_date').value:'';
+    var wh=getStandardWorkHours(dateStr);
+    var entryMin=timeToMinutes(entryT);
+    var exitMin=timeToMinutes(exitT);
+    var stdStartMin=timeToMinutes(wh.start_time);
+    var stdEndMin=timeToMinutes(wh.end_time);
+    // ساعات غیبت: یا تأخیر ورود یا خروج زودهنگام
+    var gapStart='',gapEnd='';
+    if(entryMin>stdStartMin){gapStart=wh.start_time;gapEnd=entryT;}
+    else if(exitMin<stdEndMin){gapStart=exitT;gapEnd=wh.end_time;}
+    if(gapStart&&gapEnd){
+      setTimepickerValue('abs_start_time',gapStart);
+      setTimepickerValue('abs_end_time',gapEnd);
+    }
+    if($('abs_reason'))$('abs_reason').value='مرخصی ساعتی — ثبت خودکار از مغایرت';
+  }else if(type==='hourly_mission'){
+    setTimepickerValue('abs_start_time',entryT);
+    setTimepickerValue('abs_end_time',exitT);
+    if($('mh_location'))$('mh_location').value='خارج از مرکز';
+    if($('abs_reason'))$('abs_reason').value='مأموریت ساعتی — ثبت خودکار از مغایرت';
+  }
+  // مخفی کردن کادر مغایرت
+  var box=$('discrepancy_suggestion');
+  if(box)box.classList.add('hidden');
+  showAlert('نوع عدم حضور روی «'+ABS_LABEL[type]+'» تنظیم شد. ساعت‌ها به‌صورت خودکار پر شدند. در صورت نیاز ویرایش کنید و سپس ثبت کنید.','info');
+}
+function dismissDiscrepancy(){
+  var box=$('discrepancy_suggestion');
+  if(box)box.classList.add('hidden');
+}
 function toggleAbsenceFields(){
   var type=$('absence_type').value;
   ['hourly','daily','sick','1day_mission','out_province_daily','out_province_hourly','hourly_mission','other'].forEach(function(f){var el=$('abs_'+f+'_fields');if(el)el.classList.add('hidden');});
@@ -6699,6 +6812,10 @@ function openTimepicker(e){
       var val=(hEl?hEl.dataset.val:'00')+':'+(mEl?mEl.dataset.val:'00');
       setTimepickerValue(targetId,val);
       closePopups();
+      // بررسی مغایرت با ساعت کاری استاندارد برای entry_time/exit_time
+      if(targetId==='entry_time'||targetId==='exit_time'){
+        setTimeout(checkTimeDiscrepancy,100);
+      }
     }
     if(ev.target.closest('#tp_cancel'))closePopups();
   });
