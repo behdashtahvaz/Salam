@@ -806,6 +806,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">⚙️ مدیریت سامانه <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="users"><span class="ico">👥</span><span class="lbl">مدیریت کاربران و نقش‌ها</span></button>
+        <button class="nav-item" data-target="roles"><span class="ico">🎭</span><span class="lbl">تعریف نقش‌ها</span></button>
         <button class="nav-item" data-target="hierarchy"><span class="ico">🌳</span><span class="lbl">سلسله‌مراتب سازمانی</span></button>
         <button class="nav-item events-access hidden" data-target="events"><span class="ico">📅</span><span class="lbl">رویدادها و تعطیلات</span></button>
 
@@ -999,6 +1000,36 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>نوع عدم حضور:</label><select id="absence_type"><option value="hourly_leave">مرخصی ساعتی</option><option value="daily_leave">مرخصی روزانه</option><option value="sick_leave_daily">استعلاجی روزانه</option><option value="absence_no_leave">غیبت (بدون مرخصی)</option><option value="1day_mission">مأموریت یک‌روزه</option><option value="out_province_daily">مأموریت خارج از استان (روزانه)</option><option value="out_province_hourly">مأموریت خارج از استان (ساعتی)</option><option value="hourly_mission">مأموریت ساعتی</option><option value="other_absence">سایر علل عدم حضور</option></select></div>
     <div id="abs_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="abs_start_time"><div class="time-picker-widget" data-target="abs_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="abs_end_time"><div class="time-picker-widget" data-target="abs_end_time">--:--</div></div></div><div class="form-group"><label>علت (الزامی):</label><input type="text" id="abs_reason"></div></div>
     <div id="abs_daily_fields" class="hidden"><div class="form-group"><label>نوع مرخصی:</label><input type="text" id="leave_type" placeholder="استحقاقی، استعلاجی..."></div></div>
+    <div id="abs_sick_fields" class="hidden">
+      <div style="background:var(--c-warning-light,#fef3c7);border:1px solid var(--c-warning,#f59e0b);border-radius:var(--c-radius-sm);padding:10px 12px;margin-bottom:10px">
+        <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:8px;font-size:13px">🩺 تأیید مدارک استعلاجی (توسط مسئول کارکرد)</div>
+        <div class="form-row" style="margin-bottom:6px">
+          <div class="form-group" style="flex:0 0 220px">
+            <label>دستور پزشک:</label>
+            <select id="sick_doctor_order">
+              <option value="unknown">— نامشخص —</option>
+              <option value="yes">✅ بله — دستور پزشک دارد</option>
+              <option value="no">❌ خیر — دستور پزشک ندارد</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:0 0 220px">
+            <label>نسخه داروخانه:</label>
+            <select id="sick_pharmacy_prescription">
+              <option value="unknown">— نامشخص —</option>
+              <option value="yes">✅ بله — نسخه دارد</option>
+              <option value="no">❌ خیر — نسخه ندارد</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label>شماره نوبت/نسخه (اختیاری):</label>
+            <input type="text" id="sick_prescription_number" placeholder="مثلاً ۱۲۳۴۵" dir="ltr">
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--c-text-muted);margin:0">
+          📋 این دو مورد باید توسط <b>مسئول کارکرد</b> مشخص شود. کاربر عادی می‌تواند با وضعیت «نامشخص» ثبت کند تا مسئول کارکرد بعداً تکمیل کند.
+        </p>
+      </div>
+    </div>
     <div id="abs_1day_mission_fields" class="hidden"><div class="form-group"><label>محل مأموریت (الزامی):</label><input type="text" id="m1_location"></div></div>
     <div id="abs_out_province_daily_fields" class="hidden"><div class="form-group"><label>استان مقصد:</label><input type="text" id="mout_daily_province"></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="mout_daily_location"></div></div>
     <div id="abs_out_province_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="mout_h_start_time"><div class="time-picker-widget" data-target="mout_h_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="mout_h_end_time"><div class="time-picker-widget" data-target="mout_h_end_time">--:--</div></div></div><div class="form-group"><label>استان مقصد:</label><input type="text" id="mout_h_province"></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="mout_h_location"></div><div class="form-group"><label>شرح فعالیت:</label><textarea id="mout_h_activity"></textarea></div></div>
@@ -1403,7 +1434,7 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <div class="form-row">
     <div class="form-group"><label>ایمیل (اختیاری):</label><input type="email" id="inv_email" dir="ltr"></div>
-    <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"><option value="user">پرسنل بهداشت/اداری</option><option value="coordinator">👥 مسئول واحد (هماهنگ‌کننده)</option><option value="guest">👁️ مهمان (دسترسی خواندن و نوشتن)</option><option value="admin">مدیر مرکز</option></select></div>
+    <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">نقش‌ها از منوی «🎭 تعریف نقش‌ها» بارگذاری می‌شوند.</small></div>
     <div class="form-group" style="flex:0 0 auto;display:flex;align-items:center;padding-top:20px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="inv_can_approve" onchange="onApproveCheck()"> ✅ تفویض تأیید کارکرد</label>
     </div>
@@ -1422,9 +1453,9 @@ button,.btn{-webkit-touch-callout:none}
     </div>
   </div>
   <div class="form-row">
-    <div class="form-group" style="flex:0 0 150px"><label>سهمیه مرخصی سالانه (روز):</label><input type="number" id="inv_annual_leave" min="0" step="0.5" value="26" placeholder="26"></div>
+    <div class="form-group" style="flex:0 0 150px"><label>سهمیه مرخصی سالانه (روز):</label><input type="number" id="inv_annual_leave" min="0" step="0.5" value="30" placeholder="30"></div>
     <div class="form-group" style="flex:0 0 150px"><label>انتقال از سال قبل:</label><input type="number" id="inv_carry_over" min="0" step="0.5" value="0" placeholder="0"></div>
-    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small style="color:var(--c-text-muted);font-size:11px">📅 سهمیه ماهانه خودکار محاسبه می‌شود (سالانه ÷ ۱۲). مثلاً ۱۲ روز = ۱ روز/ماه. مرخصی تدریجی تعلق می‌گیرد و کاربر نمی‌تواند بیشتر از تعلق‌گرفته تا آن ماه استفاده کند.</small></div>
+    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small style="color:var(--c-text-muted);font-size:11px">📅 سهمیه ماهانه خودکار محاسبه می‌شود (سالانه ÷ ۱۲). پیش‌فرض: ۳۰ روز در سال = ۲.۵ روز در ماه. مرخصی تدریجی تعلق می‌گیرد و کاربر نمی‌تواند بیشتر از تعلق‌گرفته تا آن ماه استفاده کند.</small></div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -1443,6 +1474,44 @@ button,.btn{-webkit-touch-callout:none}
   <h3>فهرست کاربران</h3>
   <p><small>🎫 = تفویض اختیار مدیریت کاربران (فقط سوپرادمین به مدیران) &nbsp;|&nbsp; 🔑 = بازنشانی رمز کاربر</small></p>
   <div id="users_list_container" class="table-wrap"></div>
+</div>
+
+<!-- ═══ بخش تعریف نقش‌ها ═══ -->
+<div id="section-roles" class="card hidden">
+  <h2>🎭 تعریف نقش‌ها</h2>
+  <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px;line-height:1.7">
+    در این بخش نقش‌های سازمانی مرکز را تعریف کنید. نقش «مدیر مرکز» و «سوپرادمین» محفوظ و غیرقابل حذف هستند. سایر نقش‌ها (پرسنل بهداشت، مسئول واحد، مهمان و…) را می‌توانید ویرایش یا حذف کنید و نقش‌های جدید نیز بسازید.<br>
+    پس از تعریف، نقش‌ها در فرم «ایجاد کاربر»، ویرایش کاربر و گزارش‌ها به‌عنوان گزینه قابل انتخاب نمایش داده می‌شوند.
+  </p>
+
+  <div class="form-row" style="align-items:flex-end">
+    <div class="form-group" style="flex:0 0 200px">
+      <label>کلید فنی (انگلیسی):</label>
+      <input type="text" id="role_key" dir="ltr" placeholder="مثلاً nurse" style="font-family:monospace">
+      <small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">فقط حروف انگلیسی، عدد و زیرخط. قابل تغییر نیست.</small>
+    </div>
+    <div class="form-group" style="flex:0 0 220px">
+      <label>برچسب نمایشی (فارسی):</label>
+      <input type="text" id="role_label" placeholder="مثلاً بهورز">
+    </div>
+    <div class="form-group" style="flex:0 0 80px">
+      <label>رنگ:</label>
+      <input type="color" id="role_color" value="#3498db" style="height:38px;width:100%;padding:2px;cursor:pointer">
+    </div>
+    <div class="form-group" style="flex:1;min-width:220px">
+      <label>توضیحات (اختیاری):</label>
+      <input type="text" id="role_description" placeholder="مثلاً پرسنل بهداشتی حوزه روستایی">
+    </div>
+    <div class="form-group" style="flex:0 0 auto">
+      <button class="btn btn-success" id="btn_save_role" onclick="saveRole()">➕ افزودن نقش</button>
+      <button class="btn hidden" id="btn_cancel_edit_role" onclick="cancelEditRole()" style="margin-right:6px">انصراف</button>
+    </div>
+  </div>
+
+  <hr style="margin:20px 0;border:0;border-top:1px solid var(--c-border)">
+
+  <h3>📋 فهرست نقش‌ها</h3>
+  <div id="roles_list_container" class="table-wrap"></div>
 </div>
 
 <!-- ═══ بخش سلسله‌مراتب سازمانی ═══ -->
@@ -1740,7 +1809,217 @@ var ABS_LABEL={hourly_leave:'مرخصی ساعتی',daily_leave:'مرخصی رو
 var FULL_DAY=['daily_leave','sick_leave_daily','absence_no_leave','1day_mission','out_province_daily','other_absence'];
 var HOURLY=['hourly_leave','hourly_mission','out_province_hourly'];
 var LEAVE_STATUS={pending:'در انتظار مدیر',coordinator_pending:'در انتظار هماهنگ‌کننده',manager_pending:'در انتظار تصمیم مدیر',approved:'تأییدشده',partial:'جزئی',rejected:'ردشده',canceled:'لغوشده'};
-var ROLE_LABEL={user:'پرسنل',admin:'مدیر مرکز',super_admin:'سوپرادمین',guest:'مهمان',coordinator:'مسئول واحد'};
+var ROLE_LABEL={user:'پرسنل بهداشت/اداری',admin:'مدیر مرکز',super_admin:'سوپرادمین',guest:'مهمان',coordinator:'مسئول واحد'};
+// ═════ مدیریت نقش‌ها (Roles) ═════
+// نقش‌های تعریف‌شده در سامانه (از جدول roles) — شامل نقش‌های پیش‌فرض و سفارشی
+var cachedRoles=[];
+var editingRoleKey=null; // در حالت ویرایش، کلید نقش در حال ویرایش
+// بارگذاری نقش‌ها از دیتابیس
+async function loadRoles(){
+  try{
+    const{data,error}=await sb.from('roles').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+    if(error)throw error;
+    cachedRoles=data||[];
+    // اگر جدول خالی است (مثلاً هنوز INSERT پیش‌فرض اجرا نشده)، نقش‌های پیش‌فرض درون‌برنامه‌ای ارائه می‌شود
+    if(!cachedRoles.length){
+      cachedRoles=[
+        {role_key:'admin',label:'مدیر مرکز',color:'#9b59b6',is_protected:true,description:'مدیر مرکز بهداشت',sort_order:10},
+        {role_key:'super_admin',label:'سوپرادمین',color:'#e74c3c',is_protected:true,description:'مدیر کل سامانه',sort_order:11},
+        {role_key:'user',label:'پرسنل بهداشت/اداری',color:'#3498db',is_protected:false,description:'کاربر عادی',sort_order:20},
+        {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'دسترسی محدود',sort_order:30},
+        {role_key:'coordinator',label:'مسئول واحد',color:'#16a085',is_protected:false,description:'مسئول واحد هماهنگ‌کننده',sort_order:40}
+      ];
+    }
+    return cachedRoles;
+  }catch(e){
+    console.warn('loadRoles:',e);
+    // در صورت خطا، نقش‌های پیش‌فرض درون‌برنامه‌ای
+    cachedRoles=[
+      {role_key:'admin',label:'مدیر مرکز',color:'#9b59b6',is_protected:true,description:'',sort_order:10},
+      {role_key:'super_admin',label:'سوپرادمین',color:'#e74c3c',is_protected:true,description:'',sort_order:11},
+      {role_key:'user',label:'پرسنل بهداشت/اداری',color:'#3498db',is_protected:false,description:'',sort_order:20},
+      {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'',sort_order:30},
+      {role_key:'coordinator',label:'مسئول واحد',color:'#16a085',is_protected:false,description:'',sort_order:40}
+    ];
+    return cachedRoles;
+  }
+}
+// دریافت برچسب نمایشی یک نقش (پشتیبان ROLE_LABEL قدیمی)
+function getRoleLabel(role){
+  if(!role)return'—';
+  // ابتدا در cachedRoles جستجو
+  for(var i=0;i<cachedRoles.length;i++){
+    if(cachedRoles[i].role_key===role)return cachedRoles[i].label;
+  }
+  // پشتیبان: ROLE_LABEL قدیمی
+  return ROLE_LABEL[role]||role;
+}
+// دریافت رنگ یک نقش
+function getRoleColor(role){
+  if(!role)return'#95a5a6';
+  for(var i=0;i<cachedRoles.length;i++){
+    if(cachedRoles[i].role_key===role)return cachedRoles[i].color||'#3498db';
+  }
+  // مقادیر قدیمی CSS
+  if(role==='admin')return'#9b59b6';
+  if(role==='super_admin')return'#e74c3c';
+  if(role==='guest')return'#95a5a6';
+  return'#3498db';
+}
+// بررسی محفوظ بودن یک نقش
+function isRoleProtected(role){
+  for(var i=0;i<cachedRoles.length;i++){
+    if(cachedRoles[i].role_key===role)return !!cachedRoles[i].is_protected;
+  }
+  return role==='admin'||role==='super_admin';
+}
+// ساخت HTML برای badge نقش
+function roleBadgeHtml(role,extraStyle){
+  var label=getRoleLabel(role);
+  var color=getRoleColor(role);
+  var style='background:'+color+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600';
+  if(extraStyle)style+=';'+extraStyle;
+  return '<span class="badge" style="'+style+'">'+esc(label)+'</span>';
+}
+// پر کردن dropdown نقش‌ها در فرم ایجاد/ویرایش کاربر
+function populateRoleDropdown(selectId,currentValue,includeSuperAdmin){
+  var sel=$(selectId);
+  if(!sel)return;
+  // ترتیب: نقش‌های موجود در cachedRoles (شامل admin، بدون super_admin مگر درخواست شده)
+  var opts='';
+  cachedRoles.forEach(function(r){
+    if(r.role_key==='super_admin'&&!includeSuperAdmin)return;
+    var selAttr=(currentValue===r.role_key)?' selected':'';
+    opts+='<option value="'+esc(r.role_key)+'"'+selAttr+'>'+esc(r.label)+'</option>';
+  });
+  // اگر currentValue در cachedRoles نیست (مثلاً نقش قدیمی حذف‌شده)، آن را هم اضافه کن
+  if(currentValue&&!cachedRoles.some(function(r){return r.role_key===currentValue;})){
+    opts+='<option value="'+esc(currentValue)+'" selected>'+esc(ROLE_LABEL[currentValue]||currentValue)+'</option>';
+  }
+  sel.innerHTML=opts;
+}
+// ذخیره/به‌روزرسانی یک نقش
+async function saveRole(){
+  var key=$('role_key').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  var label=$('role_label').value.trim();
+  var color=$('role_color').value;
+  var description=$('role_description').value.trim();
+  if(!key){showAlert('کلید فنی نقش الزامی است (فقط حروف انگلیسی، عدد و زیرخط).','error');return;}
+  if(!label){showAlert('برچسب نمایشی نقش الزامی است.','error');return;}
+  if(key.length<2||key.length>40){showAlert('کلید فنی باید بین ۲ تا ۴۰ نویسه باشد.','error');return;}
+  // کلیدهای رزرو شده
+  var reserved=['admin','super_admin','manager'];
+  if(reserved.indexOf(key)!==-1){showAlert('این کلید رزرو شده و قابل استفاده نیست.','error');return;}
+  showLoading('ذخیره نقش...');
+  try{
+    if(editingRoleKey){
+      // ویرایش: فقط label/color/description قابل تغییر است (کلید ثابت)
+      const{data,error}=await sb.from('roles').update({label:label,color:color,description:description,updated_at:new Date().toISOString()}).eq('role_key',editingRoleKey).select();
+      if(error)throw error;
+      await recordAudit('update','roles',data[0]?data[0].id:null,{role_key:editingRoleKey,label:label,color:color});
+      showAlert('✅ نقش «'+label+'» به‌روزرسانی شد.','success');
+    }else{
+      // بررسی تکراری نبودن کلید
+      var dup=cachedRoles.filter(function(r){return r.role_key===key;});
+      if(dup.length){showAlert('این کلید قبلاً ثبت شده است.','error');hideLoading();return;}
+      const{data,error}=await sb.from('roles').insert({role_key:key,label:label,color:color,description:description,is_protected:false,sort_order:100,created_by:currentUser?currentUser.id:null}).select();
+      if(error)throw error;
+      await recordAudit('create','roles',data[0].id,{role_key:key,label:label});
+      showAlert('✅ نقش «'+label+'» با کلید «'+key+'» ایجاد شد.','success');
+    }
+    cancelEditRole();
+    await loadRoles();
+    renderRolesList();
+    // به‌روزرسانی dropdown نقش‌ها در فرم‌های ایجاد/ویرایش کاربر
+    populateRoleDropdown('inv_role',$('inv_role')?$('inv_role').value:'',false);
+    await renderUsers();
+  }catch(e){showAlert('خطا: '+e.message,'error');}
+  hideLoading();
+}
+// شروع ویرایش یک نقش
+function editRole(roleKey){
+  var r=cachedRoles.filter(function(x){return x.role_key===roleKey;})[0];
+  if(!r){showAlert('نقش یافت نشد.','error');return;}
+  if(r.is_protected){showAlert('نقش‌های محفوظ قابل ویرایش نیستند.','error');return;}
+  editingRoleKey=roleKey;
+  $('role_key').value=r.role_key;
+  $('role_key').disabled=true; // کلید در ویرایش قابل تغییر نیست
+  $('role_label').value=r.label;
+  $('role_color').value=r.color||'#3498db';
+  $('role_description').value=r.description||'';
+  $('btn_save_role').textContent='💾 به‌روزرسانی نقش';
+  $('btn_cancel_edit_role').classList.remove('hidden');
+  document.getElementById('section-roles').scrollIntoView({behavior:'smooth',block:'start'});
+}
+// انصراف از ویرایش
+function cancelEditRole(){
+  editingRoleKey=null;
+  $('role_key').value='';
+  $('role_key').disabled=false;
+  $('role_label').value='';
+  $('role_color').value='#3498db';
+  $('role_description').value='';
+  $('btn_save_role').textContent='➕ افزودن نقش';
+  $('btn_cancel_edit_role').classList.add('hidden');
+}
+// حذف یک نقش
+async function deleteRole(roleKey){
+  var r=cachedRoles.filter(function(x){return x.role_key===roleKey;})[0];
+  if(!r){showAlert('نقش یافت نشد.','error');return;}
+  if(r.is_protected){showAlert('این نقش محفوظ است و قابل حذف نیست.','error');return;}
+  // بررسی کاربرانی که این نقش دارند
+  var usersWithRole=cachedPersons.filter(function(p){return p.role===roleKey;});
+  var warnMsg='⚠️ حذف نقش «'+r.label+'»';
+  if(usersWithRole.length){
+    warnMsg+='\n\nتوجه: '+usersWithRole.length+' کاربر با این نقش وجود دارند. پس از حذف، نقش آن‌ها به «پرسنل بهداشت/اداری» تغییر می‌یابد.\n\nکاربران: '+usersWithRole.slice(0,5).map(function(u){return u.first_name+' '+u.last_name;}).join('، ')+(usersWithRole.length>5?' …':'');
+  }
+  warnMsg+='\n\nآیا مطمئن هستید؟';
+  if(!confirm(warnMsg))return;
+  showLoading('حذف نقش...');
+  try{
+    // ابتدا کاربران دارای این نقش را به 'user' برگردان
+    if(usersWithRole.length){
+      const{error:updErr}=await sb.from('profiles').update({role:'user'}).eq('role',roleKey);
+      if(updErr)console.warn('update users role:',updErr);
+    }
+    const{error}=await sb.from('roles').delete().eq('role_key',roleKey);
+    if(error)throw error;
+    await recordAudit('delete','roles',null,{role_key:roleKey,migrated_users:usersWithRole.length});
+    showAlert('✅ نقش «'+r.label+'» حذف شد.'+(usersWithRole.length?(' '+usersWithRole.length+' کاربر به «پرسنل» تغییر یافتند.'):''),'success');
+    await loadRoles();
+    await loadAllPersons();
+    renderRolesList();
+    populateRoleDropdown('inv_role',$('inv_role')?$('inv_role').value:'',false);
+    await renderUsers();
+  }catch(e){showAlert('خطا در حذف: '+e.message,'error');}
+  hideLoading();
+}
+// نمایش فهرست نقش‌ها
+function renderRolesList(){
+  var c=$('roles_list_container');
+  if(!c)return;
+  if(!cachedRoles.length){c.innerHTML='<p style="color:var(--c-text-muted)">هنوز نقشی تعریف نشده است.</p>';return;}
+  var h='<table><thead><tr><th>کلید فنی</th><th>برچسب</th><th>توضیحات</th><th>نمونه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>';
+  cachedRoles.forEach(function(r){
+    var sample='<span style="background:'+(r.color||'#3498db')+';color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">'+esc(r.label)+'</span>';
+    var statusBadge=r.is_protected?'<span class="badge badge-absence">محفوظ</span>':'<span class="badge badge-normal">سفارشی</span>';
+    var actions='';
+    if(r.is_protected){
+      actions='<span style="color:var(--c-text-muted);font-size:11px">—</span>';
+    }else{
+      actions='<button class="btn btn-sm btn-warning" onclick="editRole(\''+esc(r.role_key)+'\')" title="ویرایش">✏️</button> '+
+              '<button class="btn btn-sm btn-danger" onclick="deleteRole(\''+esc(r.role_key)+'\')" title="حذف">🗑️</button>';
+    }
+    h+='<tr><td dir="ltr" style="font-family:monospace;font-size:12px">'+esc(r.role_key)+'</td>'+
+       '<td><b>'+esc(r.label)+'</b></td>'+
+       '<td style="font-size:12px;color:var(--c-text-muted)">'+esc(r.description||'—')+'</td>'+
+       '<td>'+sample+'</td>'+
+       '<td>'+statusBadge+'</td>'+
+       '<td style="white-space:nowrap">'+actions+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
 // بررسی آیا کاربر فعلی نقش هماهنگ‌کننده دارد (کاربر با دسترسی‌های هماهنگ‌کننده)
 function isCoordinatorRole(){
   if(!currentUser||!currentUser.profile)return false;
@@ -1759,7 +2038,7 @@ function getDisplayRole(){
 function getDisplayRoleLabel(){
   var dr=getDisplayRole();
   if(dr==='coordinator')return 'هماهنگ‌کننده';
-  return ROLE_LABEL[currentRole]||currentRole;
+  return getRoleLabel(currentRole);
 }
 var TASK_STATUS={pending:'در انتظار',in_progress:'در حال انجام',done:'انجام‌شده',cancelled:'لغوشده'};
 
@@ -1799,7 +2078,15 @@ function describeLog(l){
   if(l.status==='overtime')return'اضافه‌کاری '+(f.ot_start||'')+' تا '+(f.ot_end||'')+[f.ot_location,f.ot_reason].filter(Boolean).map(function(x){return' — '+x;}).join('')+verBadge;
   var s=ABS_LABEL[t]||t||'';if(f.start_time)s+=' ('+f.start_time+' تا '+f.end_time+')';
   var x=[f.leave_type,f.province,f.location,f.reason].filter(Boolean).join('، ');
-  return s+(x?' — '+x:'')+verBadge;
+  // ─── مدارک استعلاجی ───
+  var sickInfo='';
+  if(t==='sick_leave_daily'){
+    var DOC_LABEL={yes:'دستور پزشک: بله',no:'دستور پزشک: خیر',unknown:'دستور پزشک: نامشخص'};
+    var RX_LABEL={yes:'نسخه: بله',no:'نسخه: خیر',unknown:'نسخه: نامشخص'};
+    sickInfo=' — '+DOC_LABEL[f.has_doctor_order||'unknown']+' | '+RX_LABEL[f.has_pharmacy_prescription||'unknown'];
+    if(f.prescription_number)sickInfo+=' (شماره: '+f.prescription_number+')';
+  }
+  return s+(x?' — '+x:'')+sickInfo+verBadge;
 }
 function statusBadge(st){return'<span class="badge badge-'+esc(st)+'">'+esc(LEAVE_STATUS[st]||STATUS_LABEL[st]||st)+'</span>';}
 function getPersonName(id){var p=cachedPersons.filter(function(x){return x.id===id;})[0];return p?p.first_name+' '+p.last_name:'نامشخص';}
@@ -2060,7 +2347,7 @@ function restoreSession(){
     applyRoleBasedUI();
     // بارگذاری داده‌ها
     setTimeout(async function(){
-      try{await loadAllPersons();await loadSubordinates();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');checkUnreadNotifications();generateReminderAlerts();setTimeout(checkActiveAlerts,1000);}catch(e){console.warn('restoreSession load:',e);}
+      try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');checkUnreadNotifications();generateReminderAlerts();setTimeout(checkActiveAlerts,1000);}catch(e){console.warn('restoreSession load:',e);}
     },100);
     return true;
   }catch(e){console.warn('restoreSession:',e);return false;}
@@ -2109,7 +2396,7 @@ async function handleLogin(e){
     else{document.body.classList.remove('guest-mode');document.body.classList.remove('no-log');}
     $('auth_screen').classList.add('hidden');
     $('main_app').classList.remove('hidden');
-    try{await loadAllPersons();await loadSubordinates();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');setTimeout(checkUnreadNotifications,500);generateReminderAlerts();setTimeout(checkActiveAlerts,1500);}catch(e){console.warn('post-login:',e);}
+    try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');setTimeout(checkUnreadNotifications,500);generateReminderAlerts();setTimeout(checkActiveAlerts,1500);}catch(e){console.warn('post-login:',e);}
     updateUserBox();
     applyRoleBasedUI();
   }catch(err){
@@ -3277,7 +3564,14 @@ function showSection(id,skipHistory){
     var isAdmin=currentRole==='admin'||currentRole==='super_admin';
     var createForm=$('user_create_form');
     if(createForm)createForm.classList.toggle('hidden',!isAdmin);
-    renderUsers();
+    // بارگذاری نقش‌ها برای dropdown و سپس render
+    loadRoles().then(function(){
+      populateRoleDropdown('inv_role','',false);
+      renderUsers();
+    });
+  }
+  if(id==='roles'){
+    loadRoles().then(function(){renderRolesList();cancelEditRole();});
   }
   if(id==='audit_log')renderAuditLog();
   window.scrollTo(0,0);
@@ -4543,7 +4837,7 @@ async function editLog(id){
       var map={
         hourly_leave:{abs_reason:f.reason,abs_start_time:f.start_time,abs_end_time:f.end_time},
         daily_leave:{leave_type:f.leave_type},
-        sick_leave_daily:{leave_type:f.leave_type},
+        sick_leave_daily:{leave_type:f.leave_type,sick_doctor_order:f.has_doctor_order||'unknown',sick_pharmacy_prescription:f.has_pharmacy_prescription||'unknown',sick_prescription_number:f.prescription_number||''},
         absence_no_leave:{},
         '1day_mission':{m1_location:f.location},
         out_province_daily:{mout_daily_province:f.province,mout_daily_location:f.location},
@@ -4606,12 +4900,15 @@ async function deleteLog(id){
 function toggleLogFields(){var st=$('log_status').value;['normal','absence','overtime','official'].forEach(function(k){var el=$('fields_'+k);if(el)el.classList.toggle('hidden',k!==st);});toggleAbsenceFields();if(st==='official')toggleOfficialFields();updateDeclarationModeBanner();}
 function toggleAbsenceFields(){
   var type=$('absence_type').value;
-  ['hourly','daily','1day_mission','out_province_daily','out_province_hourly','hourly_mission','other'].forEach(function(f){var el=$('abs_'+f+'_fields');if(el)el.classList.add('hidden');});
+  ['hourly','daily','sick','1day_mission','out_province_daily','out_province_hourly','hourly_mission','other'].forEach(function(f){var el=$('abs_'+f+'_fields');if(el)el.classList.add('hidden');});
   $('abs_desc_box').style.display=HOURLY.indexOf(type)!==-1?'none':'block';
   // نگاشت نوع به فیلد: استعلاجی ساعتی → hourly، استعلاجی روزانه → daily، غیبت → daily (فقط توضیحات)
   var map={hourly_leave:'hourly',daily_leave:'daily',sick_leave_daily:'daily',absence_no_leave:'daily','1day_mission':'1day_mission',out_province_daily:'out_province_daily',out_province_hourly:'out_province_hourly',hourly_mission:'hourly_mission',other_absence:'other'};
   var target=map[type];
   if(target){var el=$('abs_'+target+'_fields');if(el)el.classList.remove('hidden');}
+  // بخش مدارک استعلاجی فقط برای استعلاجی روزانه نمایش داده شود
+  var sickBox=$('abs_sick_fields');
+  if(sickBox)sickBox.classList.toggle('hidden',type!=='sick_leave_daily');
 }
 async function saveDailyLog(){
   var id=$('log_id').value,personId=$('log_person_id').value,dateStr=$('log_date').value,status=$('log_status').value,disc=val('log_discrepancy');
@@ -4751,7 +5048,21 @@ async function saveDailyLog(){
       if(!await checkTimeOverlap(actualPersonId,dateStr,s,e,'مأموریت خارج از استان'))return;
       f.start_time=s;f.end_time=e;
     }
-    else{fullDay=true;f.desc=val('abs_general_desc');if(t==='other_absence'){f.reason=val('other_reason');if(!need(f.reason,'علت الزامی است.'))return;}else if(t==='daily_leave'||t==='sick_leave_daily')f.leave_type=val('leave_type');else if(t==='absence_no_leave'){/* غیبت — فقط توضیحات اختیاری در desc */}else if(t==='1day_mission'){f.location=val('m1_location');if(!need(f.location,'محل الزامی است.'))return;}else if(t==='out_province_daily'){f.province=val('mout_daily_province');f.location=val('mout_daily_location');if(!need(f.province&&f.location,'استان و محل الزامی است.'))return;}}
+    else{fullDay=true;f.desc=val('abs_general_desc');if(t==='other_absence'){f.reason=val('other_reason');if(!need(f.reason,'علت الزامی است.'))return;}else if(t==='daily_leave'||t==='sick_leave_daily')f.leave_type=val('leave_type');else if(t==='absence_no_leave'){/* غیبت — فقط توضیحات اختیاری در desc */}else if(t==='1day_mission'){f.location=val('m1_location');if(!need(f.location,'محل الزامی است.'))return;}else if(t==='out_province_daily'){f.province=val('mout_daily_province');f.location=val('mout_daily_location');if(!need(f.province&&f.location,'استان و محل الزامی است.'))return;}
+      // ─── مدارک استعلاجی: فقط برای sick_leave_daily ───
+      if(t==='sick_leave_daily'){
+        f.has_doctor_order=val('sick_doctor_order')||'unknown';
+        f.has_pharmacy_prescription=val('sick_pharmacy_prescription')||'unknown';
+        f.prescription_number=val('sick_prescription_number')||'';
+        // مسئول کارکرد یا مدیر باید این دو را مشخص کنند (غیر «نامشخص»)
+        var _isWorkOfficer=_isAdmin||(currentUser.profile&&currentUser.profile.can_approve_leaves);
+        if(_isWorkOfficer){
+          if(f.has_doctor_order==='unknown'||f.has_pharmacy_prescription==='unknown'){
+            if(!confirm('⚠️ تأیید مدارک استعلاجی\n\nشما مسئول کارکرد هستید. وضعیت «دستور پزشک» یا «نسخه داروخانه» همچنان «نامشخص» است.\n\nآیا از ثبت با این وضعیت مطمئن هستید؟'))return;
+          }
+        }
+      }
+    }
   }else if(status==='overtime'){
     s=$('ot_start').value;e=$('ot_end').value;
     if(!need(s&&e,'ساعت شروع و پایان الزامی است.'))return;
@@ -4904,10 +5215,12 @@ function updateDelegateBox(){
 }
 function resetDailyLogForm(){
   $('log_id').value='';$('log_status').value='normal';$('absence_type').value='hourly_leave';
-  ['log_discrepancy','abs_reason','leave_type','m1_location','mout_daily_province','mout_daily_location','mout_h_province','mout_h_location','mout_h_activity','mh_location','mh_activity','other_reason','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note'].forEach(function(k){if($(k))$(k).value='';});
+  ['log_discrepancy','abs_reason','leave_type','m1_location','mout_daily_province','mout_daily_location','mout_h_province','mout_h_location','mout_h_activity','mh_location','mh_activity','other_reason','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
   if($('break_minutes'))$('break_minutes').value='0';
   if($('official_status'))$('official_status').value='present';
   if($('official_mission_type'))$('official_mission_type').value='home_visit';
+  if($('sick_doctor_order'))$('sick_doctor_order').value='unknown';
+  if($('sick_pharmacy_prescription'))$('sick_pharmacy_prescription').value='unknown';
   ['abs_start_time','abs_end_time','mout_h_start_time','mout_h_end_time','mh_start_time','mh_end_time','ot_start','ot_end','entry_time','exit_time','official_entry_time','official_exit_time'].forEach(function(k){setTimepickerValue(k,'');});
   window._editingLogOriginal=null;
   toggleLogFields();
@@ -4989,7 +5302,7 @@ function renderHierarchyTree(){
     var children=cachedPersons.filter(function(p){return p.parent_id===person.id;});
     var mode=getPersonDeclarationMode(person.id);
     var modeIcon=mode==='verification'?'🔍':'⏰';
-    var roleLabel=ROLE_LABEL[person.role]||person.role;
+    var roleLabel=getRoleLabel(person.role);
     if(person.role==='user'&&(person.can_approve_leaves||person.can_schedule_tasks))roleLabel='مسئول واحد';
     var h='<div style="margin-right:'+indent+'px;padding:6px 10px;border-right:2px solid var(--c-border);margin-bottom:4px">';
     h+='<span style="font-weight:700">'+esc(person.first_name+' '+person.last_name)+'</span>';
@@ -5197,7 +5510,7 @@ function renderWorkHoursHistory(){
 // محاسبه سهمیه مرخصی استفاده‌شده و باقیمانده
 async function getLeaveBalance(personId,dateStr){
   var person=cachedPersons.filter(function(x){return x.id===personId;})[0];
-  var annualTotal=person?(parseFloat(person.annual_leave_days)||26):26;
+  var annualTotal=person?(parseFloat(person.annual_leave_days)||30):30;
   var carryOver=person?(parseFloat(person.carry_over_days)||0):0;
   if(!dateStr)dateStr=getTodayJalali();
   var p=parseJalali(dateStr);
@@ -6376,7 +6689,7 @@ async function createInvitation(){
       can_approve_leaves:canApproveLeaves,
       can_schedule_tasks:canScheduleTasks,
       declaration_mode:val('inv_declaration_mode')||'time_based',
-      annual_leave_days:parseFloat(val('inv_annual_leave'))||26,
+      annual_leave_days:parseFloat(val('inv_annual_leave'))||30,
       monthly_leave_quota:parseFloat(val('inv_monthly_quota'))||2.5,
       carry_over_days:parseFloat(val('inv_carry_over'))||0,
       failed_attempts:0,
@@ -6431,13 +6744,13 @@ async function renderUsers(){
       // مدیر/سوپرادمین می‌تواند رمز همه را تغییر دهد (مدیر نمی‌تواند رمز سوپرادمین را)
       var canReset=!isSelf&&isAdmin&&(currentRole==='super_admin'||p.role!=='super_admin');
       var canDelegate=currentRole==='super_admin'&&p.role==='admin';
-      // ─── نقش فقط‌خواندن (badge) ───
-      var roleBadge='';
-      if(p.role==='super_admin')roleBadge='<span class="badge badge-absence">سوپرادمین</span>';
-      else if(p.role==='admin')roleBadge='<span class="badge badge-manager_pending">مدیر</span>';
-      else if(p.role==='guest')roleBadge='<span class="badge badge-partial">مهمان</span>';
-      else if(p.can_approve_leaves&&p.can_schedule_tasks)roleBadge='<span class="badge badge-overtime">مسئول واحد</span>';else if(p.can_approve_leaves)roleBadge='<span class="badge badge-info">مسئول کارکرد</span>';
-      else roleBadge='<span class="badge badge-normal">کاربر</span>';
+      // ─── نقش فقط‌خواندن (badge پویا از جدول roles) ───
+      var roleBadge=roleBadgeHtml(p.role);
+      // افزودن نشان دسترسی‌های ویژه برای کاربران عادی (مسئول واحد/مسئول کارکرد)
+      if(p.role==='user'){
+        if(p.can_approve_leaves&&p.can_schedule_tasks)roleBadge+=' <span class="badge badge-overtime">مسئول واحد</span>';
+        else if(p.can_approve_leaves)roleBadge+=' <span class="badge badge-info">مسئول کارکرد</span>';
+      }
       if(p.can_manage_users)roleBadge+=' <span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">🎫 تفویض‌شده</span>';
       // ─── دسترسی‌ها فقط‌خواندن (badge‌ها) ───
       var perms='';
@@ -6595,11 +6908,10 @@ function editUserDetails(userId){
   // هماهنگ‌کننده فقط زیرمجموعه‌های خودش را می‌تواند ویرایش کند
   if(isCoord&&!isAdmin&&p.parent_id!==currentUser.id){showAlert('شما فقط زیرمجموعه‌های خودتان را می‌توانید ویرایش کنید.','error');return;}
   // تعیین نقش فعلی برای نمایش در dropdown
-  var currentDisplayRole='user';
-  if(p.role==='admin')currentDisplayRole='admin';
-  else if(p.role==='super_admin')currentDisplayRole='super_admin';
-  else if(p.role==='guest')currentDisplayRole='guest';
-  else if(p.role==='user'&&(p.can_approve_leaves||p.can_schedule_tasks))currentDisplayRole='coordinator';
+  // - برای نقش‌های سفارشی جدید: همان p.role استفاده می‌شود
+  // - برای کاربر عادی با دسترسی‌های هماهنگ‌کننده: coordinator نمایش داده می‌شود (سازگاری با داده قدیمی)
+  var currentDisplayRole=p.role||'user';
+  if(p.role==='user'&&(p.can_approve_leaves||p.can_schedule_tasks))currentDisplayRole='coordinator';
   // لیست تفویض‌شوندگان کارکرد این کاربر
   var edDelegates=p.log_delegates;
   if(typeof edDelegates==='string'){try{edDelegates=JSON.parse(edDelegates);}catch(e){edDelegates=[];}}
@@ -6620,13 +6932,7 @@ function editUserDetails(userId){
     '</div>'+
     // ─── نقش ───
     '<div class="form-row">'+
-      '<div class="form-group"><label>نقش:</label><select id="ed_role" onchange="onEdRoleChange()">'+
-        '<option value="user"'+(currentDisplayRole==='user'?' selected':'')+'>کاربر</option>'+
-        '<option value="coordinator"'+(currentDisplayRole==='coordinator'?' selected':'')+'>👥 هماهنگ‌کننده</option>'+
-        '<option value="guest"'+(currentDisplayRole==='guest'?' selected':'')+'>👁️ مهمان</option>'+
-        '<option value="admin"'+(currentDisplayRole==='admin'?' selected':'')+'>مدیر</option>'+
-        (currentRole==='super_admin'?'<option value="super_admin"'+(currentDisplayRole==='super_admin'?' selected':'')+'>سوپرادمین</option>':'')+
-      '</select></div>'+
+      '<div class="form-group"><label>نقش:</label><select id="ed_role" onchange="onEdRoleChange()"></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">نقش‌ها از منوی «تعریف نقش‌ها» بارگذاری می‌شوند.</small></div>'+
       // ─── هماهنگ‌کننده (والد) ───
       '<div class="form-group" id="ed_parent_group"><label>هماهنگ‌کننده (والد):</label><select id="ed_parent"><option value="">— بدون هماهنگ‌کننده —</option></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">اگر این کاربر هماهنگ‌کننده دارد، اینجا انتخاب کنید. فقط کاربرانی که نقش هماهنگ‌کننده دارند نمایش داده می‌شوند.</small></div>'+
     '</div>'+
@@ -6670,11 +6976,11 @@ function editUserDetails(userId){
     if(!firstName||!lastName||!pid){showAlert('نام، نام خانوادگی و شماره پرسنلی الزامی است.','error');return;}
     // ─── بررسی تغییر نقش ───
     var roleChanged=(newRole!==currentDisplayRole);
-    var roleLabel={user:'کاربر',coordinator:'هماهنگ‌کننده',guest:'مهمان',admin:'مدیر',super_admin:'سوپرادمین'}[newRole]||newRole;
+    var roleLabel=getRoleLabel(newRole);
     if(roleChanged){
       var confirmMsg='⚠️ تغییر نقش کاربر\n\n';
       confirmMsg+='نام: '+p.first_name+' '+p.last_name+'\n';
-      confirmMsg+='نقش فعلی: '+(ROLE_LABEL[p.role]||currentDisplayRole)+'\n';
+      confirmMsg+='نقش فعلی: '+(getRoleLabel(p.role)||currentDisplayRole)+'\n';
       confirmMsg+='نقش جدید: '+roleLabel+'\n\n';
       if(newRole==='coordinator'){
         confirmMsg+='با انتخاب هماهنگ‌کننده، دسترسی‌های تأیید مرخصی و تعریف وظیفه فعال می‌شود.\n';
@@ -6766,7 +7072,15 @@ function editUserDetails(userId){
   };
   // مقداردهی dropdown هماهنگ‌کننده (در try-catch تا از کار انداختن دکمه ذخیره جلوگیری کند)
   try{renderEdCoordinatorDropdown(p);}catch(e){console.warn('renderEdCoordinatorDropdown:',e);}
-  try{onEdRoleChange();}catch(e){console.warn('onEdRoleChange:',e);}
+  // مقداردهی dropdown نقش (از جدول roles)
+  try{
+    var includeSA=(currentRole==='super_admin');
+    // نقش فعلی برای نمایش در dropdown: اگر کاربر با perms هماهنگ‌کننده است، coordinator را نشان بده
+    var roleForDropdown=p.role;
+    if(p.role==='user'&&currentDisplayRole==='coordinator')roleForDropdown='coordinator';
+    populateRoleDropdown('ed_role',roleForDropdown,includeSA);
+    onEdRoleChange();
+  }catch(e){console.warn('populateRoleDropdown ed_role:',e);}
 }
 
 // نمایش/مخفی کردن فیلد هماهنگ‌کننده + auto-check دسترسی‌ها بر اساس نقش
@@ -7414,7 +7728,7 @@ function personReport(person,logs,period){
   if(!tables)tables='<p style="text-align:center;padding:20px;color:var(--c-text-muted)">مغایرتی در این دوره ثبت نشده است.</p>';
   return '<div class="rep rep-page">'+
     '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px"><div style="text-align:center;font-weight:bold;font-size:14px;color:var(--c-primary)">📊 گزارش کارکرد</div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>نام:</b> '+esc(person.first_name)+'</span><span><b>نام خانوادگی:</b> '+esc(person.last_name)+'</span><span><b>شماره پرسنلی:</b> '+esc(person.personnel_id)+'</span><span><b>نقش:</b> '+esc(ROLE_LABEL[person.role]||person.role)+'</span><span><b>دوره:</b> '+esc(period)+'</span></div></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>نام:</b> '+esc(person.first_name)+'</span><span><b>نام خانوادگی:</b> '+esc(person.last_name)+'</span><span><b>شماره پرسنلی:</b> '+esc(person.personnel_id)+'</span><span><b>نقش:</b> '+esc(getRoleLabel(person.role))+'</span><span><b>دوره:</b> '+esc(period)+'</span></div></div>'+
     '<div class="sum" style="background:var(--c-bg-alt);padding:10px;border-radius:8px;margin-bottom:10px">'+summaryHtml(summarize(logs))+'</div>'+tables+
     '<div style="margin-top:14px;display:flex;justify-content:space-between"><div>امضای کاربر: ..................</div><div>امضای مسئول: ..................</div></div>'+
     '<p style="text-align:center;margin:6px 0 0;font-size:9px;color:var(--c-text-muted)">این سند صرفاً گزارش اظهارات ثبت‌شده است — تولید شده در '+getTodayJalali()+'</p></div>';
