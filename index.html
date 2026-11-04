@@ -1831,12 +1831,10 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>شماره پرسنلی:</label><input type="text" id="inv_personnel_id" dir="ltr"></div>
   </div>
   <div class="form-row">
-    <div class="form-group"><label>ایمیل (اختیاری):</label><input type="email" id="inv_email" dir="ltr"></div>
     <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">نقش‌ها از منوی «🎭 تعریف نقش‌ها» بارگذاری می‌شوند.</small></div>
     <div class="form-group" style="flex:0 0 auto;display:flex;align-items:center;padding-top:20px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="inv_can_approve" onchange="onApproveCheck()"> ✅ تفویض تأیید کارکرد</label>
     </div>
-    <div class="form-group"><label>مسئول واحد (اختیاری):</label><select id="inv_parent" class="coordinator-dropdown"><option value="">—</option></select></div>
   </div>
   <div class="form-row">
     <div class="form-group" style="flex:0 0 100%">
@@ -2198,6 +2196,59 @@ function showLoading(t){var o=$('loading_overlay');o.textContent=t||'در حال
 function hideLoading(){$('loading_overlay').classList.add('hidden');}
 var alertTimer=null;
 function showAlert(msg,type){var box=$('alert-box');box.className='alert alert-'+(type||'error');box.textContent=msg;box.style.display='block';clearTimeout(alertTimer);alertTimer=setTimeout(function(){box.style.display='none';},6000);window.scrollTo(0,0);}
+// ═══ مودال راهنمای مهاجرت (برای خطای profiles_role_check) ═══
+function showMigrationGuide(){
+  // حذف مودال قبلی اگر وجود دارد
+  var old=document.getElementById('migration_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='migration_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  var sqlText="-- ۱. حذف محدودیت قدیمی (مهم‌ترین)\nALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;\n\n-- ۲. افزودن ستون‌های دسترسی\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_events BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;\n\n-- ۳. افزودن ستون‌های roles\nALTER TABLE roles ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT '';\nALTER TABLE roles ADD COLUMN IF NOT EXISTS station TEXT NOT NULL DEFAULT '';\n\n-- ۴. فعال‌سازی uuid (اگر فعال نیست)\nCREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";";
+  overlay.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px;max-width:680px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3);margin:20px auto">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<h2 style="margin:0;color:#e74c3c;font-size:18px">⚠️ راهنمای رفع خطا</h2>'+
+      '<button class="btn btn-sm" onclick="document.getElementById(\'migration_modal\').remove()" style="background:#95a5a6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer">✕ بستن</button>'+
+    '</div>'+
+    '<div style="background:#fadbd8;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#922b21">'+
+      '<b>خطا:</b> محدودیت <code>profiles_role_check</code> اجازه ذخیره نقش‌های جدید را نمی‌دهد.<br>'+
+      'برای رفع، باید SQL زیر را در Supabase اجرا کنید (یک‌بار کافی است).'+
+    '</div>'+
+    '<div style="margin-bottom:12px">'+
+      '<a href="https://supabase.com/dashboard/project/rlekagcnmfghxycrwenf/sql/new" target="_blank" style="display:inline-block;background:#3498db;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">🌐 باز کردن Supabase SQL Editor</a>'+
+    '</div>'+
+    '<div style="margin-bottom:8px;font-size:13px;font-weight:600">سپس کد زیر را کپی کرده و در SQL Editor اجرا کنید:</div>'+
+    '<div style="position:relative">'+
+      '<button class="btn btn-sm" style="position:absolute;top:8px;left:8px;background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;z-index:1" onclick="copyMigrationSQL(this)">📋 کپی SQL</button>'+
+      '<pre id="migration_sql_text" style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-family:monospace;font-size:12px;direction:ltr;text-align:left;overflow-x:auto;white-space:pre-wrap;margin:0;max-height:300px;overflow-y:auto">'+esc(sqlText)+'</pre>'+
+    '</div>'+
+    '<div style="margin-top:16px;padding:12px;background:#d5f5e3;border:1px solid #2ecc71;border-radius:8px;font-size:13px;color:#196f3d">'+
+      '✅ پس از اجرای SQL در Supabase، به اینجا برگردید و دوباره کاربر را ایجاد کنید.'+
+    '</div>'+
+    '<div style="margin-top:8px;font-size:11px;color:#7f8c8d">'+
+      'راهنمای کامل‌تر: فایل <code>migration.html</code> را در مرورگر باز کنید.'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+function copyMigrationSQL(btn){
+  var pre=document.getElementById('migration_sql_text');
+  if(!pre)return;
+  var text=pre.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var orig=btn.textContent;
+    btn.textContent='✅ کپی شد!';
+    btn.style.background='#2ecc71';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='#3498db';},2000);
+  }).catch(function(){
+    // fallback
+    var ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');btn.textContent='✅ کپی شد!';}catch(e){}
+    document.body.removeChild(ta);
+  });
+}
 async function recordAudit(action,entity,entityId,details){
   if(!sb||!currentUser||!AUDIT_TABLE_AVAILABLE)return;
   try{var row={actor_id:currentUser.id,action:String(action||'').slice(0,80),entity:String(entity||'').slice(0,80),entity_id:entityId?String(entityId):null,details:details&&typeof details==='object'?details:{},created_at:new Date().toISOString()};var{error}=await sb.from('audit_logs').insert(row);if(error){if(error.code==='42P01'||error.code==='PGRST205')AUDIT_TABLE_AVAILABLE=false;console.warn('Audit log unavailable; apply the supplied SQL migration.',error.message);}}catch(e){console.warn('Audit log failed:',e);}
@@ -2221,7 +2272,7 @@ var ABS_LABEL={hourly_leave:'مرخصی ساعتی',daily_leave:'مرخصی رو
 var FULL_DAY=['daily_leave','sick_leave_daily','absence_no_leave','1day_mission','out_province_daily','other_absence'];
 var HOURLY=['hourly_leave','hourly_mission','out_province_hourly'];
 var LEAVE_STATUS={pending:'در انتظار مدیر',coordinator_pending:'در انتظار هماهنگ‌کننده',manager_pending:'در انتظار تصمیم مدیر',approved:'تأییدشده',partial:'جزئی',rejected:'ردشده',canceled:'لغوشده'};
-var ROLE_LABEL={user:'پرسنل بهداشت/اداری',admin:'مدیر',super_admin:'سوپرادمین',guest:'مهمان',coordinator:'مسئول واحد'};
+var ROLE_LABEL={user:'پرسنل بهداشت/اداری',admin:'مدیر',super_admin:'سوپرادمین',guest:'مهمان'};
 // ═════ مدیریت نقش‌ها (Roles) ═════
 // نقش‌های تعریف‌شده در سامانه (از جدول roles) — شامل نقش‌های پیش‌فرض و سفارشی
 var cachedRoles=[];
@@ -2263,8 +2314,7 @@ var DEFAULT_ROLES_TREE=[
   {role_key:'kooye_basij_health_worker',label:'مراقب سلامت',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:73},
   {role_key:'kooye_basij_midwife',label:'ماما',color:'#16a085',is_protected:false,description:'',category:'stations',station:'پایگاه کوی بسیج',sort_order:74},
   // ─── نقش‌های مستقل (بدون دسته) ───
-  {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'دسترسی محدود با انقضا',category:'',station:'',sort_order:90},
-  {role_key:'coordinator',label:'مسئول واحد',color:'#16a085',is_protected:false,description:'مسئول واحد هماهنگ‌کننده',category:'',station:'',sort_order:91}
+  {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'دسترسی محدود با انقضا',category:'',station:'',sort_order:90}
 ];
 // بارگذاری نقش‌ها از دیتابیس
 async function loadRoles(){
@@ -4135,6 +4185,7 @@ function populatePersonDropdown(dropdownId,autoFirst){
 // populateSubordinateDropdown حذف شد — فقط در coordinator_tasks استفاده می‌شد که حذف شده است
 function populateCoordinatorDropdown(dropdownId){
   var select=$(dropdownId);
+  if(!select)return; // فیلد parent از فرم ایجاد کاربر حذف شده
   var coordinators=cachedPersons.filter(function(p){return p.role==='user'&&(p.can_approve_leaves||p.can_schedule_tasks);});
   var o='<option value="">—</option>';
   coordinators.forEach(function(p){o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';});
@@ -6965,7 +7016,7 @@ async function renderNotificationsList(){
 
 /* ═════ Users management ═════ */
 async function createInvitation(){
-  var first=val('inv_first_name'),last=val('inv_last_name'),pid=toEnglishDigits(val('inv_personnel_id')),email=val('inv_email'),role=val('inv_role'),parent=val('inv_parent'),password=val('inv_password'),password2=val('inv_password2');
+  var first=val('inv_first_name'),last=val('inv_last_name'),pid=toEnglishDigits(val('inv_personnel_id')),role=val('inv_role'),password=val('inv_password'),password2=val('inv_password2');
   if(!first||!last||!pid){showAlert('نام، نام خانوادگی و شماره پرسنلی الزامی است.');return;}
   if(!password){showAlert('رمز عبور الزامی است.');return;}
   if(password!==password2){showAlert('رمز و تکرار آن یکسان نیستند.');return;}
@@ -6990,16 +7041,12 @@ async function createInvitation(){
         expiresAt=new Date(gExp[0],gExp[1]-1,gExp[2],23,59,59).toISOString();
       }
     }
-    // ─── مدیریت نقش‌های ویژه ───
-    // هماهنگ‌کننده = نقش اصلی با تأیید مرخصی + تعریف وظیفه
-    // تفویض تأیید کارکرد = checkbox جداگانه، روی هر نقشی قابل اعمال
+    // ایمیل از فرم حذف شد — به‌صورت خودکار از شماره پرسنلی تولید می‌شود
+    var email=pid+'@salam.health';
+    var parent=null; // فیلد parent از فرم حذف شد
+    // ─── نقش مستقیم ذخیره می‌شود (coordinator حذف شده — نقش‌های سفارشی مستقیم استفاده می‌شوند) ───
     var actualRole=role;
     var canApproveLeaves=false,canScheduleTasks=false;
-    if(role==='coordinator'){
-      actualRole='user';
-      canApproveLeaves=true;
-      canScheduleTasks=true;
-    }
     // خواندن checkbox تفویض تأیید کارکرد
     var canApproveEl=$('inv_can_approve');
     if(canApproveEl&&canApproveEl.checked){
@@ -7030,14 +7077,18 @@ async function createInvitation(){
     const{data:profData,error:profError}=await sb.from('profiles').insert(profRow).select();
     if(profError){
       console.warn('profile insert error:',profError);
-      if(profError.message&&profError.message.indexOf('row-level security')!==-1){
+      var errMsg=profError.message||'';
+      if(errMsg.indexOf('profiles_role_check')!==-1||errMsg.indexOf('check constraint')!==-1){
+        // نمایش مودال راهنمای مهاجرت با لینک مستقیم
+        showMigrationGuide();
+      }else if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
         showAlert('خطای دسترسی: RLS روی جدول profiles فعال است. این SQL را در Supabase اجرا کنید:\nALTER TABLE profiles DISABLE ROW LEVEL SECURITY;','error');
       }else{
-        showAlert('خطا در ایجاد کاربر: '+profError.message,'error');
+        showAlert('خطا در ایجاد کاربر: '+errMsg,'error');
       }
     }else{
       showAlert('✅ کاربر ساخته شد. کد پرسنلی: '+pid+' — رمز را به کاربر بدهید.','success');
-      $('inv_first_name').value='';$('inv_last_name').value='';$('inv_personnel_id').value='';$('inv_email').value='';$('inv_password').value='';$('inv_password2').value='';
+      $('inv_first_name').value='';$('inv_last_name').value='';$('inv_personnel_id').value='';$('inv_password').value='';$('inv_password2').value='';
       $('inv_strength_bar').style.width='0%';$('inv_strength_label').textContent='';
       await renderUsers();
     }
@@ -7460,14 +7511,8 @@ function renderEdCoordinatorDropdown(p){
 
 // وقتی نقش در فرم ایجاد کاربر تغییر می‌کند
 function onRoleChange(){
-  var role=val('inv_role');
-  var parentGroup=$('inv_parent').parentNode;
-  if(role==='coordinator'){
-    // هماهنگ‌کننده نیاز به هماهنگ‌کننده بالادستی ندارد
-    parentGroup.style.display='none';
-  }else{
-    parentGroup.style.display='';
-  }
+  // فیلد parent (مسئول واحد) از فرم حذف شد — این تابع فقط برای سازگاری باقی مانده
+  // نقش coordinator حذف شده — نقش‌ها مستقیم انتخاب می‌شوند
 }
 async function togglePermission(userId,perm,val){
   // اگر دسترسی can_approve_leaves یا can_schedule_tasks خاموش می‌شود
