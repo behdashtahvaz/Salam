@@ -2487,9 +2487,88 @@ async function saveRole(){
     await renderUsers();
   }catch(e){
     console.error('saveRole error:',e);
-    showAlert('خطا در ذخیره نقش: '+e.message+'\n\nاگر جدول roles در دیتابیس وجود ندارد، فایل supabase_schema.sql را اجرا کنید.','error');
+    var errMsg=e.message||'';
+    if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
+      showRLSFixGuide('roles');
+    }else if(errMsg.indexOf('profiles_role_check')!==-1||errMsg.indexOf('check constraint')!==-1){
+      showMigrationGuide();
+    }else if(errMsg.indexOf('does not exist')!==-1||errMsg.indexOf('42P01')!==-1){
+      showTableMissingGuide();
+    }else{
+      showAlert('خطا در ذخیره نقش: '+errMsg,'error');
+    }
   }
   hideLoading();
+}
+// ═══ مودال راهنمای رفع RLS ═══
+function showRLSFixGuide(tableName){
+  var old=document.getElementById('rls_fix_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='rls_fix_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  var sqlText='ALTER TABLE '+tableName+' DISABLE ROW LEVEL SECURITY;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)">'+
+    '<h2 style="margin:0 0 12px;color:#e74c3c;font-size:18px">⚠️ خطای امنیت سطح ردیف (RLS)</h2>'+
+    '<div style="background:#fadbd8;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#922b21">'+
+      'جدول <code>'+esc(tableName)+'</code> دارای RLS فعال است که اجازه نوشتن را نمی‌دهد.<br>'+
+      'این یک ویژگی پیش‌فرض Supabase است و باید غیرفعال شود.'+
+    '</div>'+
+    '<div style="margin-bottom:12px">'+
+      '<a href="https://supabase.com/dashboard/project/rlekagcnmfghxycrwenf/sql/new" target="_blank" style="display:inline-block;background:#3498db;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">🌐 باز کردن Supabase SQL Editor</a>'+
+    '</div>'+
+    '<div style="margin-bottom:8px;font-size:13px;font-weight:600">سپس این دستور را کپی و اجرا کنید:</div>'+
+    '<div style="position:relative">'+
+      '<button class="btn btn-sm" style="position:absolute;top:8px;left:8px;background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;z-index:1" onclick="copyRLSSQL(this,\''+esc(tableName)+'\')">📋 کپی SQL</button>'+
+      '<pre id="rls_sql_text" style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-family:monospace;font-size:14px;direction:ltr;text-align:left;overflow-x:auto;white-space:pre-wrap;margin:0">'+esc(sqlText)+'</pre>'+
+    '</div>'+
+    '<div style="margin-top:16px;padding:12px;background:#d5f5e3;border:1px solid #2ecc71;border-radius:8px;font-size:13px;color:#196f3d">'+
+      '✅ پس از اجرای SQL، به اینجا برگردید و دوباره نقش را ذخیره کنید.'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:12px"><button class="btn" style="background:#95a5a6;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer" onclick="document.getElementById(\'rls_fix_modal\').remove()">بستن</button></div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+function copyRLSSQL(btn,tableName){
+  var sql='ALTER TABLE '+tableName+' DISABLE ROW LEVEL SECURITY;';
+  navigator.clipboard.writeText(sql).then(function(){
+    btn.textContent='✅ کپی شد!';btn.style.background='#2ecc71';
+    setTimeout(function(){btn.textContent='📋 کپی SQL';btn.style.background='#3498db';},2000);
+  }).catch(function(){
+    var ta=document.createElement('textarea');ta.value=sql;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');btn.textContent='✅ کپی شد!';}catch(e){}
+    document.body.removeChild(ta);
+  });
+}
+// ═══ مودال راهنمای جدول موجود نیست ═══
+function showTableMissingGuide(){
+  var old=document.getElementById('table_missing_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='table_missing_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  overlay.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)">'+
+    '<h2 style="margin:0 0 12px;color:#e74c3c;font-size:18px">⚠️ جدول roles وجود ندارد</h2>'+
+    '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#b45309">'+
+      'جدول <code>roles</code> در دیتابیس ایجاد نشده است. باید فایل SQL مهاجرت را اجرا کنید.'+
+    '</div>'+
+    '<div style="margin-bottom:12px">'+
+      '<a href="https://supabase.com/dashboard/project/rlekagcnmfghxycrwenf/sql/new" target="_blank" style="display:inline-block;background:#3498db;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">🌐 باز کردن Supabase SQL Editor</a>'+
+    '</div>'+
+    '<div style="font-size:13px;line-height:1.8">'+
+      '۱. فایل <code>migration_fixed.sql</code> را باز کنید<br>'+
+      '۲. کل محتوا را کپی کنید<br>'+
+      '۳. در SQL Editor پیست کنید<br>'+
+      '۴. دکمه <b>Run</b> را بزنید'+
+    '</div>'+
+    '<div style="margin-top:16px;padding:12px;background:#d5f5e3;border:1px solid #2ecc71;border-radius:8px;font-size:13px;color:#196f3d">'+
+      '✅ پس از اجرای SQL، جدول roles ایجاد می‌شود و ۲۷ نقش پیش‌فرض درج می‌شوند.'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:12px"><button class="btn" style="background:#95a5a6;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer" onclick="document.getElementById(\'table_missing_modal\').remove()">بستن</button></div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
 }
 // شروع ویرایش یک نقش
 function editRole(roleKey){
@@ -2556,7 +2635,14 @@ async function deleteRole(roleKey){
     await renderUsers();
   }catch(e){
     console.error('deleteRole error:',e);
-    showAlert('خطا در حذف نقش: '+e.message+'\n\nاگر جدول roles در دیتابیس وجود ندارد، فایل supabase_schema.sql را اجرا کنید.','error');
+    var errMsg=e.message||'';
+    if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
+      showRLSFixGuide('roles');
+    }else if(errMsg.indexOf('does not exist')!==-1||errMsg.indexOf('42P01')!==-1){
+      showTableMissingGuide();
+    }else{
+      showAlert('خطا در حذف نقش: '+errMsg,'error');
+    }
   }
   hideLoading();
 }
