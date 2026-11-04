@@ -515,9 +515,11 @@ tr:hover td{background:var(--c-table-hover)}
 .table-wrap{overflow-x:auto;border-radius:var(--c-radius);box-shadow:var(--c-shadow);background:var(--c-card)}
 
 /* ─── آلرت ─── */
-.alert{padding:12px 16px;border-radius:var(--c-radius-sm);margin-bottom:16px;font-size:13px;display:none}
+.alert{padding:12px 16px;border-radius:var(--c-radius-sm);margin-bottom:16px;font-size:13px;display:none;white-space:pre-wrap;line-height:1.7}
 .alert-error{background:var(--c-danger-light);color:var(--c-danger);border:1px solid var(--c-danger)}
 .alert-success{background:var(--c-success-light);color:var(--c-success);border:1px solid var(--c-success)}
+.alert-warning{background:var(--c-warning-light,#fef3c7);color:var(--c-warning,#b45309);border:1px solid var(--c-warning,#f59e0b)}
+.alert-info{background:var(--c-info-light,#d6eaf8);color:var(--c-info,#1a5276);border:1px solid var(--c-info,#aed6f1)}
 
 /* ─── آمار داشبورد ─── */
 .dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
@@ -773,8 +775,16 @@ button,.btn{-webkit-touch-callout:none}
         <button class="nav-item" data-target="daily_log"><span class="ico">📝</span><span class="lbl">خوداظهاری و مرخصی</span></button>
         <button class="nav-item hidden" data-target="leave_req"><span class="ico">✈️</span><span class="lbl">درخواست مرخصی</span></button>
         <button class="nav-item" data-target="calendar"><span class="ico">📅</span><span class="lbl">تقویم ماهانه</span></button>
-        <button class="nav-item" data-target="records"><span class="ico">📊</span><span class="lbl">گزارش و سوابق کارکرد</span></button>
         <button class="nav-item" data-target="delegations"><span class="ico">🔁</span><span class="lbl">تفویض‌ها</span><span class="nav-badge hidden" id="delegations_badge">۰</span></button>
+      </div>
+    </div>
+    <!-- ۲b. گزارش‌گیری -->
+    <div class="nav-section">
+      <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">📊 گزارش‌گیری <span class="nav-chevron">▾</span></div>
+      <div class="nav-section-body">
+        <button class="nav-item" data-target="records"><span class="ico">📊</span><span class="lbl">گزارش کارکرد</span></button>
+        <button class="nav-item" data-target="program_reports"><span class="ico">📋</span><span class="lbl">گزارش برنامه‌ها</span></button>
+        <button class="nav-item" data-target="categorized_reports"><span class="ico">🗂️</span><span class="lbl">گزارش دسته‌بندی</span></button>
       </div>
     </div>
     <!-- ۳. وظایف و برنامه‌ها -->
@@ -782,7 +792,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">🎯 مأموریت‌ها <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="my_tasks"><span class="ico">✅</span><span class="lbl">مأموریت‌های من</span><span class="nav-badge hidden" id="tasks_badge">۰</span></button>
-        <button class="nav-item" data-target="shift_schedule"><span class="ico">📅</span><span class="lbl">لوح شیفت</span></button>
+        <button class="nav-item shift-access" data-target="shift_schedule"><span class="ico">📅</span><span class="lbl">لوح شیفت</span></button>
 
       </div>
     </div>
@@ -791,7 +801,6 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">👥 هماهنگی و تأیید <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="approvals"><span class="ico">✅</span><span class="lbl">تأیید درخواست‌ها</span><span class="nav-badge hidden" id="admin_approvals_badge">۰</span></button>
-        <button class="nav-item" data-target="coordinator_tasks"><span class="ico">📋</span><span class="lbl">مدیریت وظایف زیرمجموعه</span></button>
       </div>
     </div>
     <!-- ۵. ارتباطات -->
@@ -1099,8 +1108,9 @@ button,.btn{-webkit-touch-callout:none}
 <!-- ═══ لوح شیفت — تقویم خام برای تخصیص مأموریت ═══ -->
 <div id="section-shift_schedule" class="card hidden">
   <h2>📅 لوح شیفت</h2>
-  <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px">
-    روی هر روز کلیک کنید تا مشخص کنید چه کسی، کجا، چه کاری و در چه ساعتی انجام دهد. مأموریت‌های ثبت‌شده در کارکرد پرسنل و تقویم هر نفر نمایش داده می‌شوند.
+  <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px;line-height:1.7">
+    روی هر روز کلیک کنید تا مشخص کنید چه کسی، کجا، چه کاری و در چه ساعتی انجام دهد. مأموریت‌های ثبت‌شده در کارکرد پرسنل و تقویم ماهانه هر نفر نمایش داده می‌شوند و به‌صورت خودکار برایشان پیام ارسال می‌شود.<br>
+    <b>دسترسی:</b> این بخش مختص مدیر مرکز و کاربرانی است که مدیر دسترسی «📅 لوح شیفت» را به آن‌ها تفویض کرده باشد.
   </p>
   <div class="form-row" style="align-items:flex-end;margin-bottom:12px">
     <div class="form-group" style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
@@ -1296,21 +1306,10 @@ button,.btn{-webkit-touch-callout:none}
   <div id="coordinator_approvals_container_old"></div>
 </div>
 
-<!-- مدیریت وظایف زیرمجموعه (توسط هماهنگ‌کننده) -->
+<!-- بخش مدیریت وظایف زیرمجموعه حذف شد — کارکرد آن در «لوح شیفت» و «تعریف مأموریت» ادغام شده است -->
 <div id="section-coordinator_tasks" class="card hidden">
-  <h2>مدیریت وظایف زیرمجموعه‌ها</h2>
-  <p>تعریف وظیفه/برنامه برای روز خاص برای یک کاربر از زیرمجموعه‌های شما. پس از ایجاد، پیام خودکار برای کاربر ارسال می‌شود.</p>
-  <div class="form-row">
-    <div class="form-group"><label>کاربر:</label><select id="ct_assignee" class="subordinate-dropdown"></select></div>
-    <div class="form-group"><label>تاریخ وظیفه:</label><input type="text" id="ct_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group"><label>اولویت:</label><select id="ct_priority"><option value="low">پایین</option><option value="normal" selected>معمول</option><option value="high">بالا</option></select></div>
-  </div>
-  <div class="form-group"><label>عنوان (الزامی):</label><input type="text" id="ct_title"></div>
-  <div class="form-group"><label>شرح:</label><textarea id="ct_description"></textarea></div>
-  <button class="btn btn-purple" id="btn_create_task">ایجاد وظیفه</button>
-  <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
-  <h3>وظایف تعریف‌شده توسط شما</h3>
-  <div id="coordinator_tasks_container"></div>
+  <h2>مدیریت وظایف زیرمجموعه</h2>
+  <p>این بخش حذف شده است. لطفاً از منوی «📅 لوح شیفت» برای تعریف مأموریت استفاده کنید.</p>
 </div>
 
 <!-- تأیید مرخصی‌ها (ادمین) — حذف شد: در section-approvals بالا ادغام شده -->
@@ -1359,7 +1358,7 @@ button,.btn{-webkit-touch-callout:none}
 </div>
 
 <!-- سیستم امتیازدهی حذف شد -->
-<div id="section-categorized_reports" class="card hidden" style="display:none">
+<div id="section-categorized_reports" class="card hidden">
   <h2>گزارش‌های دسته‌بندی‌شده فعالیت‌ها و امتیازها</h2>
   <p>گزارش جامع از فعالیت‌ها و امتیاز کاربران بر اساس اولویت، وضعیت و درصد انجام — با فیلتر بازه زمانی (امتیازها بر اساس فعالیت‌های درون بازه محاسبه می‌شوند).</p>
   <div class="form-row">
@@ -2085,6 +2084,20 @@ function describeLog(l){
     var RX_LABEL={yes:'نسخه: بله',no:'نسخه: خیر',unknown:'نسخه: نامشخص'};
     sickInfo=' — '+DOC_LABEL[f.has_doctor_order||'unknown']+' | '+RX_LABEL[f.has_pharmacy_prescription||'unknown'];
     if(f.prescription_number)sickInfo+=' (شماره: '+f.prescription_number+')';
+    // نمایش مهلت تحویل مدارک و هشدار در صورت گذشته بودن
+    var deadline=f.sick_doc_deadline||addDaysToJalali(l.date,3);
+    var todayTs=jalaliToTimestamp(getTodayJalali());
+    var deadlineTs=jalaliToTimestamp(deadline);
+    var docsUnknown=(f.has_doctor_order||'unknown')==='unknown'||(f.has_pharmacy_prescription||'unknown')==='unknown';
+    if(docsUnknown){
+      if(deadlineTs<todayTs){
+        sickInfo+=' — ⛔ مهلت تحویل مدارک ('+deadline+') گذشته! عدم حضور به مرخصی/غیبت تغییر می‌یابد';
+      }else{
+        sickInfo+=' — 📅 مهلت تحویل مدارک: '+deadline;
+      }
+    }else{
+      sickInfo+=' — ✅ مدارک تأیید شد';
+    }
   }
   return s+(x?' — '+x:'')+sickInfo+verBadge;
 }
@@ -2570,6 +2583,9 @@ function applyRoleBasedUI(){
   // events-access: admin/super_admin یا کاربر با can_manage_events
   var canEvents=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_events);
   document.querySelectorAll('.events-access').forEach(function(el){el.classList.toggle('hidden',!canEvents);});
+  // shift-access: admin/super_admin یا کاربر با can_manage_shifts (تفویض دسترسی لوح شیفت)
+  var canShifts=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_shifts);
+  document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
   // تفویض‌ها: فقط اگر کاربر تفویضی دارد (داده یا گرفته)
   updateDelegationVisibility();
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
@@ -3540,7 +3556,7 @@ function showSection(id,skipHistory){
   if(id==='records'){populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();if($('rep_mode').value==='table')renderRecords();}
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
   if(id==='reports'){showSection('records');return;}
-  if(id==='coordinator_tasks'){populateSubordinateDropdown('ct_assignee');renderCoordinatorTasks();}
+  if(id==='coordinator_tasks'){/* بخش حذف شده — redirect به approvals */showSection('approvals');return;}
   if(id==='approvals')renderApprovals();
   if(id==='send_notification'){populateRecipientDropdown();renderMsgArchive();}
   if(id==='categorized_reports'){populatePersonDropdown('catrep_user');if(!isValidJalaliDate(val('catrep_start_date')))toggleCatRepDates();}
@@ -5054,6 +5070,8 @@ async function saveDailyLog(){
         f.has_doctor_order=val('sick_doctor_order')||'unknown';
         f.has_pharmacy_prescription=val('sick_pharmacy_prescription')||'unknown';
         f.prescription_number=val('sick_prescription_number')||'';
+        // مهلت تحویل مدارک: ۳ روز کاری از تاریخ استعلاجی
+        f.sick_doc_deadline=addDaysToJalali(normJ(dateStr),3);
         // مسئول کارکرد یا مدیر باید این دو را مشخص کنند (غیر «نامشخص»)
         var _isWorkOfficer=_isAdmin||(currentUser.profile&&currentUser.profile.can_approve_leaves);
         if(_isWorkOfficer){
@@ -5094,6 +5112,35 @@ async function saveDailyLog(){
     if(fullDay){try{var existing=await loadLogs(actualPersonId,dateStr,dateStr);for(var i=0;i<existing.length;i++){if(existing[i].id!==savedLog.id&&existing[i].status==='absence'&&existing[i].data&&FULL_DAY.indexOf(existing[i].data.absence_type)!==-1){await deleteLogFromDB(existing[i].id);await recordAudit('delete','daily_logs',existing[i].id,{reason:'duplicate_full_day_log',date:dateStr});}}}catch(cleanupError){console.warn('cleanup:',cleanupError);cleanupWarning=' پاک‌سازی رکوردهای تکراری کامل نشد.';}}
     $('log_date').value=dateStr;
     showAlert(submittedBy?'کارکرد برای '+getPersonName(actualPersonId)+' ثبت شد. شناسه شما در گزارش ذخیره شد.':'اظهار ثبت شد.'+cleanupWarning,cleanupWarning?'error':'success');
+    // ═══ هشدار مهلت تحویل مدارک استعلاجی ═══
+    if(status==='absence'&&d.absence_type==='sick_leave_daily'){
+      var sickDeadline=f.sick_doc_deadline||addDaysToJalali(normJ(dateStr),3);
+      setTimeout(function(){
+        showAlert(
+          '⚠️ مهلت تحویل مدارک استعلاجی\n\n'+
+          'شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.\n\n'+
+          '📅 مهلت نهایی: '+sickDeadline+'\n\n'+
+          '⛔ در غیر این صورت، به دلیل عدم تأیید مدارک استعلاجی، عدم حضور شما در سامانه به «مرخصی» یا «غیبت» تغییر خواهد یافت.',
+          'warning'
+        );
+      },800);
+      // ارسال نوتیفیکیشن به کاربر (اگر مدیر برای کاربر دیگر ثبت می‌کند)
+      if(actualPersonId!==currentUser.id){
+        try{
+          await sendNotificationDB({
+            sender_id:currentUser.id,
+            recipient_id:actualPersonId,
+            title:'⚠️ مهلت تحویل مدارک استعلاجی — '+dateStr,
+            body:'استعلاجی روزانه شما برای تاریخ '+dateStr+' ثبت شد.\n\n'+
+                 'شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.\n'+
+                 '📅 مهلت نهایی: '+sickDeadline+'\n\n'+
+                 '⛔ در غیر این صورت، عدم حضور شما به مرخصی یا غیبت تغییر خواهد یافت.',
+            priority:'high',
+            related_type:'sick_leave_doc_deadline'
+          });
+        }catch(e){console.warn('sick leave notif:',e);}
+      }
+    }
     resetDailyLogForm();
     await renderDailyLogsList();
     // به‌روزرسانی لیست سوابق اگر در حال نمایش است
@@ -6946,6 +6993,7 @@ function editUserDetails(userId){
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_schedule_tasks" '+(p.can_schedule_tasks?'checked':'')+'> تعریف وظیفه</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_create_programs" '+(p.can_create_programs?'checked':'')+'> ساخت برنامه</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_events" '+(p.can_manage_events?'checked':'')+'> 📅 رویدادها</label>'+
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_shifts" '+(p.can_manage_shifts?'checked':'')+'> 📅 لوح شیفت (تعریف مأموریت)</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_view_reports" '+(p.can_view_reports?'checked':'')+'> 📊 گزارش کارکرد همه پرسنل</label>'+
         (currentDisplayRole==='guest'?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_log" '+(p.can_log?'checked':'')+'> 📝 ثبت کارکرد</label>':'')+
       '</div>'+
@@ -7023,6 +7071,7 @@ function editUserDetails(userId){
     }
     updates.can_create_programs=$('ed_can_create_programs')?$('ed_can_create_programs').checked:false;
     updates.can_manage_events=$('ed_can_manage_events')?$('ed_can_manage_events').checked:false;
+    updates.can_manage_shifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
     // can_view_reports فقط اگر ستون در DB وجود داشته باشد (p.can_view_reports تعریف‌شده باشد)
     if(p.can_view_reports!==undefined){
       updates.can_view_reports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
@@ -8903,15 +8952,15 @@ async function renderShiftCalendar(){
         var personName=getPersonName(t.assignee_id);
         cellContent+='<div style="font-size:9px;color:'+stColor+';margin-top:1px;padding:1px 3px;border-radius:3px;background:'+var_c_info_light+';cursor:pointer;border-right:2px solid '+stColor+'" onclick="event.stopPropagation();editShiftTask(\''+t.id+'\')">'+stIcon+' '+esc(personName.split(' ')[0])+' '+esc(timeStr)+'</div>';
       });
-      // دکمه افزودن مأموریت (فقط برای روزهای آینده و فقط مدیر)
-      var isAdmin=currentRole==='admin'||currentRole==='super_admin';
-      if(!isPast&&isAdmin){
+      // دکمه افزودن مأموریت (فقط برای روزهای آینده و فقط مدیر یا کاربر با دسترسی لوح شیفت)
+      var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
+      if(!isPast&&canManageShifts){
         cellContent+='<div style="margin-top:2px"><button class="btn btn-sm" style="padding:2px 8px;font-size:10px;min-height:auto" onclick="event.stopPropagation();createDayMission(\''+ds+'\')">➕</button></div>';
       }
       var cellStyle='border:1px solid var(--c-border);height:80px;vertical-align:top;padding:4px;cursor:'+(isPast?'default':'pointer')+';background:'+cellBg;
       if(isToday)cellStyle+=';box-shadow:inset 0 0 0 2px var(--c-primary)';
-      if(!isPast&&isAdmin)cellStyle+=';cursor:pointer';
-      if(!isPast&&isAdmin){
+      if(!isPast&&canManageShifts)cellStyle+=';cursor:pointer';
+      if(!isPast&&canManageShifts){
         h+='<td style="'+cellStyle+'" onclick="createDayMission(\''+ds+'\')">'+cellContent+'</td>';
       }else{
         h+='<td style="'+cellStyle+'">'+cellContent+'</td>';
@@ -8930,9 +8979,11 @@ async function renderShiftCalendar(){
     c.innerHTML=h;
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
-// ویرایش/حذف مأموریت از لوح شیفت
+// ویرایش/حذف مأموریت از لوح شیفت (فقط مدیر یا کاربر با دسترسی can_manage_shifts)
 async function editShiftTask(taskId){
-  if(!confirm('این مأموریت را ویرایش یا حذف می‌کنید?\n\nOK = حذف\nCancel = بازگشت'))return;
+  var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
+  if(!canManageShifts){showAlert('شما دسترسی ویرایش/حذف مأموریت ندارید.','error');return;}
+  if(!confirm('این مأموریت را حذف می‌کنید?\n\nOK = حذف\nCancel = بازگشت'))return;
   showLoading('حذف...');
   try{
     const{error}=await sb.from('tasks').delete().eq('id',taskId);
