@@ -808,8 +808,7 @@ button,.btn{-webkit-touch-callout:none}
         <button class="nav-item" data-target="users"><span class="ico">👥</span><span class="lbl">مدیریت کاربران و نقش‌ها</span></button>
         <button class="nav-item" data-target="hierarchy"><span class="ico">🌳</span><span class="lbl">سلسله‌مراتب سازمانی</span></button>
         <button class="nav-item events-access hidden" data-target="events"><span class="ico">📅</span><span class="lbl">رویدادها و تعطیلات</span></button>
-        <button class="nav-item" data-target="scoring_config"><span class="ico">⭐</span><span class="lbl">تنظیمات امتیازدهی</span></button>
-        <button class="nav-item" data-target="categorized_reports"><span class="ico">📈</span><span class="lbl">گزارش تحلیلی امتیازات</span></button>
+
         <button class="nav-item" data-target="audit_log"><span class="ico">📜</span><span class="lbl">تاریخچه تغییرات</span></button>
         <button class="nav-item" data-target="settings"><span class="ico">⚙</span><span class="lbl">تنظیمات</span></button>
         <button class="nav-item" onclick="toggleTheme()"><span class="ico" id="sidebar_theme_icon">☾</span><span class="lbl">تغییر تم (روز/شب)</span></button>
@@ -1064,28 +1063,7 @@ button,.btn{-webkit-touch-callout:none}
   <div id="daily_logs_list_container" class="table-wrap"></div>
 </div>
 
-<div id="section-leave_req" class="card hidden">
-  <h2>درخواست مرخصی مستقل</h2>
-  <div class="form-row">
-    <div class="form-group"><label>پرسنل:</label><select id="lv_person_id" class="person-dropdown"></select></div>
-    <div class="form-group"><label>نوع مرخصی:</label><select id="lv_type"><option value="daily">روزانه</option><option value="hourly">ساعتی</option></select></div>
-  </div>
-  <div class="form-row">
-    <div class="form-group"><label>تاریخ شروع:</label><input type="text" id="lv_start_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group" id="lv_end_date_box"><label>تاریخ پایان:</label><input type="text" id="lv_end_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-  </div>
-  <div class="form-row hidden" id="lv_times_box">
-    <div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="lv_start_time"><div class="time-picker-widget" data-target="lv_start_time">--:--</div></div>
-    <div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="lv_end_time"><div class="time-picker-widget" data-target="lv_end_time">--:--</div></div>
-  </div>
-  <div class="form-group"><label>علت یا توضیحات:</label><textarea id="lv_reason"></textarea></div>
-  <input type="hidden" id="lv_id">
-  <button class="btn btn-success" id="btn_save_leave">ثبت درخواست</button>
-  <button class="btn btn-warning" id="btn_reset_leave">پاک کردن فرم</button>
-  <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
-  <h3>فهرست درخواست‌ها</h3>
-  <div id="leave_list_container" class="table-wrap"></div>
-</div>
+<!-- بخش درخواست مرخصی حذف شد -->
 
 <!-- وظایف من -->
 <div id="section-my_tasks" class="card hidden">
@@ -1327,8 +1305,8 @@ button,.btn{-webkit-touch-callout:none}
   <div id="msg_archive_container"></div>
 </div>
 
-<!-- گزارش‌های دسته‌بندی‌شده (ادمین) -->
-<div id="section-categorized_reports" class="card hidden">
+<!-- سیستم امتیازدهی حذف شد -->
+<div id="section-categorized_reports" class="card hidden" style="display:none">
   <h2>گزارش‌های دسته‌بندی‌شده فعالیت‌ها و امتیازها</h2>
   <p>گزارش جامع از فعالیت‌ها و امتیاز کاربران بر اساس اولویت، وضعیت و درصد انجام — با فیلتر بازه زمانی (امتیازها بر اساس فعالیت‌های درون بازه محاسبه می‌شوند).</p>
   <div class="form-row">
@@ -1381,8 +1359,8 @@ button,.btn{-webkit-touch-callout:none}
   <div id="prog_history_container" class="table-wrap"></div>
 </div>
 
-<!-- تنظیمات امتیازدهی (ادمین) -->
-<div id="section-scoring_config" class="card hidden">
+<!-- سیستم امتیازدهی حذف شد -->
+<div id="section-scoring_config" class="card hidden" style="display:none">
   <h2>تنظیمات سیستم امتیازدهی</h2>
   <p>امتیاز هر ترکیب «اولویت × وضعیت تکمیل» را تنظیم کنید. امتیاز مثبت = پاداش، منفی = جریمه.</p>
   <div id="scoring_rules_container"></div>
@@ -1404,6 +1382,9 @@ button,.btn{-webkit-touch-callout:none}
   <div class="form-row">
     <div class="form-group"><label>ایمیل (اختیاری):</label><input type="email" id="inv_email" dir="ltr"></div>
     <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"><option value="user">پرسنل بهداشت/اداری</option><option value="coordinator">👥 مسئول واحد (هماهنگ‌کننده)</option><option value="guest">👁️ مهمان (دسترسی خواندن و نوشتن)</option><option value="admin">مدیر مرکز</option></select></div>
+    <div class="form-group" style="flex:0 0 auto;display:flex;align-items:center;padding-top:20px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="inv_can_approve" onchange="onApproveCheck()"> ✅ تفویض تأیید کارکرد</label>
+    </div>
     <div class="form-group"><label>مسئول واحد (اختیاری):</label><select id="inv_parent" class="coordinator-dropdown"><option value="">—</option></select></div>
   </div>
   <div class="form-row">
@@ -2844,7 +2825,7 @@ function renderLogDelegates(){
     var roleTag='';
     if(p.role==='admin')roleTag=' [مدیر مرکز]';
     else if(p.role==='guest')roleTag=' [مهمان]';
-    else if(p.can_approve_leaves||p.can_schedule_tasks)roleTag=' [مسئول واحد]';
+    else if(p.can_approve_leaves&&p.can_schedule_tasks)roleTag=' [مسئول واحد]';else if(p.can_approve_leaves)roleTag=' [مسئول کارکرد]';
     o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
   });
   pickSel.innerHTML=o;
@@ -3415,7 +3396,7 @@ function populateNotifMultiRecipients(){
     var roleTag='';
     if(p.role==='admin')roleTag=' <small style="color:var(--c-info)">[مدیر]</small>';
     else if(p.role==='super_admin')roleTag=' <small style="color:var(--c-danger)">[سوپرادمین]</small>';
-    else if(p.can_approve_leaves||p.can_schedule_tasks)roleTag=' <small style="color:var(--c-success)">[هماهنگ‌کننده]</small>';
+    else if(p.can_approve_leaves&&p.can_schedule_tasks)roleTag=' <small style="color:var(--c-success)">[مسئول واحد]</small>';else if(p.can_approve_leaves)roleTag=' <small style="color:var(--c-info)">[مسئول کارکرد]</small>';
     html+='<label style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'var(--c-primary-light)\'" onmouseout="this.style.background=\'\'">'+
       '<input type="checkbox" class="notif-recipient-check" value="'+p.id+'" onchange="updateNotifRecipientsCount()">'+
       '<span>'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</span>'+
@@ -4674,7 +4655,7 @@ function updateDelegateBox(){
       var roleTag='';
       if(p.role==='admin')roleTag=' [مدیر مرکز]';
       else if(p.role==='guest')roleTag=' [مهمان]';
-      else if(p.can_approve_leaves||p.can_schedule_tasks)roleTag=' [مسئول واحد]';
+      else if(p.can_approve_leaves&&p.can_schedule_tasks)roleTag=' [مسئول واحد]';else if(p.can_approve_leaves)roleTag=' [مسئول کارکرد]';
       o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
       count++;
     });
@@ -5060,6 +5041,18 @@ function onDeclarationModeChange(){
     help.innerHTML='🔍 مناسب پزشکان و کسانی که کارکردشان از منبع دیگر (کارت‌خوان، شیفت‌نامه) تأیید می‌شود — مدیر کارکرد رسمی را وارد می‌کند و کاربر تأیید/اعتراض می‌کند.';
   }else{
     help.innerHTML='⏰ مناسب پرسنل حاضر در مرکز (بهورز، کارشناس، اداری) — کاربر هر روز ساعت ورود/خروج را ثبت می‌کند.';
+  }
+}
+// هنگام فعال‌سازی checkbox تفویض تأیید کارکرد
+function onApproveCheck(){
+  var cb=$('inv_can_approve');
+  if(!cb)return;
+  if(cb.checked){
+    var role=$('inv_role').value;
+    if(role==='admin'||role==='super_admin'){
+      showAlert('مدیر مرکز خودش تأیید کارکرد را دارد — نیازی به تفویض نیست.','warning');
+      cb.checked=false;
+    }
   }
 }
 // ═══ تأیید کارکرد رسمی توسط کاربر ═══
@@ -6085,14 +6078,20 @@ async function createInvitation(){
         expiresAt=new Date(gExp[0],gExp[1]-1,gExp[2],23,59,59).toISOString();
       }
     }
-    // ─── مدیریت نقش هماهنگ‌کننده ───
-    // هماهنگ‌کننده = کاربر با دسترسی‌های تأیید مرخصی و تعریف وظیفه
+    // ─── مدیریت نقش‌های ویژه ───
+    // هماهنگ‌کننده = نقش اصلی با تأیید مرخصی + تعریف وظیفه
+    // تفویض تأیید کارکرد = checkbox جداگانه، روی هر نقشی قابل اعمال
     var actualRole=role;
     var canApproveLeaves=false,canScheduleTasks=false;
     if(role==='coordinator'){
-      actualRole='user'; // در دیتابیس به‌عنوان user ذخیره می‌شود
+      actualRole='user';
       canApproveLeaves=true;
       canScheduleTasks=true;
+    }
+    // خواندن checkbox تفویض تأیید کارکرد
+    var canApproveEl=$('inv_can_approve');
+    if(canApproveEl&&canApproveEl.checked){
+      canApproveLeaves=true; // مسئول کارکرد = نقش فرعی
     }
     // درج مستقیم در profiles
     var profRow={
@@ -6170,7 +6169,7 @@ async function renderUsers(){
       if(p.role==='super_admin')roleBadge='<span class="badge badge-absence">سوپرادمین</span>';
       else if(p.role==='admin')roleBadge='<span class="badge badge-manager_pending">مدیر</span>';
       else if(p.role==='guest')roleBadge='<span class="badge badge-partial">مهمان</span>';
-      else if(p.can_approve_leaves||p.can_schedule_tasks)roleBadge='<span class="badge badge-overtime">هماهنگ‌کننده</span>';
+      else if(p.can_approve_leaves&&p.can_schedule_tasks)roleBadge='<span class="badge badge-overtime">مسئول واحد</span>';else if(p.can_approve_leaves)roleBadge='<span class="badge badge-info">مسئول کارکرد</span>';
       else roleBadge='<span class="badge badge-normal">کاربر</span>';
       if(p.can_manage_users)roleBadge+=' <span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:8px">🎫 تفویض‌شده</span>';
       // ─── دسترسی‌ها فقط‌خواندن (badge‌ها) ───
@@ -6860,7 +6859,7 @@ function openMissingDayDiscrepancy(){
     var tag='';
     if(p.role==='admin')tag=' [مدیر مرکز]';
     else if(p.role==='guest')tag=' [مهمان]';
-    else if(p.can_approve_leaves||p.can_schedule_tasks)tag=' [مسئول واحد]';
+    else if(p.can_approve_leaves&&p.can_schedule_tasks)tag=' [مسئول واحد]';else if(p.can_approve_leaves)tag=' [مسئول کارکرد]';
     userOpts+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+tag+'</option>';
   });
   var overlay=document.createElement('div');
