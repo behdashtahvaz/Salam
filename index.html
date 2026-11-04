@@ -1855,14 +1855,14 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group" style="flex:0 0 180px">
       <label>نوع استخدام:</label>
       <select id="inv_employment_type" onchange="onEmploymentTypeChange()">
-        <option value="contract">📝 قراردادی (بدون انتقال مرخصی)</option>
+        <option value="contract">📝 پیمانکاری (بدون انتقال مرخصی)</option>
         <option value="official">🏛️ رسمی (انتقال مرخصی به سال بعد)</option>
         <option value="tarhi">📋 طرحی</option>
       </select>
     </div>
     <div class="form-group" style="flex:0 0 150px"><label>سهمیه مرخصی سالانه (روز):</label><input type="number" id="inv_annual_leave" min="0" step="0.5" value="30" placeholder="30"></div>
     <div class="form-group" style="flex:0 0 150px" id="inv_carry_over_group"><label>انتقال از سال قبل (روز):</label><input type="number" id="inv_carry_over" min="0" step="0.5" value="0" placeholder="0"></div>
-    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small id="employment_help" style="color:var(--c-text-muted);font-size:11px">📅 رسمی: مرخصی استفاده‌نشده به سال بعد منتقل می‌شود. قراردادی/طرحی: بدون انتقال — هر سال از ۳۰ روز شروع می‌شود.</small></div>
+    <div class="form-group" style="flex:1;min-width:250px;display:flex;align-items:flex-end"><small id="employment_help" style="color:var(--c-text-muted);font-size:11px">📅 رسمی: مرخصی استفاده‌نشده به سال بعد منتقل می‌شود. پیمانکاری/طرحی: بدون انتقال — هر سال از ۳۰ روز شروع می‌شود.</small></div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -4585,7 +4585,7 @@ async function renderDashboard(){
       try{
         var bal=await getLeaveBalance(currentUser.id,todayStr);
         var empType=bal.employmentType||'contract';
-        var EMP_LABEL={official:'🏛️ رسمی',contract:'📝 قراردادی',tarhi:'📋 طرحی'};
+        var EMP_LABEL={official:'🏛️ رسمی',contract:'📝 پیمانکاری',tarhi:'📋 طرحی'};
         var empLabel=EMP_LABEL[empType]||empType;
         var empColor=empType==='official'?'#9b59b6':empType==='tarhi'?'#e67e22':'#3498db';
         var availColor=bal.accrued.available<=0?'#e74c3c':bal.accrued.available<1?'#f39c12':'#2ecc71';
@@ -6363,7 +6363,7 @@ async function getLeaveBalance(personId,dateStr){
   var person=cachedPersons.filter(function(x){return x.id===personId;})[0];
   var annualTotal=person?(parseFloat(person.annual_leave_days)||30):30;
   var employmentType=person?(person.employment_type||'contract'):'contract';
-  // فقط رسمی انتقال مرخصی دارد — قراردادی و طرحی بدون انتقال
+  // فقط رسمی انتقال مرخصی دارد — پیمانکاری و طرحی بدون انتقال
   var carryOver=(employmentType==='official')?(person?parseFloat(person.carry_over_days)||0:0):0;
   // مرخصی استفاده‌شده دستی (تنظیم شده توسط مسئول کارکرد)
   var manualUsed=person?parseFloat(person.manual_leave_used)||0:0;
@@ -6488,9 +6488,9 @@ function onEmploymentTypeChange(){
     if(type==='official'){
       help.innerHTML='🏛️ رسمی: مرخصی استفاده‌نشده به سال بعد منتقل می‌شود. مسئول کارکرد باید مقدار انتقال‌یافته را مشخص کند. این مقدار علاوه بر سهمیه ماهیانه در دسترس است.';
     }else if(type==='contract'){
-      help.innerHTML='📝 قراردادی: مرخصی استفاده‌نشده به سال بعد منتقل نمی‌شود. هر سال از ۳۰ روز (= ۲.۵ روز/ماه) شروع می‌شود.';
+      help.innerHTML='📝 پیمانکاری: مرخصی استفاده‌نشده به سال بعد منتقل نمی‌شود. هر سال از ۳۰ روز (= ۲.۵ روز/ماه) شروع می‌شود.';
     }else{
-      help.innerHTML='📋 طرحی: مشابه قراردادی — بدون انتقال مرخصی. هر سال از ۳۰ روز شروع می‌شود.';
+      help.innerHTML='📋 طرحی: مشابه پیمانکاری — بدون انتقال مرخصی. هر سال از ۳۰ روز شروع می‌شود.';
     }
   }
 }
@@ -7686,7 +7686,7 @@ function editUserDetails(userId){
     // ─── نوع استخدام + نوع کارکرد + وضعیت ───
     '<div class="form-row">'+
       '<div class="form-group"><label>نوع استخدام:</label><select id="ed_employment_type" onchange="onEdEmploymentTypeChange()">'+
-        '<option value="contract"'+((p.employment_type||'contract')==='contract'?' selected':'')+'>📝 قراردادی</option>'+
+        '<option value="contract"'+((p.employment_type||'contract')==='contract'?' selected':'')+'>📝 پیمانکاری</option>'+
         '<option value="official"'+(p.employment_type==='official'?' selected':'')+'>🏛️ رسمی</option>'+
         '<option value="tarhi"'+(p.employment_type==='tarhi'?' selected':'')+'>📋 طرحی</option>'+
       '</select></div>'+
@@ -7799,7 +7799,7 @@ function editUserDetails(userId){
       // ارسال نوتیفیکیشن به کاربر درباره تغییر مرخصی
       if(userId!==currentUser.id){
         try{
-          var empLabel={official:'رسمی',contract:'قراردادی',tarhi:'طرحی'}[newEmpType]||'';
+          var empLabel={official:'رسمی',contract:'پیمانکاری',tarhi:'طرحی'}[newEmpType]||'';
           await sendNotificationDB({
             sender_id:currentUser.id,
             recipient_id:userId,
