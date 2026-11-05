@@ -2932,6 +2932,14 @@ async function loadAllPersons(){
   try{const{data,error}=await sb.from('profiles').select('*').order('last_name').order('first_name');if(error)throw error;cachedPersons=data||[];
     // حذف فیلدهای حساس از حافظه مرورگر
     cachedPersons.forEach(function(p){delete p.password_hash;delete p.password_salt;delete p.recovery_salt;});
+    // به‌روزرسانی پروفایل کاربر فعلی از دیتابیس (برای دسترسی‌های جدید)
+    if(currentUser&&currentUser.id){
+      var me=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
+      if(me){
+        currentUser.profile=me;
+        currentRole=me.role||'user';
+      }
+    }
     return cachedPersons;}catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
 }
 async function loadLogs(personId,from,to){
@@ -3260,10 +3268,13 @@ function applyRoleBasedUI(){
   // events-access: admin/super_admin یا کاربر با can_manage_events
   var canEvents=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_events);
   document.querySelectorAll('.events-access').forEach(function(el){el.classList.toggle('hidden',!canEvents);});
-  // shift-access: admin/super_admin یا کاربر با can_manage_shifts (تفویض دسترسی لوح شیفت)
-  var canShifts=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_shifts);
+  // shift-access: admin/super_admin یا کاربر با can_manage_shifts
+  // از cachedPersons هم چک می‌کنیم (برای دسترسی‌های جدید بدون نیاز به خروج/ورود)
+  var meInCache=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
+  var myProfile=meInCache||currentUser.profile;
+  var canShifts=isAdmin||(myProfile&&myProfile.can_manage_shifts);
   document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
-  // roles-access: admin/super_admin یا کاربر با can_manage_shifts (تعریف نقش‌ها هم قابل تفویض)
+  // roles-access: همان منطق shift-access
   document.querySelectorAll('.roles-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
