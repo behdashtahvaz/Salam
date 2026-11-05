@@ -8075,81 +8075,120 @@ function repTable(title,heads,rows){
   return h+'</table>';
 }
 function personReport(person,logs,period){
-  // ─── دسته‌بندی مطابق فرم خوداظهاری (سه دسته اصلی) ───
-  // ۱. عدم حضورهای روزانه: مرخصی روزانه + مأموریت یک‌روزه + مأموریت خارج از استان روزانه + سایر علل
-  // ۲. عدم حضورهای ساعتی: مرخصی ساعتی + مأموریت ساعتی + مأموریت خارج از استان ساعتی
-  // ۳. اضافه‌کاری‌ها
-  var T={normal:[],dailyAbs:[],hourlyAbs:[],ot:[]};
-  // برچسب‌های نوع عدم حضور
+  // ─── گزارش روز به روز: برای هر روز، اول حضور (ورود/خروج)، سپس مغایرت‌های آن روز ───
   var ABS_TYPE_LABELS={
     daily_leave:'مرخصی روزانه',
     '1day_mission':'مأموریت یک‌روزه',
-    out_province_daily:'مأموریت خارج از استان (روزانه)',
-    other_absence:'سایر علل عدم حضور',
+    sick_leave_daily:'استعلاجی روزانه',
+    absence_no_leave:'غیبت',
     hourly_leave:'مرخصی ساعتی',
-    hourly_mission:'مأموریت ساعتی',
-    out_province_hourly:'مأموریت خارج از استان (ساعتی)'
+    hourly_mission:'مأموریت ساعتی'
   };
+  // گروه‌بندی لاگ‌ها بر اساس تاریخ
+  var byDate={};
+  var dateOrder=[];
   logs.forEach(function(l){
-    var x=(l.data&&l.data.fields)||{},t=l.data&&l.data.absence_type,d=l.date,dn=dayName(d),disc=(l.data&&l.data.discrepancy)||'';
-    var note=[x.desc,disc].filter(Boolean).join(' — ');
-    if(l.status==='overtime'){
-      // ─── اضافه‌کاری ───
-      var dur=formatMins(calcDuration(x.ot_start,x.ot_end));
-      T.ot.push([d,dn,x.ot_start,x.ot_end,dur,x.ot_reason,x.ot_location,[x.ot_topic,x.ot_description].filter(Boolean).join(' — '),disc]);
-    }else if(l.status==='normal'){
-      // ─── حضور عادی با ساعت ورود/خروج ───
-      var entryT=x.entry_time||'—';
-      var exitT=x.exit_time||'—';
-      var nDur=(entryT!=='—'&&exitT!=='—')?formatMins(calcDuration(entryT,exitT)):'—';
-      T.normal.push([d,dn,entryT,exitT,nDur,x.topic||'',disc||'—']);
-    }else if(l.status==='official_record'){
-      // ─── کارکرد رسمی با ساعت ورود/خروج ───
-      var entryT2=x.official_entry_time||'—';
-      var exitT2=x.official_exit_time||'—';
-      var nDur2=(entryT2!=='—'&&exitT2!=='—')?formatMins(calcDuration(entryT2,exitT2)):'—';
-      var os=x.official_status||'';
-      var osLabel={present:'حضور رسمی',absent:'غیبت رسمی',mission:'مأموریت رسمی',leave:'مرخصی رسمی'}[os]||'کارکرد رسمی';
-      T.normal.push([d,dn,entryT2,exitT2,nDur2,osLabel,disc||'—']);
-    }else if(l.status==='absence'){
-      // بررسی نوع عدم حضور: روزانه یا ساعتی
-      var typeLabel=ABS_TYPE_LABELS[t]||t||'نامشخص';
-      if(FULL_DAY.indexOf(t)!==-1){
-        // ─── عدم حضور روزانه ───
-        var detailParts=[];
-        if(x.leave_type)detailParts.push('نوع: '+x.leave_type);
-        if(x.province)detailParts.push('استان: '+x.province);
-        if(x.location)detailParts.push('محل: '+x.location);
-        if(x.reason)detailParts.push('علت: '+x.reason);
-        if(note)detailParts.push(note);
-        T.dailyAbs.push([d,dn,typeLabel,detailParts.join(' | ')]);
-      }else if(HOURLY.indexOf(t)!==-1){
-        // ─── عدم حضور ساعتی ───
-        var dur2=formatMins(calcDuration(x.start_time,x.end_time));
-        var detailParts2=[];
-        if(x.province)detailParts2.push('استان: '+x.province);
-        if(x.location)detailParts2.push('محل: '+x.location);
-        if(x.activity)detailParts2.push('شرح: '+x.activity);
-        if(x.reason)detailParts2.push('علت: '+x.reason);
-        if(note)detailParts2.push(note);
-        T.hourlyAbs.push([d,dn,typeLabel,x.start_time,x.end_time,dur2,detailParts2.join(' | ')]);
-      }else{
-        // نوع نامشخص — در روزانه قرار بده
-        T.dailyAbs.push([d,dn,typeLabel,note||'—']);
-      }
-    }
+    var d=l.date;
+    if(!byDate[d]){byDate[d]=[];dateOrder.push(d);}
+    byDate[d].push(l);
   });
-  // ─── جداول گزارش (سه دسته اصلی + حضور عادی) ───
-  var tables=
-    repTable('✅ حضور و ورود/خروج',['تاریخ','روز','ساعت ورود','ساعت خروج','مدت کارکرد','موضوع','توضیحات'],T.normal)+
-    repTable('📅 عدم حضورهای روزانه',['تاریخ','روز','نوع','جزئیات'],T.dailyAbs)+
-    repTable('⏰ عدم حضورهای ساعتی',['تاریخ','روز','نوع','از ساعت','تا ساعت','مدت','جزئیات'],T.hourlyAbs)+
-    repTable('⚡ اضافه‌کاری‌ها',['تاریخ','روز','از ساعت','تا ساعت','مدت','علت','محل','موضوع و شرح','توضیحات'],T.ot);
-  if(!tables)tables='<p style="text-align:center;padding:20px;color:var(--c-text-muted)">مغایرتی در این دوره ثبت نشده است.</p>';
+  dateOrder.sort(function(a,b){return jalaliToTimestamp(a)-jalaliToTimestamp(b);});
+  // ساخت جدول روز به روز
+  var rows=[];
+  var totalWorkMins=0;
+  dateOrder.forEach(function(d){
+    var dayLogs=byDate[d];
+    var dn=dayName(d);
+    var dayFirstRow=true; // اولین ردیف این روز
+    dayLogs.forEach(function(l){
+      var x=(l.data&&l.data.fields)||{},t=l.data&&l.data.absence_type,disc=(l.data&&l.data.discrepancy)||'';
+      var note=[x.desc,disc].filter(Boolean).join(' — ');
+      if(l.status==='normal'){
+        // ردیف اول: حضور با ساعت ورود/خروج
+        var entryT=x.entry_time||'—';
+        var exitT=x.exit_time||'—';
+        var mins=(entryT!=='—'&&exitT!=='—')?calcDuration(entryT,exitT):0;
+        totalWorkMins+=mins;
+        rows.push({
+          date:d,dn:dn,type:'✅ حضور',
+          col1:entryT,col2:exitT,
+          dur:mins?formatMins(mins):'—',
+          detail:x.topic||'',
+          isFirst:dayFirstRow
+        });
+        dayFirstRow=false;
+      }else if(l.status==='official_record'){
+        var entryT2=x.official_entry_time||'—';
+        var exitT2=x.official_exit_time||'—';
+        var mins2=(entryT2!=='—'&&exitT2!=='—')?calcDuration(entryT2,exitT2):0;
+        totalWorkMins+=mins2;
+        var osLabel={present:'✅ حضور رسمی',absent:'❌ غیبت رسمی',mission:'🔁 مأموریت رسمی',leave:'✈️ مرخصی رسمی'}[x.official_status]||'کارکرد رسمی';
+        rows.push({date:d,dn:dn,type:osLabel,col1:entryT2,col2:exitT2,dur:mins2?formatMins(mins2):'—',detail:x.official_note||'',isFirst:dayFirstRow});
+        dayFirstRow=false;
+      }else if(l.status==='absence'){
+        var typeLabel=ABS_TYPE_LABELS[t]||t||'نامشخص';
+        if(FULL_DAY.indexOf(t)!==-1){
+          // عدم حضور روزانه — کل روز
+          var detailParts=[];
+          if(x.location)detailParts.push('محل: '+x.location);
+          if(x.reason)detailParts.push('علت: '+x.reason);
+          if(note)detailParts.push(note);
+          rows.push({date:d,dn:dn,type:'📅 '+typeLabel,col1:'—',col2:'—',dur:'کل روز',detail:detailParts.join(' | '),isFirst:dayFirstRow});
+          dayFirstRow=false;
+        }else if(HOURLY.indexOf(t)!==-1){
+          // عدم حضور ساعتی
+          var mins3=calcDuration(x.start_time,x.end_time);
+          var detailParts2=[];
+          if(x.location)detailParts2.push('محل: '+x.location);
+          if(x.reason)detailParts2.push('علت: '+x.reason);
+          if(note)detailParts2.push(note);
+          rows.push({date:d,dn:dn,type:'⏰ '+typeLabel,col1:x.start_time,col2:x.end_time,dur:formatMins(mins3),detail:detailParts2.join(' | '),isFirst:dayFirstRow});
+          dayFirstRow=false;
+        }
+      }else if(l.status==='overtime'){
+        var otMins=calcDuration(x.ot_start,x.ot_end);
+        rows.push({date:d,dn:dn,type:'⚡ اضافه‌کاری',col1:x.ot_start,col2:x.ot_end,dur:formatMins(otMins),detail:[x.ot_reason,x.ot_location,x.ot_topic].filter(Boolean).join(' | '),isFirst:dayFirstRow});
+        dayFirstRow=false;
+      }
+    });
+  });
+  // ساخت HTML جدول
+  var h='<table><thead><tr>'+
+    '<th class="sortable">تاریخ</th>'+
+    '<th class="sortable">روز</th>'+
+    '<th>نوع</th>'+
+    '<th class="sortable">ساعت ورود</th>'+
+    '<th class="sortable">ساعت خروج</th>'+
+    '<th>مدت</th>'+
+    '<th>جزئیات</th>'+
+  '</tr></thead><tbody>';
+  if(!rows.length){
+    h+='<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted);padding:16px">در این دوره اظهاری ثبت نشده است.</td></tr>';
+  }else{
+    rows.forEach(function(r){
+      // اگر اولین ردیف روز نیست، تاریخ و روز را خالی بگذار
+      var dateCell=r.isFirst?'<b>'+esc(r.date)+'</b>':'';
+      var dayCell=r.isFirst?esc(r.dn):'';
+      // استایل ردیف: اولین ردیف روز پس‌زمینه متفاوت
+      var rowStyle=r.isFirst?'background:var(--c-card-alt,#f8fafc);border-top:2px solid var(--c-border)':'';
+      h+='<tr style="'+rowStyle+'">'+
+        '<td>'+dateCell+'</td>'+
+        '<td>'+dayCell+'</td>'+
+        '<td>'+esc(r.type)+'</td>'+
+        '<td dir="ltr">'+esc(r.col1)+'</td>'+
+        '<td dir="ltr">'+esc(r.col2)+'</td>'+
+        '<td>'+esc(r.dur)+'</td>'+
+        '<td style="font-size:11px">'+esc(r.detail)+'</td>'+
+      '</tr>';
+    });
+    // جمع کل
+    h+='<tr style="font-weight:700;background:var(--c-primary-light,#e8f4f8)"><td colspan="5">جمع کل کارکرد</td><td>'+esc(formatMins(totalWorkMins))+'</td><td></td></tr>';
+  }
+  h+='</tbody></table>';
   return '<div class="rep rep-page">'+
-    '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px"><div style="text-align:center;font-weight:bold;font-size:14px;color:var(--c-primary)">📊 گزارش کارکرد</div>'+
+    '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px"><div style="text-align:center;font-weight:bold;font-size:14px;color:var(--c-primary)">📊 گزارش کارکرد — روز به روز</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>نام:</b> '+esc(person.first_name)+'</span><span><b>نام خانوادگی:</b> '+esc(person.last_name)+'</span><span><b>شماره پرسنلی:</b> '+esc(person.personnel_id)+'</span><span><b>نقش:</b> '+esc(getRoleLabel(person.role))+'</span><span><b>دوره:</b> '+esc(period)+'</span></div></div>'+
-    '<div class="sum" style="background:var(--c-bg-alt);padding:10px;border-radius:8px;margin-bottom:10px">'+summaryHtml(summarize(logs))+'</div>'+tables+
+    '<div class="sum" style="background:var(--c-bg-alt);padding:10px;border-radius:8px;margin-bottom:10px">'+summaryHtml(summarize(logs))+'</div>'+h+
     '<div style="margin-top:14px;display:flex;justify-content:space-between"><div>امضای کاربر: ..................</div><div>امضای مسئول: ..................</div></div>'+
     '<p style="text-align:center;margin:6px 0 0;font-size:9px;color:var(--c-text-muted)">این سند صرفاً گزارش اظهارات ثبت‌شده است — تولید شده در '+getTodayJalali()+'</p></div>';
 }
