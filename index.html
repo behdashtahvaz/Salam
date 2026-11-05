@@ -7653,10 +7653,13 @@ function editUserDetails(userId){
     if(updates.can_create_programs!==undefined||updates.can_manage_events!==undefined)msg+=' دسترسی‌ها به‌روز شد.';
     showAlert(msg,'success');
     overlay.remove();
+    // ─── به‌روزرسانی داده‌ها از دیتابیس ───
     await loadAllPersons();
     await loadSubordinates();
-    await renderUsers();
+    // ─── اعمال دسترسی‌های جدید ───
     applyRoleBasedUI();
+    // ─── به‌روزرسانی لیست کاربران ───
+    await renderUsers();
    }catch(e){
     console.error('editUser save error:',e);
     showAlert('خطا در ذخیره: '+e.message,'error');
