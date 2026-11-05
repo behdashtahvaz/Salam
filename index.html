@@ -1372,7 +1372,7 @@ button,.btn{-webkit-touch-callout:none}
   <div class="form-row">
     <div class="form-group"><label>پرسنل:</label><select id="log_person_id" class="person-dropdown" onchange="syncLog()"></select></div>
     <div class="form-group"><label>تاریخ شمسی:</label><input type="text" id="log_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور</option></select></div>
+    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور روزانه</option><option value="absence_hourly">⏰ عدم حضور ساعتی</option><option value="overtime">⚡ اضافه‌کار</option></select></div>
   </div>
   <!-- بنر نمایش نوع خوداظهاری کاربر انتخاب‌شده -->
   <div id="declaration_mode_banner" style="display:none;background:var(--c-info-light);border-right:4px solid var(--c-info);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px">
@@ -1388,16 +1388,7 @@ button,.btn{-webkit-touch-callout:none}
   <div id="standard_hours_display" style="background:var(--c-card-alt);padding:8px 12px;border-radius:var(--c-radius-sm);margin-bottom:10px;font-size:13px;border:1px solid var(--c-border)"></div>
   <!-- نمایش موجودی مرخصی -->
   <div id="leave_balance_display" style="margin-bottom:12px"></div>
-  <!-- تفویض کارکرد: برای همه کاربران -->
-  <div id="delegate_box" class="form-row" style="background:var(--c-warning-light);padding:12px;border-radius:var(--c-radius-sm);margin-bottom:12px">
-    <div class="form-group" style="margin:0">
-      <label>⚠️ ثبت به نمایندگی از کاربر دیگر (تفویض):</label>
-      <select id="log_delegate_user" onchange="checkDelegateWarning()">
-        <option value="">خودم ثبت می‌کنم</option>
-      </select>
-      <small style="color:var(--c-warning);display:block;margin-top:4px">⚠️ با انتخاب کاربر دیگر، شما مسئولیت صحت اطلاعات را می‌پذیرید. شناسه پرسنلی شما در گزارش ثبت می‌شود.</small>
-    </div>
-  </div>
+  <!-- delegate_box حذف شد — ثبت به نمایندگی از کاربر دیگر -->
   <div id="fields_normal">
     <div style="background:var(--c-success-light);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px;border-right:4px solid var(--c-success);font-size:12px;color:var(--c-success)">
       ✅ <b>حضور:</b> ساعت ورود و خروج خود را ثبت کنید. سیستم به‌صورت خودکار با ساعت کاری استاندارد مقایسه می‌کند.
@@ -1414,46 +1405,60 @@ button,.btn{-webkit-touch-callout:none}
     </div>
     <div class="form-group"><label>موضوع/شرح کارکرد (اختیاری):</label><input type="text" id="normal_topic" placeholder="مثلاً: ویزیت بیماران، واکسیناسیون، آمار..."></div>
   </div>
+  <!-- ═══ عدم حضور روزانه ═══ -->
   <div id="fields_absence" class="hidden">
-    <div class="form-group"><label>نوع عدم حضور:</label><select id="absence_type"><option value="daily_leave">📅 مرخصی روزانه</option><option value="sick_leave_daily">🩺 استعلاجی روزانه</option><option value="1day_mission">🔁 مأموریت یک‌روزه</option><option value="absence_no_leave">❌ غیبت (بدون مرخصی)</option><option value="hourly_leave">⏰ مرخصی ساعتی</option><option value="hourly_mission">🔁 مأموریت ساعتی</option><option value="out_province_daily">🗺️ مأموریت خارج از استان (روزانه)</option><option value="out_province_hourly">🗺️ مأموریت خارج از استان (ساعتی)</option><option value="other_absence">📋 سایر علل عدم حضور</option></select></div>
-    <div id="abs_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="abs_start_time"><div class="time-picker-widget" data-target="abs_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="abs_end_time"><div class="time-picker-widget" data-target="abs_end_time">--:--</div></div></div><div class="form-group"><label>علت (الزامی):</label><input type="text" id="abs_reason"></div></div>
-    <div id="abs_daily_fields" class="hidden"><div class="form-group"><label>نوع مرخصی:</label><input type="text" id="leave_type" placeholder="استحقاقی، استعلاجی..."></div></div>
+    <div class="form-group"><label>نوع عدم حضور روزانه:</label><select id="absence_type" onchange="toggleAbsenceFields()">
+      <option value="daily_leave">📅 مرخصی روزانه</option>
+      <option value="sick_leave_daily">🩺 استعلاجی روزانه</option>
+      <option value="absence_no_leave">❌ غیبت (بدون مرخصی)</option>
+      <option value="1day_mission">🔁 مأموریت یک‌روزه</option>
+    </select></div>
+    <!-- فیلدهای مرخصی روزانه -->
+    <div id="abs_daily_fields" class="hidden"></div>
+    <!-- فیلدهای استعلاجی — فقط هشدار ۳ روزه برای کاربر عادی -->
     <div id="abs_sick_fields" class="hidden">
-      <div style="background:var(--c-warning-light,#fef3c7);border:1px solid var(--c-warning,#f59e0b);border-radius:var(--c-radius-sm);padding:10px 12px;margin-bottom:10px">
-        <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:8px;font-size:13px">🩺 تأیید مدارک استعلاجی (توسط مسئول کارکرد)</div>
-        <div class="form-row" style="margin-bottom:6px">
-          <div class="form-group" style="flex:0 0 220px">
-            <label>دستور پزشک:</label>
-            <select id="sick_doctor_order">
-              <option value="unknown">— نامشخص —</option>
-              <option value="yes">✅ بله — دستور پزشک دارد</option>
-              <option value="no">❌ خیر — دستور پزشک ندارد</option>
-            </select>
-          </div>
-          <div class="form-group" style="flex:0 0 220px">
-            <label>نسخه داروخانه:</label>
-            <select id="sick_pharmacy_prescription">
-              <option value="unknown">— نامشخص —</option>
-              <option value="yes">✅ بله — نسخه دارد</option>
-              <option value="no">❌ خیر — نسخه ندارد</option>
-            </select>
-          </div>
-          <div class="form-group" style="flex:1;min-width:200px">
-            <label>شماره نوبت/نسخه (اختیاری):</label>
-            <input type="text" id="sick_prescription_number" placeholder="مثلاً ۱۲۳۴۵" dir="ltr">
+      <div style="background:var(--c-warning-light,#fef3c7);border:1px solid var(--c-warning,#f59e0b);border-radius:var(--c-radius-sm);padding:12px;margin-bottom:10px">
+        <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:6px;font-size:13px">⚠️ مهلت تحویل مدارک استعلاجی</div>
+        <p style="font-size:12px;color:var(--c-text);margin:0;line-height:1.7">
+          شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.<br>
+          <b>در غیر این صورت، عدم حضور شما به مرخصی یا غیبت تغییر خواهد یافت.</b>
+        </p>
+        <div id="sick_admin_fields" class="hidden" style="margin-top:10px;border-top:1px solid var(--c-border);padding-top:10px">
+          <div style="font-weight:700;color:var(--c-info);margin-bottom:6px;font-size:12px">🔑 تأیید مدارک (فقط مسئول کارکرد)</div>
+          <div class="form-row" style="margin-bottom:6px">
+            <div class="form-group" style="flex:0 0 200px">
+              <label>دستور پزشک:</label>
+              <select id="sick_doctor_order"><option value="unknown">— نامشخص —</option><option value="yes">✅ بله</option><option value="no">❌ خیر</option></select>
+            </div>
+            <div class="form-group" style="flex:0 0 200px">
+              <label>نسخه داروخانه:</label>
+              <select id="sick_pharmacy_prescription"><option value="unknown">— نامشخص —</option><option value="yes">✅ بله</option><option value="no">❌ خیر</option></select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label>شماره نسخه (اختیاری):</label>
+              <input type="text" id="sick_prescription_number" placeholder="مثلاً ۱۲۳۴۵" dir="ltr">
+            </div>
           </div>
         </div>
-        <p style="font-size:11px;color:var(--c-text-muted);margin:0">
-          📋 این دو مورد باید توسط <b>مسئول کارکرد</b> مشخص شود. کاربر عادی می‌تواند با وضعیت «نامشخص» ثبت کند تا مسئول کارکرد بعداً تکمیل کند.
-        </p>
       </div>
     </div>
+    <!-- فیلدهای مأموریت روزانه -->
     <div id="abs_1day_mission_fields" class="hidden"><div class="form-group"><label>محل مأموریت (الزامی):</label><input type="text" id="m1_location"></div></div>
-    <div id="abs_out_province_daily_fields" class="hidden"><div class="form-group"><label>استان مقصد:</label><input type="text" id="mout_daily_province"></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="mout_daily_location"></div></div>
-    <div id="abs_out_province_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="mout_h_start_time"><div class="time-picker-widget" data-target="mout_h_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="mout_h_end_time"><div class="time-picker-widget" data-target="mout_h_end_time">--:--</div></div></div><div class="form-group"><label>استان مقصد:</label><input type="text" id="mout_h_province"></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="mout_h_location"></div><div class="form-group"><label>شرح فعالیت:</label><textarea id="mout_h_activity"></textarea></div></div>
+    <!-- فیلدهای ساعتی (برای مرخصی ساعتی و مأموریت ساعتی) -->
+    <div id="abs_hourly_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="abs_start_time"><div class="time-picker-widget" data-target="abs_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="abs_end_time"><div class="time-picker-widget" data-target="abs_end_time">--:--</div></div></div><div class="form-group"><label>علت (الزامی):</label><input type="text" id="abs_reason"></div></div>
+    <!-- فیلدهای مأموریت ساعتی -->
     <div id="abs_hourly_mission_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="mh_start_time"><div class="time-picker-widget" data-target="mh_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="mh_end_time"><div class="time-picker-widget" data-target="mh_end_time">--:--</div></div></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="mh_location"></div><div class="form-group"><label>شرح فعالیت:</label><textarea id="mh_activity"></textarea></div></div>
-    <div id="abs_other_fields" class="hidden"><div class="form-group"><label>علت (الزامی):</label><input type="text" id="other_reason"></div></div>
     <div class="form-group" id="abs_desc_box"><label>توضیحات:</label><textarea id="abs_general_desc"></textarea></div>
+  </div>
+  <!-- ═══ عدم حضور ساعتی ═══ -->
+  <div id="fields_absence_hourly" class="hidden">
+    <div class="form-group"><label>نوع عدم حضور ساعتی:</label><select id="absence_type_hourly" onchange="toggleAbsenceHourlyFields()">
+      <option value="hourly_leave">⏰ مرخصی ساعتی</option>
+      <option value="hourly_mission">🔁 مأموریت ساعتی</option>
+    </select></div>
+    <div id="abs_hourly_leave_fields" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="hl_start_time"><div class="time-picker-widget" data-target="hl_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="hl_end_time"><div class="time-picker-widget" data-target="hl_end_time">--:--</div></div></div><div class="form-group"><label>علت (الزامی):</label><input type="text" id="hl_reason"></div></div>
+    <div id="abs_hourly_mission_fields_2" class="hidden"><div class="form-row"><div class="form-group"><label>ساعت شروع:</label><input type="hidden" id="hm_start_time"><div class="time-picker-widget" data-target="hm_start_time">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="hm_end_time"><div class="time-picker-widget" data-target="hm_end_time">--:--</div></div></div><div class="form-group"><label>محل مأموریت:</label><input type="text" id="hm_location"></div><div class="form-group"><label>شرح فعالیت:</label><textarea id="hm_activity"></textarea></div></div>
+    <div class="form-group"><label>توضیحات:</label><textarea id="hl_general_desc"></textarea></div>
   </div>
   <div id="fields_overtime" class="hidden">
     <div class="form-row"><div class="form-group"><label>ساعت شروع اضافه‌کاری:</label><input type="hidden" id="ot_start"><div class="time-picker-widget" data-target="ot_start">--:--</div></div><div class="form-group"><label>ساعت پایان:</label><input type="hidden" id="ot_end"><div class="time-picker-widget" data-target="ot_end">--:--</div></div></div>
@@ -1661,12 +1666,7 @@ button,.btn{-webkit-touch-callout:none}
       <option value="admin">نمای مدیر (تأیید نهایی)</option>
     </select></div>
   </div>
-  <!-- بخش هماهنگ‌کننده (مشاوره و یادداشت) -->
-  <div id="coordinator_approvals_section" class="hidden" style="margin-bottom:20px">
-    <h3 style="margin:0 0 10px">👥 درخواست‌های دریافتی شما (مشاوره)</h3>
-    <p style="font-size:12px;color:var(--c-text-muted);margin-bottom:10px">این درخواست‌ها مستقیم به مدیر رفته‌اند. شما می‌توانید نظر بدهید (اختیاری). تأیید/رد فقط توسط مدیر انجام می‌شود.</p>
-    <div id="coordinator_approvals_container"></div>
-  </div>
+  <!-- بخش هماهنگ‌کننده (مشاوره و یادداشت) — حذف شد -->
   <!-- بخش مدیر (تأیید نهایی) -->
   <div id="admin_approvals_section">
     <h3 style="margin:0 0 10px">🔑 درخواست‌های در انتظار تصمیم شما</h3>
@@ -1675,18 +1675,7 @@ button,.btn{-webkit-touch-callout:none}
   </div>
 </div>
 
-<!-- بخش پنهان coordinator_approvals (ادغام‌شده در approvals) -->
-<div id="section-coordinator_approvals" class="card hidden">
-  <h2>تأیید اولیه درخواست‌های مرخصی</h2>
-  <p>این بخش ادغام شده است. لطفاً از منوی «تأیید درخواست‌ها» استفاده کنید.</p>
-  <div id="coordinator_approvals_container_old"></div>
-</div>
-
-<!-- بخش مدیریت وظایف زیرمجموعه حذف شد — کارکرد آن در «لوح شیفت» و «تعریف مأموریت» ادغام شده است -->
-<div id="section-coordinator_tasks" class="card hidden">
-  <h2>مدیریت وظایف زیرمجموعه</h2>
-  <p>این بخش حذف شده است. لطفاً از منوی «📅 لوح شیفت» برای تعریف مأموریت استفاده کنید.</p>
-</div>
+<!-- section-coordinator_approvals و section-coordinator_tasks حذف شدند (ادغام در بخش‌های دیگر) -->
 
 <!-- تأیید مرخصی‌ها (ادمین) — حذف شد: در section-approvals بالا ادغام شده -->
 
@@ -2305,9 +2294,9 @@ async function recordAudit(action,entity,entityId,details){
 
 /* ═════ Labels ═════ */
 var STATUS_LABEL={normal:'حضور (ساعت ورود/خروج)',absence:'عدم حضور',overtime:'اضافه‌کاری',official_record:'کارکرد رسمی'};
-var ABS_LABEL={hourly_leave:'مرخصی ساعتی',daily_leave:'مرخصی روزانه',sick_leave_daily:'استعلاجی روزانه',absence_no_leave:'غیبت','1day_mission':'مأموریت یک‌روزه',out_province_daily:'مأموریت خارج از استان (روزانه)',out_province_hourly:'مأموریت خارج از استان (ساعتی)',hourly_mission:'مأموریت ساعتی',other_absence:'سایر علل عدم حضور'};
-var FULL_DAY=['daily_leave','sick_leave_daily','absence_no_leave','1day_mission','out_province_daily','other_absence'];
-var HOURLY=['hourly_leave','hourly_mission','out_province_hourly'];
+var ABS_LABEL={hourly_leave:'مرخصی ساعتی',daily_leave:'مرخصی روزانه',sick_leave_daily:'استعلاجی روزانه',absence_no_leave:'غیبت','1day_mission':'مأموریت یک‌روزه',hourly_mission:'مأموریت ساعتی'};
+var FULL_DAY=['daily_leave','sick_leave_daily','absence_no_leave','1day_mission'];
+var HOURLY=['hourly_leave','hourly_mission'];
 var LEAVE_STATUS={pending:'در انتظار مدیر',coordinator_pending:'در انتظار هماهنگ‌کننده',manager_pending:'در انتظار تصمیم مدیر',approved:'تأییدشده',partial:'جزئی',rejected:'ردشده',canceled:'لغوشده'};
 var ROLE_LABEL={user:'پرسنل بهداشت/اداری',admin:'مدیر',super_admin:'سوپرادمین',guest:'مهمان'};
 // ═════ مدیریت نقش‌ها (Roles) ═════
@@ -2920,7 +2909,7 @@ function describeLog(l){
   }
   if(l.status==='overtime')return'اضافه‌کاری '+(f.ot_start||'')+' تا '+(f.ot_end||'')+[f.ot_location,f.ot_reason].filter(Boolean).map(function(x){return' — '+x;}).join('')+verBadge;
   var s=ABS_LABEL[t]||t||'';if(f.start_time)s+=' ('+f.start_time+' تا '+f.end_time+')';
-  var x=[f.leave_type,f.province,f.location,f.reason].filter(Boolean).join('، ');
+  var x=[f.province,f.location,f.reason].filter(Boolean).join('، ');
   // ─── مدارک استعلاجی ───
   var sickInfo='';
   if(t==='sick_leave_daily'){
@@ -2956,7 +2945,7 @@ async function loadAllPersons(){
   try{const{data,error}=await sb.from('profiles').select('*').order('last_name').order('first_name');if(error)throw error;cachedPersons=data||[];
     // حذف فیلدهای حساس از حافظه مرورگر
     cachedPersons.forEach(function(p){delete p.password_hash;delete p.password_salt;delete p.recovery_salt;});
-    if(typeof updateDelegateBox==='function')updateDelegateBox();if(typeof updateDelegationVisibility==='function')updateDelegationVisibility();return cachedPersons;}catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
+    return cachedPersons;}catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
 }
 async function loadLogs(personId,from,to){
   try{let q=sb.from('daily_logs').select('*');if(personId)q=q.eq('user_id',personId);if(from)q=q.gte('date',from);if(to)q=q.lte('date',to);const{data,error}=await q.order('date',{ascending:false});if(error)throw error;return data||[];}catch(e){console.error('loadLogs:',e);throw e;}
@@ -3306,8 +3295,6 @@ function applyRoleBasedUI(){
   // shift-access: admin/super_admin یا کاربر با can_manage_shifts (تفویض دسترسی لوح شیفت)
   var canShifts=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_shifts);
   document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
-  // تفویض‌ها: فقط اگر کاربر تفویضی دارد (داده یا گرفته)
-  updateDelegationVisibility();
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
   //   ۱. دسترسی تأیید مرخصی (can_approve_leaves)
@@ -3666,341 +3653,7 @@ function toggleReminderPattern(){
   if(box)box.classList.toggle('hidden',freq!=='custom');
 }
 
-/* ═════ Delegations System ═════ */
-function getDelegationData(){
-  // جمع‌آوری تمام تفویض‌های مرتبط با کاربر فعلی
-  var received=[]; // تفویض‌شده به من
-  var given=[];    // تفویض‌شده از من
-  if(!cachedPersons.length)return{received:received,given:given};
-  
-  cachedPersons.forEach(function(p){
-    // تفویض‌شده به من: کاربرانی که parent_id آنها = من
-    if(p.parent_id===currentUser.id){
-      received.push({
-        type:'coordinator',
-        from:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        to:p.first_name+' '+p.last_name,
-        toId:p.id,
-        permissions:['هماهنگ‌کننده'],
-        detail:'هماهنگ‌کننده کاربر «'+p.first_name+' '+p.last_name+'» ('+p.personnel_id+')',
-        icon:'👥',
-        status:p.status||'فعال',
-        id:p.id
-      });
-    }
-    // تفویض‌شده از من: parent_id من = شخص دیگر
-    if(currentUser.profile.parent_id===p.id){
-      given.push({
-        type:'coordinator',
-        from:p.first_name+' '+p.last_name,
-        to:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        toId:currentUser.id,
-        permissions:['هماهنگ‌کننده'],
-        detail:'هماهنگ‌کننده من: «'+p.first_name+' '+p.last_name+'» ('+p.personnel_id+')',
-        icon:'👥',
-        status:p.status||'فعال',
-        id:p.id
-      });
-    }
-  });
-  
-  // دسترسی‌های تفویض‌شده
-  var permLabels={
-    can_approve_leaves:'تأیید مرخصی',
-    can_schedule_tasks:'تعریف وظیفه',
-    can_create_programs:'ساخت برنامه',
-    can_manage_events:'مدیریت رویدادها',
-    can_manage_users:'مدیریت کاربران',
-    can_log:'ثبت کارکرد'
-  };
-  
-  // بررسی دسترسی‌های تفویض‌شده به کاربران دیگر (در جدول مدیریت کاربران)
-  cachedPersons.forEach(function(p){
-    if(p.id===currentUser.id)return;
-    var perms=[];
-    Object.keys(permLabels).forEach(function(k){
-      if(p[k]===true){
-        // اگر مدیر/سوپرادمین این دسترسی را به این کاربر داده
-        // و کاربر فعلی مدیر/سوپرادمین است → تفویض‌شده از من
-        if(currentRole==='admin'||currentRole==='super_admin'){
-          perms.push(permLabels[k]);
-        }
-      }
-    });
-    if(perms.length>0&&(currentRole==='admin'||currentRole==='super_admin')){
-      given.push({
-        type:'permission',
-        from:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        to:p.first_name+' '+p.last_name,
-        toId:p.id,
-        permissions:perms,
-        detail:'دسترسی‌های '+perms.join('، '),
-        icon:'🔑',
-        status:p.status||'فعال',
-        id:p.id
-      });
-    }
-  });
-  
-  // دسترسی‌های تفویض‌شده به من (اگر من کاربر عادی هستم و دسترسی‌های خاصی دارم)
-  if(currentUser.profile){
-    var myPerms=[];
-    Object.keys(permLabels).forEach(function(k){
-      if(currentUser.profile[k]===true&&k!=='can_log'){
-        myPerms.push(permLabels[k]);
-      }
-    });
-    if(myPerms.length>0&&currentRole==='user'){
-      // پیدا کن کی این دسترسی را داده
-      var giver=cachedPersons.filter(function(p){return p.role==='admin'||p.role==='super_admin';})[0];
-      received.push({
-        type:'permission',
-        from:giver?(giver.first_name+' '+giver.last_name):'مدیر سیستم',
-        to:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        toId:currentUser.id,
-        permissions:myPerms,
-        detail:'دسترسی‌های '+myPerms.join('، '),
-        icon:'🔑',
-        status:'فعال',
-        id:currentUser.id
-      });
-    }
-  }
-
-  // ─── تفویض کارکرد (log_delegates) ───
-  // تفویض‌شده از من: کاربرانی که من در log_delegates خودم اضافه کرده‌ام
-  var myDelegates=currentUser.profile?currentUser.profile.log_delegates:null;
-  if(typeof myDelegates==='string'){try{myDelegates=JSON.parse(myDelegates);}catch(e){myDelegates=[];}}
-  if(Array.isArray(myDelegates)){
-    myDelegates.forEach(function(uid){
-      var p=cachedPersons.filter(function(x){return x.id===uid;})[0];
-      if(!p)return;
-      given.push({
-        type:'log_delegate',
-        from:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        to:p.first_name+' '+p.last_name,
-        toId:p.id,
-        permissions:['ثبت کارکرد به‌نمایندگی'],
-        detail:'اجازه ثبت کارکرد به‌نمایندگی از شما برای «'+p.first_name+' '+p.last_name+'» ('+p.personnel_id+')',
-        icon:'📝',
-        status:'فعال',
-        id:p.id
-      });
-    });
-  }
-  // تفویض‌شده به من: کاربرانی که من را در log_delegates خود دارند
-  cachedPersons.forEach(function(p){
-    if(p.id===currentUser.id)return;
-    var delegates=p.log_delegates;
-    if(typeof delegates==='string'){try{delegates=JSON.parse(delegates);}catch(e){delegates=[];}}
-    if(Array.isArray(delegates)&&delegates.indexOf(currentUser.id)!==-1){
-      received.push({
-        type:'log_delegate',
-        from:p.first_name+' '+p.last_name,
-        to:currentUser.profile.first_name+' '+currentUser.profile.last_name,
-        toId:currentUser.id,
-        permissions:['ثبت کارکرد به‌نمایندگی'],
-        detail:'شما اجازه دارید کارکرد «'+p.first_name+' '+p.last_name+'» ('+p.personnel_id+') را ثبت کنید',
-        icon:'📝',
-        status:'فعال',
-        id:p.id
-      });
-    }
-  });
-
-  return{received:received,given:given};
-}
-function updateDelegationVisibility(){
-  // منوی تفویض‌ها حذف شد — این تابع فقط برای سازگاری باقی مانده
-  // badge دیگر وجود ندارد
-}
-
-/* ═════ تفویض کارکرد (log_delegates) ═════ */
-// دریافت لیست کاربرانی که من به آنها اجازه ثبت به‌جای خودم داده‌ام
-function getMyLogDelegates(){
-  var raw=currentUser.profile?currentUser.profile.log_delegates:null;
-  if(!raw)return [];
-  if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){return [];}}
-  if(!Array.isArray(raw))return [];
-  return raw;
-}
-// دریافت لیست کاربرانی که به من اجازه ثبت داده‌اند (برای dropdown تفویض)
-function getUsersWhoDelegatedToMe(){
-  if(!cachedPersons.length)return [];
-  var list=[];
-  cachedPersons.forEach(function(p){
-    if(p.id===currentUser.id)return;
-    if(p.role==='super_admin')return;
-    var delegates=p.log_delegates;
-    if(typeof delegates==='string'){try{delegates=JSON.parse(delegates);}catch(e){delegates=[];}}
-    if(Array.isArray(delegates)&&delegates.indexOf(currentUser.id)!==-1)list.push(p);
-  });
-  return list;
-}
-// نمایش لیست تفویض‌شوندگان کارکرد من + dropdown انتخاب
-function renderLogDelegates(){
-  var listBox=$('log_delegates_list');
-  var pickSel=$('log_delegate_pick');
-  if(!listBox||!pickSel)return;
-  var myDelegates=getMyLogDelegates();
-  // لیست چیپ‌های تفویض‌شوندگان فعلی
-  if(!myDelegates.length){
-    listBox.innerHTML='<span style="color:var(--c-text-muted);font-size:13px;padding:6px 0">📭 هیچ کاربری به‌عنوان تفویض‌شونده ثبت نشده. با افزودن کاربر، اجازه می‌دهید به‌جای شما کارکرد ثبت کند.</span>';
-  }else{
-    var html='';
-    myDelegates.forEach(function(uid){
-      var p=cachedPersons.filter(function(x){return x.id===uid;})[0];
-      if(!p)return;
-      var name=esc(p.first_name+' '+p.last_name+' - '+p.personnel_id);
-      html+='<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--c-border,#e5e7eb);border-radius:20px;padding:4px 6px 4px 12px;font-size:12px">'+
-        '<span>👤 '+name+'</span>'+
-        '<button class="btn btn-sm btn-danger" style="padding:2px 8px;min-height:auto;font-size:11px;border-radius:12px" onclick="removeLogDelegate(\''+uid+'\')" title="حذف">✕</button>'+
-        '</span>';
-    });
-    listBox.innerHTML=html;
-  }
-  // dropdown انتخاب: همه کاربران به‌جز خودم، سوپرادمین، و کسانی که از قبل اضافه شده‌اند
-  var o='<option value="">— انتخاب کاربر —</option>';
-  cachedPersons.forEach(function(p){
-    if(p.id===currentUser.id)return;
-    if(p.role==='super_admin')return;
-    if(myDelegates.indexOf(p.id)!==-1)return; // قبلاً اضافه شده
-    var roleTag='';
-    if(p.role==='admin')roleTag=' [مدیر]';
-    else if(p.role==='guest')roleTag=' [مهمان]';
-    else if(p.can_approve_leaves&&p.can_schedule_tasks)roleTag=' [مسئول واحد]';else if(p.can_approve_leaves)roleTag=' [مسئول کارکرد]';
-    o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
-  });
-  pickSel.innerHTML=o;
-}
-async function addLogDelegate(){
-  var uid=val('log_delegate_pick');
-  if(!uid){showAlert('یک کاربر انتخاب کنید.','error');return;}
-  var myDelegates=getMyLogDelegates();
-  if(myDelegates.indexOf(uid)!==-1){showAlert('این کاربر قبلاً اضافه شده.','info');return;}
-  myDelegates.push(uid);
-  showLoading('در حال افزودن تفویض...');
-  try{
-    await updateUserProfileDB(currentUser.id,{log_delegates:JSON.stringify(myDelegates)});
-    currentUser.profile.log_delegates=myDelegates;
-    renderLogDelegates();
-    updateDelegateBox(); // به‌روزرسانی dropdown خوداظهاری کاربر مقابل
-    showAlert('کاربر به تفویض‌شوندگان شما اضافه شد. او حالا می‌تواند به‌نمایندگی از شما ثبت کند.','success');
-  }catch(e){showAlert('خطا: '+e.message,'error');}
-  hideLoading();
-}
-async function removeLogDelegate(uid){
-  if(!uid)return;
-  var p=cachedPersons.filter(function(x){return x.id===uid;})[0];
-  var name=p?(p.first_name+' '+p.last_name):'این کاربر';
-  if(!confirm('حذف «'+name+'» از تفویض‌شوندگان شما؟\nاین کاربر دیگر نمی‌تواند به‌نمایندگی از شما ثبت کند.'))return;
-  var myDelegates=getMyLogDelegates();
-  myDelegates=myDelegates.filter(function(x){return x!==uid;});
-  showLoading('در حال حذف تفویض...');
-  try{
-    await updateUserProfileDB(currentUser.id,{log_delegates:JSON.stringify(myDelegates)});
-    currentUser.profile.log_delegates=myDelegates;
-    renderLogDelegates();
-    updateDelegateBox();
-    showAlert('تفویض حذف شد.','success');
-  }catch(e){showAlert('خطا: '+e.message,'error');}
-  hideLoading();
-}
-function renderDelegations(){
-  var data=getDelegationData();
-  var recvBox=$('delegations_received');
-  var givenBox=$('delegations_given');
-  var detailBox=$('delegations_detail');
-  
-  // تفویض‌شده به من
-  if(!data.received.length){
-    recvBox.innerHTML='<div style="text-align:center;padding:20px;color:var(--c-text-muted);font-size:13px">📭 هیچ تفویضی دریافت نکرده‌اید</div>';
-  }else{
-    var rh='<div style="display:flex;flex-direction:column;gap:8px">';
-    data.received.forEach(function(d){
-      rh+='<div style="padding:10px 12px;border-radius:10px;background:var(--c-primary-light);border-right:3px solid var(--c-primary);cursor:pointer" onclick="showDelegationDetail(\''+esc(JSON.stringify(d).replace(/'/g,'&#39;'))+'\')">'+
-        '<div style="display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:18px">'+d.icon+'</span>'+
-        '<div style="flex:1">'+
-        '<div style="font-weight:600;font-size:13px">'+esc(d.detail)+'</div>'+
-        '<div style="font-size:11px;color:var(--c-text-muted)">از: '+esc(d.from)+'</div>'+
-        '</div>'+
-        '<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:'+var_c_success_light+';color:'+var_c_success+'">'+esc(d.status)+'</span>'+
-        '</div>'+
-        '</div>';
-    });
-    rh+='</div>';
-    recvBox.innerHTML=rh;
-  }
-  
-  // تفویض‌شده از من
-  if(!data.given.length){
-    givenBox.innerHTML='<div style="text-align:center;padding:20px;color:var(--c-text-muted);font-size:13px">📭 هیچ تفویضی نداده‌اید</div>';
-  }else{
-    var gh='<div style="display:flex;flex-direction:column;gap:8px">';
-    data.given.forEach(function(d){
-      gh+='<div style="padding:10px 12px;border-radius:10px;background:var(--c-warning-light);border-right:3px solid var(--c-warning);cursor:pointer" onclick="showDelegationDetail(\''+esc(JSON.stringify(d).replace(/'/g,'&#39;'))+'\')">'+
-        '<div style="display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:18px">'+d.icon+'</span>'+
-        '<div style="flex:1">'+
-        '<div style="font-weight:600;font-size:13px">'+esc(d.detail)+'</div>'+
-        '<div style="font-size:11px;color:var(--c-text-muted)">به: '+esc(d.to)+'</div>'+
-        '</div>'+
-        '<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:'+var_c_success_light+';color:'+var_c_success+'">'+esc(d.status)+'</span>'+
-        '</div>'+
-        '</div>';
-    });
-    gh+='</div>';
-    givenBox.innerHTML=gh;
-  }
-  
-  detailBox.innerHTML='<p style="text-align:center;color:var(--c-text-muted);font-size:12px;padding:16px">برای جزئیات، روی هر تفویض کلیک کنید</p>';
-}
-function showDelegationDetail(jsonStr){
-  try{
-    var d=JSON.parse(jsonStr);
-    var box=$('delegations_detail');
-    var typeLabel=d.type==='coordinator'?'هماهنگ‌کننده':(d.type==='log_delegate'?'تفویض کارکرد':'دسترسی');
-    // دکمه لغو: فقط برای تفویض‌های «از من» (d.toId !== currentUser.id)
-    var revokeBtn='';
-    if(d.toId&&d.toId!==currentUser.id){
-      if(d.type==='log_delegate'){
-        revokeBtn='<button class="btn btn-sm btn-danger" onclick="removeLogDelegate(\''+esc(d.id)+'\')">لغو تفویض</button>';
-      }else{
-        revokeBtn='<button class="btn btn-sm btn-danger" onclick="revokeDelegation(\''+esc(d.toId)+'\',\''+(d.type==='coordinator'?'coordinator':'permission')+'\')">لغو تفویض</button>';
-      }
-    }
-    var html='<div class="card" style="margin:0">'+
-      '<h3 style="margin:0 0 12px">'+d.icon+' '+esc(d.detail)+'</h3>'+
-      '<table style="margin:0">'+
-      '<tr><td style="width:30%;color:var(--c-text-muted)">نوع:</td><td>'+esc(typeLabel)+'</td></tr>'+
-      '<tr><td style="color:var(--c-text-muted)">از:</td><td>'+esc(d.from)+'</td></tr>'+
-      '<tr><td style="color:var(--c-text-muted)">به:</td><td>'+esc(d.to)+'</td></tr>'+
-      '<tr><td style="color:var(--c-text-muted)">دسترسی‌ها:</td><td>'+(d.permissions?d.permissions.map(esc).join('، '):'—')+'</td></tr>'+
-      '<tr><td style="color:var(--c-text-muted)">وضعیت:</td><td>'+esc(d.status)+'</td></tr>'+
-      '</table>'+
-      '<div style="margin-top:14px;display:flex;gap:8px">'+revokeBtn+
-      '</div>'+
-    '</div>';
-    box.innerHTML=html;
-  }catch(e){console.error('showDelegationDetail:',e);}
-}
-async function revokeDelegation(userId,type){
-  if(!confirm('⚠️ لغو این تفویض؟\nاین عمل قابل بازگشت نیست.'))return;
-  showLoading('لغو تفویض...');
-  try{
-    if(type==='coordinator'){
-      await updateUserProfileDB(userId,{parent_id:null});
-    }else{
-      await updateUserProfileDB(userId,{can_approve_leaves:false,can_schedule_tasks:false,can_create_programs:false,can_manage_events:false});
-    }
-    showAlert('تفویض لغو شد.','success');
-    await loadAllPersons();await loadSubordinates();
-    applyRoleBasedUI();
-    renderDelegations();
-  }catch(e){showAlert('خطا: '+e.message);}
-  hideLoading();
-}
+/* ═════ Delegations System — حذف شد (تفویض کارکرد از UI حذف شده) ═════ */
 
 /* ═════ Notifications Modal ═════ */
 var unreadNotifications=[];
@@ -4254,7 +3907,7 @@ function showSection(id,skipHistory){
     populatePersonDropdown('log_person_id',true);
     if(!currentLogPerson)$('log_person_id').value=currentUser.id;
     currentLogPerson=$('log_person_id').value;
-    updateDelegateBox();toggleLogFields();syncLog();
+    toggleLogFields();syncLog();
   }
   /* leave_req section removed */
   if(id==='my_tasks')renderMyTasks();
@@ -4369,10 +4022,8 @@ function populatePersonDropdown(dropdownId,autoFirst){
     // کاربر فعلی + همه (برای انتخاب تفویض‌شده‌ها)
     persons=cachedPersons;
   }else if((dropdownId==='rec_person'||dropdownId==='rep_person')&&!canViewAllReports){
-    // کاربر عادی: خودش + کسانی که به او تفویض کرده‌اند
-    var delegators=getUsersWhoDelegatedToMe();
-    var me=cachedPersons.filter(function(p){return p.id===currentUser.id;});
-    persons=me.concat(delegators);
+    // کاربر عادی: فقط خودش (تفویض‌ها از UI حذف شده)
+    persons=cachedPersons.filter(function(p){return p.id===currentUser.id;});
   }else if(all){
     persons=cachedPersons;
   }else{
@@ -5616,14 +5267,11 @@ async function editLog(id){
       $('absence_type').value=t;
       var map={
         hourly_leave:{abs_reason:f.reason,abs_start_time:f.start_time,abs_end_time:f.end_time},
-        daily_leave:{leave_type:f.leave_type},
-        sick_leave_daily:{leave_type:f.leave_type,sick_doctor_order:f.has_doctor_order||'unknown',sick_pharmacy_prescription:f.has_pharmacy_prescription||'unknown',sick_prescription_number:f.prescription_number||''},
+        daily_leave:{},
+        sick_leave_daily:{sick_doctor_order:f.has_doctor_order||'unknown',sick_pharmacy_prescription:f.has_pharmacy_prescription||'unknown',sick_prescription_number:f.prescription_number||''},
         absence_no_leave:{},
         '1day_mission':{m1_location:f.location},
-        out_province_daily:{mout_daily_province:f.province,mout_daily_location:f.location},
-        out_province_hourly:{mout_h_province:f.province,mout_h_location:f.location,mout_h_activity:f.activity,mout_h_start_time:f.start_time,mout_h_end_time:f.end_time},
-        hourly_mission:{mh_location:f.location,mh_activity:f.activity,mh_start_time:f.start_time,mh_end_time:f.end_time},
-        other_absence:{other_reason:f.reason}
+        hourly_mission:{mh_location:f.location,mh_activity:f.activity,mh_start_time:f.start_time,mh_end_time:f.end_time}
       }[t]||{};
       map.abs_general_desc=f.desc;
       Object.keys(map).forEach(function(k){if(/_time$/.test(k))setTimepickerValue(k,map[k]||'');else if($(k))$(k).value=map[k]||'';});
@@ -5676,7 +5324,26 @@ async function deleteLog(id){
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
 }
-function toggleLogFields(){var st=$('log_status').value;['normal','absence','overtime','official'].forEach(function(k){var el=$('fields_'+k);if(el)el.classList.toggle('hidden',k!==st);});toggleAbsenceFields();if(st==='official')toggleOfficialFields();updateDeclarationModeBanner();if(st==='normal')checkTimeDiscrepancy();}
+function toggleLogFields(){
+  var st=$('log_status').value;
+  ['normal','absence','absence_hourly','overtime','official'].forEach(function(k){
+    var el=$('fields_'+k);
+    if(el)el.classList.toggle('hidden',k!==st);
+  });
+  if(st==='absence')toggleAbsenceFields();
+  if(st==='absence_hourly')toggleAbsenceHourlyFields();
+  if(st==='official')toggleOfficialFields();
+  updateDeclarationModeBanner();
+  if(st==='normal')checkTimeDiscrepancy();
+}
+// نمایش فیلدهای عدم حضور ساعتی
+function toggleAbsenceHourlyFields(){
+  var type=$('absence_type_hourly')?$('absence_type_hourly').value:'hourly_leave';
+  var hlBox=$('abs_hourly_leave_fields');
+  var hmBox=$('abs_hourly_mission_fields_2');
+  if(hlBox)hlBox.classList.toggle('hidden',type!=='hourly_leave');
+  if(hmBox)hmBox.classList.toggle('hidden',type!=='hourly_mission');
+}
 // ═══ تشخیص خودکار مغایرت با ساعت کاری استاندارد ═══
 function checkTimeDiscrepancy(){
   var box=$('discrepancy_suggestion');
@@ -5786,28 +5453,33 @@ function dismissDiscrepancy(){
 }
 function toggleAbsenceFields(){
   var type=$('absence_type').value;
-  ['hourly','daily','sick','1day_mission','out_province_daily','out_province_hourly','hourly_mission','other'].forEach(function(f){var el=$('abs_'+f+'_fields');if(el)el.classList.add('hidden');});
-  $('abs_desc_box').style.display=HOURLY.indexOf(type)!==-1?'none':'block';
-  // نگاشت نوع به فیلد: استعلاجی ساعتی → hourly، استعلاجی روزانه → daily، غیبت → daily (فقط توضیحات)
-  var map={hourly_leave:'hourly',daily_leave:'daily',sick_leave_daily:'daily',absence_no_leave:'daily','1day_mission':'1day_mission',out_province_daily:'out_province_daily',out_province_hourly:'out_province_hourly',hourly_mission:'hourly_mission',other_absence:'other'};
-  var target=map[type];
-  if(target){var el=$('abs_'+target+'_fields');if(el)el.classList.remove('hidden');}
-  // بخش مدارک استعلاجی فقط برای استعلاجی روزانه نمایش داده شود
-  var sickBox=$('abs_sick_fields');
-  if(sickBox)sickBox.classList.toggle('hidden',type!=='sick_leave_daily');
+  ['hourly','daily','sick','1day_mission','hourly_mission','other'].forEach(function(f){var el=$('abs_'+f+'_fields');if(el)el.classList.add('hidden');});
+  $('abs_desc_box').style.display='block';
+  // نگاشت: مرخصی روزانه → daily (خالی)، استعلاجی → sick، غیبت → daily (خالی)، مأموریت → 1day_mission
+  if(type==='daily_leave'){
+    var el=$('abs_daily_fields');if(el)el.classList.remove('hidden');
+  }else if(type==='sick_leave_daily'){
+    var sickBox=$('abs_sick_fields');if(sickBox)sickBox.classList.remove('hidden');
+    // فیلدهای تأیید مدارک فقط برای مدیر/مسئول کارکرد
+    var adminFields=$('sick_admin_fields');
+    var isAdmin=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_approve_leaves);
+    if(adminFields)adminFields.classList.toggle('hidden',!isAdmin);
+  }else if(type==='absence_no_leave'){
+    // فقط توضیحات — فیلد اضافی ندارد
+  }else if(type==='1day_mission'){
+    var el=$('abs_1day_mission_fields');if(el)el.classList.remove('hidden');
+  }
 }
 async function saveDailyLog(){
-  var id=$('log_id').value,personId=$('log_person_id').value,dateStr=$('log_date').value,status=$('log_status').value,disc=val('log_discrepancy');
+  var id=$('log_id').value,personId=$('log_person_id').value,dateStr=$('log_date').value,rawStatus=$('log_status').value,status=rawStatus,disc=val('log_discrepancy');
+  // عدم حضور ساعتی → در دیتابیس به‌عنوان absence ذخیره می‌شود
+  if(status==='absence_hourly')status='absence';
   if(!personId){showAlert('پرسنل را انتخاب کنید.','error');return;}
   if(!isValidJalaliDate(dateStr)){showAlert('تاریخ نامعتبر است.','error');return;}
-  // ─── بررسی امنیتی: کاربر عادی فقط برای خودش یا تفویض‌شونده‌اش ثبت می‌کند ───
+  // ─── بررسی امنیتی: کاربر عادی فقط برای خودش ثبت می‌کند (تفویض از UI حذف شده) ───
   var _isAdmin=currentRole==='admin'||currentRole==='super_admin';
   if(!_isAdmin&&personId!==currentUser.id){
-    var _delegators=getUsersWhoDelegatedToMe();
-    var _allowedIds=[currentUser.id].concat(_delegators.map(function(p){return p.id;}));
-    if(_allowedIds.indexOf(personId)===-1){
-      showAlert('دسترسی غیرمجاز: نمی‌توانید برای این کاربر ثبت کنید.','error');return;
-    }
+    showAlert('دسترسی غیرمجاز: نمی‌توانید برای این کاربر ثبت کنید.','error');return;
   }
   // ─── تعریف ساعات کارکرد استاندارد ───
   // ─── ساعات کاری استاندارد این روز (از تنظیمات مدیر) ───
@@ -5911,37 +5583,46 @@ async function saveDailyLog(){
     f.official_note=val('official_note');
   }
   if(status==='absence'){
-    var t=$('absence_type').value;d.absence_type=t;
+    // تعیین نوع عدم حضور: اگر از حالت ساعتی آمده، از absence_type_hourly استفاده کن
+    var t=rawStatus==='absence_hourly'?($('absence_type_hourly')?$('absence_type_hourly').value:'hourly_leave'):$('absence_type').value;
+    d.absence_type=t;
     if(t==='hourly_leave'){
-      s=$('abs_start_time').value;e=$('abs_end_time').value;f.reason=val('abs_reason');
+      s=rawStatus==='absence_hourly'?($('hl_start_time')?$('hl_start_time').value:''):($('abs_start_time')?$('abs_start_time').value:'');
+      e=rawStatus==='absence_hourly'?($('hl_end_time')?$('hl_end_time').value:''):($('abs_end_time')?$('abs_end_time').value:'');
+      f.reason=rawStatus==='absence_hourly'?val('hl_reason'):val('abs_reason');
       if(!need(s&&e,'ساعت شروع و پایان الزامی است.')||!need(f.reason,'علت الزامی است.'))return;
       if(!validateTimeOrder(s,e,ABS_LABEL[t]))return;
       if(!await checkTimeOverlap(actualPersonId,dateStr,s,e,ABS_LABEL[t]))return;
       f.start_time=s;f.end_time=e;
     }
     else if(t==='hourly_mission'){
-      s=$('mh_start_time').value;e=$('mh_end_time').value;f.location=val('mh_location');f.activity=val('mh_activity');
-      if(!need(s&&e,'ساعت الزامی است.')||!need(f.location,'محل الزامی است.'))return;
+      if(rawStatus==='absence_hourly'){
+        s=$('hm_start_time')?$('hm_start_time').value:'';e=$('hm_end_time')?$('hm_end_time').value:'';
+        f.location=val('hm_location');f.activity=val('hm_activity');
+      }else{
+        s=$('mh_start_time')?$('mh_start_time').value:'';e=$('mh_end_time')?$('mh_end_time').value:'';
+        f.location=val('mh_location');f.activity=val('mh_activity');
+      }
+      if(!need(s&&e,'ساعت الزامی است.'))return;
       if(!validateTimeOrder(s,e,'مأموریت ساعتی'))return;
       if(!await checkTimeOverlap(actualPersonId,dateStr,s,e,'مأموریت ساعتی'))return;
       f.start_time=s;f.end_time=e;
     }
-    else if(t==='out_province_hourly'){
-      s=$('mout_h_start_time').value;e=$('mout_h_end_time').value;f.province=val('mout_h_province');f.location=val('mout_h_location');f.activity=val('mout_h_activity');
-      if(!need(s&&e,'ساعت الزامی است.')||!need(f.province&&f.location,'استان و محل الزامی است.'))return;
-      if(!validateTimeOrder(s,e,'مأموریت خارج از استان (ساعتی)'))return;
-      if(!await checkTimeOverlap(actualPersonId,dateStr,s,e,'مأموریت خارج از استان'))return;
-      f.start_time=s;f.end_time=e;
-    }
-    else{fullDay=true;f.desc=val('abs_general_desc');if(t==='other_absence'){f.reason=val('other_reason');if(!need(f.reason,'علت الزامی است.'))return;}else if(t==='daily_leave'||t==='sick_leave_daily')f.leave_type=val('leave_type');else if(t==='absence_no_leave'){/* غیبت — فقط توضیحات اختیاری در desc */}else if(t==='1day_mission'){f.location=val('m1_location');if(!need(f.location,'محل الزامی است.'))return;}else if(t==='out_province_daily'){f.province=val('mout_daily_province');f.location=val('mout_daily_location');if(!need(f.province&&f.location,'استان و محل الزامی است.'))return;}
+    else{
+      // عدم حضور روزانه — مرخصی روزانه، استعلاجی، غیبت، مأموریت روزانه
+      fullDay=true;
+      f.desc=rawStatus==='absence_hourly'?val('hl_general_desc'):val('abs_general_desc');
+      if(t==='absence_no_leave'){
+        // غیبت — فقط توضیحات
+      }else if(t==='1day_mission'){
+        f.location=val('m1_location');if(!need(f.location,'محل الزامی است.'))return;
+      }
       // ─── مدارک استعلاجی: فقط برای sick_leave_daily ───
       if(t==='sick_leave_daily'){
         f.has_doctor_order=val('sick_doctor_order')||'unknown';
         f.has_pharmacy_prescription=val('sick_pharmacy_prescription')||'unknown';
         f.prescription_number=val('sick_prescription_number')||'';
-        // مهلت تحویل مدارک: ۳ روز کاری از تاریخ استعلاجی
         f.sick_doc_deadline=addDaysToJalali(normJ(dateStr),3);
-        // مسئول کارکرد یا مدیر باید این دو را مشخص کنند (غیر «نامشخص»)
         var _isWorkOfficer=_isAdmin||(currentUser.profile&&currentUser.profile.can_approve_leaves);
         if(_isWorkOfficer){
           if(f.has_doctor_order==='unknown'||f.has_pharmacy_prescription==='unknown'){
@@ -6069,75 +5750,16 @@ async function saveDailyLog(){
   }catch(e){showAlert('خطا در ذخیره: '+e.message);}
   hideLoading();
 }
-// هشدار زنده هنگام انتخاب تفویض
-function checkDelegateWarning(){
-  var sel=$('log_delegate_user');
-  if(!sel||!sel.value)return;
-  var name=getPersonName(sel.value);
-  var box=$('delegate_box');
-  if(!box)return;
-  if(sel.value!==currentUser.id){
-    var existing=box.querySelector('.delegate-alert');
-    if(!existing){
-      existing=document.createElement('div');
-      existing.className='delegate-alert';
-      existing.style.cssText='background:var(--c-danger-light,#fee2e2);color:#991b1b;padding:8px 12px;border-radius:6px;margin-top:8px;font-size:12px;border:1px solid #fca5a5';
-      box.querySelector('.form-group').appendChild(existing);
-    }
-    existing.textContent='⚠️ شما در حال ثبت برای «'+name+'» هستید. با ثبت، مسئولیت با شماست و شناسه پرسنلی شما در گزارش ثبت می‌شود.';
-    $('log_person_id').value=sel.value;
-    updateDiscrepancyVisibility(); // بررسی نمایش بخش مغایرت
-  }else{
-    var alert=box.querySelector('.delegate-alert');
-    if(alert)alert.remove();
-    updateDiscrepancyVisibility(); // بررسی نمایش بخش مغایرت
-  }
-}
-// نمایش/مخفی کردن باکس تفویض بر اساس نقش
-function updateDelegateBox(){
-  var box=$('delegate_box');
-  if(!box)return;
-  // ─── محافظت: اگر داده بارگذاری نشده، دوباره تلاش کن ───
-  if(!cachedPersons.length){loadAllPersons().then(function(){updateDelegateBox();});return;}
-  // ─── تفویض کارکرد: فقط کاربرانی که به من تفویض کرده‌اند ───
-  box.classList.remove('hidden');
-  var sel=$('log_delegate_user');
-  if(sel && cachedPersons.length>0){
-    var o='<option value="">خودم ثبت می‌کنم</option>';
-    var count=0;
-    cachedPersons.forEach(function(p){
-      // خودم را نبینم
-      if(p.id===currentUser.id)return;
-      // سوپرادمین را نبینم
-      if(p.role==='super_admin')return;
-      // فقط کسانی که من (currentUser.id) را در log_delegates شان دارند
-      var delegates=p.log_delegates;
-      if(typeof delegates==='string'){try{delegates=JSON.parse(delegates);}catch(e){delegates=[];}}
-      if(!Array.isArray(delegates)||delegates.indexOf(currentUser.id)===-1)return;
-      var roleTag='';
-      if(p.role==='admin')roleTag=' [مدیر]';
-      else if(p.role==='guest')roleTag=' [مهمان]';
-      else if(p.can_approve_leaves&&p.can_schedule_tasks)roleTag=' [مسئول واحد]';else if(p.can_approve_leaves)roleTag=' [مسئول کارکرد]';
-      o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
-      count++;
-    });
-    sel.innerHTML=o;
-    // اگر کسی تفویض نکرده، باکس را جمع کن تا گیج‌کننده نباشد
-    if(count===0){
-      // نگه‌داشتن باکس اما با پیام راهنما
-      sel.innerHTML='<option value="">خودم ثبت می‌کنم (کسی به شما تفویض نکرده)</option>';
-    }
-  }
-}
+// checkDelegateWarning / updateDelegateBox حذف شدند — باکس تفویض از UI حذف شده
 function resetDailyLogForm(){
   $('log_id').value='';$('log_status').value='normal';$('absence_type').value='hourly_leave';
-  ['log_discrepancy','abs_reason','leave_type','m1_location','mout_daily_province','mout_daily_location','mout_h_province','mout_h_location','mout_h_activity','mh_location','mh_activity','other_reason','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
+  ['log_discrepancy','abs_reason','m1_location','mh_location','mh_activity','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
   // break_minutes حذف شد — فیلد استراحت از فرم حذف شده است
   if($('official_status'))$('official_status').value='present';
   if($('official_mission_type'))$('official_mission_type').value='home_visit';
   if($('sick_doctor_order'))$('sick_doctor_order').value='unknown';
   if($('sick_pharmacy_prescription'))$('sick_pharmacy_prescription').value='unknown';
-  ['abs_start_time','abs_end_time','mout_h_start_time','mout_h_end_time','mh_start_time','mh_end_time','ot_start','ot_end','entry_time','exit_time','official_entry_time','official_exit_time'].forEach(function(k){setTimepickerValue(k,'');});
+  ['abs_start_time','abs_end_time','mh_start_time','mh_end_time','ot_start','ot_end','entry_time','exit_time','official_entry_time','official_exit_time'].forEach(function(k){setTimepickerValue(k,'');});
   window._editingLogOriginal=null;
   toggleLogFields();
   updateDiscrepancyVisibility();
@@ -7007,6 +6629,7 @@ async function completeTask(id){
 /* ═════ Coordinator approvals (تأیید اولیه) ═════ */
 async function renderCoordinatorApprovals(){
   var c=$('coordinator_approvals_container');
+  if(!c)return; // بخش هماهنگ‌کننده از UI حذف شده
   if(!currentUser.profile.can_approve_leaves&&currentRole!=='admin'&&currentRole!=='super_admin'){c.innerHTML='<p>شما دسترسی تأیید هماهنگ‌کننده ندارید.</p>';return;}
   try{
     var leaves=await loadLeavesForCoordinator();
@@ -7092,13 +6715,11 @@ async function renderApprovals(){
   var showAdmin=roleView==='admin'||(roleView==='auto'&&isAdmin);
   // اگر نه هماهنگ‌کننده نه مدیر، چیزی نمایش نده
   if(!showCoord&&!showAdmin){
-    $('coordinator_approvals_section').classList.add('hidden');
     $('admin_approvals_section').classList.add('hidden');
     c.innerHTML='<p style="color:var(--c-text-muted)">شما دسترسی به تأیید درخواست‌ها ندارید.</p>';
     return;
   }
   // نمایش/مخفی بخش‌ها
-  $('coordinator_approvals_section').classList.toggle('hidden',!showCoord);
   $('admin_approvals_section').classList.toggle('hidden',!showAdmin);
   // به‌روزرسانی یادداشت نقش
   var notice=$('approvals_role_notice');
@@ -7524,7 +7145,6 @@ async function renderUsers(){
   var canManageAll=currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_users);
   try{
     await loadAllPersons();
-    populateCoordinatorDropdown('inv_parent');
     if(!cachedPersons.length){c.innerHTML='<p>کاربری یافت نشد.</p>';return;}
     // فیلتر کاربران قابل مشاهده
     var visibleUsers;
@@ -7732,7 +7352,6 @@ function editUserDetails(userId){
     '</div>'+
     '<div class="form-row">'+
       '<div class="form-group"><label>شماره پرسنلی:</label><input type="text" id="ed_personnel_id" dir="ltr" value="'+esc(p.personnel_id||'')+'"></div>'+
-      '<div class="form-group"><label>ایمیل:</label><input type="email" id="ed_email" dir="ltr" value="'+esc(p.email||'')+'"></div>'+
     '</div>'+
     // ─── نقش ───
     '<div class="form-row">'+
@@ -7786,7 +7405,7 @@ function editUserDetails(userId){
   // ابتدا onclick ذخیره را ست کن (تا حتی اگر خطایی در مقداردهی اولیه رخ دهد، دکمه کار کند)
   $('ed_save').onclick=async function(){
    try{
-    var firstName=val('ed_first_name'),lastName=val('ed_last_name'),pid=toEnglishDigits(val('ed_personnel_id')),email=val('ed_email');
+    var firstName=val('ed_first_name'),lastName=val('ed_last_name'),pid=toEnglishDigits(val('ed_personnel_id'));
     var newRole=$('ed_role').value;
     var newParent=val('ed_parent');
     if(!firstName||!lastName||!pid){showAlert('نام، نام خانوادگی و شماره پرسنلی الزامی است.','error');return;}
@@ -7815,7 +7434,7 @@ function editUserDetails(userId){
       if(!confirm('تغییر هماهنگ‌کننده؟\nهماهنگ‌کننده جدید: '+coordName))return;
     }
     showLoading('ذخیره...');
-    var updates={first_name:firstName,last_name:lastName,personnel_id:pid,email:email||null};
+    var updates={first_name:firstName,last_name:lastName,personnel_id:pid};
     if(roleChanged){
       if(newRole==='coordinator'){
         updates.role='user';
@@ -8205,11 +7824,10 @@ async function renderRecords(){
     // تعیین کاربران مجاز برای مشاهده/ویرایش
     var isAdmin=currentRole==='admin'||currentRole==='super_admin';
     var canViewAllReports=isAdmin||(currentUser.profile&&currentUser.profile.can_view_reports);
-    var delegators=getUsersWhoDelegatedToMe();
-    var allowedIds=[currentUser.id].concat(delegators.map(function(p){return p.id;}));
+    var allowedIds=[currentUser.id];
     // بررسی دسترسی کاربر انتخاب‌شده
     if(personId&&!canViewAllReports&&allowedIds.indexOf(personId)===-1){
-      c.innerHTML='<p>دسترسی غیرمجاز: این کاربر به شما تفویض نکرده است.</p>';return;
+      c.innerHTML='<p>دسترسی غیرمجاز.</p>';return;
     }
     // بارگذاری لاگ‌ها
     var all;
@@ -8661,11 +8279,10 @@ async function generateReport(){
   // کاربر عادی فقط خودش + تفویض‌شوندگانش را می‌بیند
   var isAdmin=currentRole==='admin'||currentRole==='super_admin';
   var canViewAllReports=isAdmin||(currentUser.profile&&currentUser.profile.can_view_reports);
-  var delegators=getUsersWhoDelegatedToMe();
-  var allowedIds=[currentUser.id].concat(delegators.map(function(p){return p.id;}));
+  var allowedIds=[currentUser.id];
   // بررسی دسترسی کاربر انتخاب‌شده
   if(personId&&!canViewAllReports&&allowedIds.indexOf(personId)===-1){
-    showAlert('دسترسی غیرمجاز: این کاربر به شما تفویض نکرده است.','error');return;
+    showAlert('دسترسی غیرمجاز.','error');return;
   }
   // ─── فیلتر مهمان‌ها ───
   var includeGuests=$('rep_include_guests')?$('rep_include_guests').checked:true;
