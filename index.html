@@ -3825,7 +3825,7 @@ async function updateBadges(){
 }
 
 /* ═════ Navigation ═════ */
-function showSection(id,skipHistory){
+async function showSection(id,skipHistory){
   closePopups();
   // ─── ریدایرکت بخش‌های ادغام‌شده (قبل از تغییر visibility) ───
   if(id==='my_activities')id='my_tasks';
@@ -3868,6 +3868,10 @@ function showSection(id,skipHistory){
     else{adminBox.classList.add('hidden');noAccess.classList.remove('hidden');}
   }
   if(id==='daily_log'){
+    // اطمینان از بارگذاری cachedPersons قبل از پر کردن dropdown
+    if(!cachedPersons||!cachedPersons.length){
+      await loadAllPersons();
+    }
     populatePersonDropdown('log_person_id',true);
     if(!currentLogPerson)$('log_person_id').value=currentUser.id;
     currentLogPerson=$('log_person_id').value;
