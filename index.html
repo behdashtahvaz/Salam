@@ -5310,22 +5310,41 @@ async function savePresenceAndShowDiscrepancies(){
   var personId=$('log_person_id')?$('log_person_id').value:'';
   if(!entryT||!exitT||!dateStr||!personId){showAlert('ساعت ورود، خروج، تاریخ و پرسنل الزامی است.','error');return;}
   if(entryT==='--:--'||exitT==='--:--'){showAlert('ساعت ورود و خروج را انتخاب کنید.','error');return;}
-  // ─── ۱. ذخیره رکورد حضور ───
+  // ─── ۱. ذخیره رکورد حضور (با بررسی رکورد موجود) ───
   showLoading('ثبت حضور...');
   try{
-    var presenceLog={
-      id:'tmp-'+genUUID(),  // پیشوند tmp- برای اینکه saveLogToDB آن را به‌عنوان رکورد جدید شناسایی کند
-      user_id:personId,
-      date:normJ(dateStr),
-      status:'normal',
-      data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
-    };
+    // بررسی: آیا رکورد حضور برای این تاریخ وجود دارد؟
+    var existing=await loadLogs(personId,normJ(dateStr),normJ(dateStr));
+    var existingNormal=null;
+    if(existing){
+      existingNormal=existing.filter(function(l){return l.status==='normal';})[0];
+    }
+    var presenceLog;
+    if(existingNormal){
+      // رکورد موجود → آپدیت
+      presenceLog={
+        id:existingNormal.id,  // آی‌دی موجود → saveLogToDB آن را به‌عنوان آپدیت شناسایی می‌کند
+        user_id:personId,
+        date:normJ(dateStr),
+        status:'normal',
+        data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
+      };
+    }else{
+      // رکورد جدید
+      presenceLog={
+        id:'tmp-'+genUUID(),
+        user_id:personId,
+        date:normJ(dateStr),
+        status:'normal',
+        data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
+      };
+    }
     if(personId!==currentUser.id){
       presenceLog.submitted_by=currentUser.id;
       presenceLog.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
     }
     await saveLogToDB(presenceLog);
-    await recordAudit('create','daily_logs',presenceLog.id,{status:'normal',date:dateStr,entry:entryT,exit:exitT});
+    await recordAudit(existingNormal?'update':'create','daily_logs',presenceLog.id,{status:'normal',date:dateStr,entry:entryT,exit:exitT});
   }catch(e){
     showAlert('خطا در ثبت حضور: '+e.message,'error');
     hideLoading();
