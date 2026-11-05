@@ -1119,7 +1119,7 @@ button,.btn{-webkit-touch-callout:none}
     <!-- این عبارت در لوگو موجود است، نیازی به تکرار نیست -->
     <div id="auth_error" class="auth-error"></div>
     <form id="login_form">
-      <div class="form-group"><label>کد پرسنلی:</label><input type="text" id="login_email" required placeholder="مثلاً 88652" autocomplete="off"></div>
+      <div class="form-group"><label>کد ملی:</label><input type="text" id="login_email" required placeholder="مثلاً 1234567890" autocomplete="off"></div>
       <div class="form-group"><label>رمز عبور:</label><input type="password" id="login_password" required></div>
       <button type="submit" class="btn btn-info" id="login_btn" style="width:100%;padding:12px;font-size:15px">ورود به سیستم</button>
     </form>
@@ -1127,7 +1127,7 @@ button,.btn{-webkit-touch-callout:none}
       <a href="javascript:void(0)" onclick="showRecoveryScreen()" style="color:var(--secondary);text-decoration:underline">فراموشی رمز سوپرادمین</a>
     </p>
     <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--secondary)">
-      🔒 ورود با کد پرسنلی و رمز عبور.<br>
+      🔒 ورود با کد ملی و رمز عبور.<br>
       حساب کاربری توسط مدیر سامانه ایجاد می‌شود.
     </p>
   </div>
@@ -1788,11 +1788,11 @@ button,.btn{-webkit-touch-callout:none}
   
   <div id="user_create_form" class="hidden">
     <h3>ایجاد کاربر جدید</h3>
-    <p>اطلاعات کاربر را وارد کنید. سیستم هم‌زمان دعوت‌نامه، حساب احراز هویت و رمز عبور را می‌سازد. سپس کد پرسنلی و رمز را به کاربر بدهید.</p>
+    <p>اطلاعات کاربر را وارد کنید. سپس کد ملی و رمز را به کاربر بدهید.</p>
   <div class="form-row">
     <div class="form-group"><label>نام:</label><input type="text" id="inv_first_name"></div>
     <div class="form-group"><label>نام خانوادگی:</label><input type="text" id="inv_last_name"></div>
-    <div class="form-group"><label>شماره پرسنلی:</label><input type="text" id="inv_personnel_id" dir="ltr"></div>
+    <div class="form-group"><label>کد ملی:</label><input type="text" id="inv_personnel_id" dir="ltr" placeholder="مثلاً 1234567890"></div>
   </div>
   <div class="form-row">
     <div class="form-group"><label>نقش:</label><select id="inv_role" onchange="onRoleChange()"></select><small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">نقش‌ها از منوی «🎭 تعریف نقش‌ها» بارگذاری می‌شوند.</small></div>
@@ -1832,7 +1832,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>تکرار رمز:</label><input type="password" id="inv_password2" dir="ltr" autocomplete="new-password"></div>
   </div>
   <button class="btn btn-success" id="btn_create_invitation">ساخت کاربر</button>
-  <p><small>✅ کاربر با کد پرسنلی و رمزی که وارد کردید ساخته می‌شود. نیازی به ثبت‌نام توسط کاربر نیست — فقط کد پرسنلی و رمز را به او بدهید.</small></p>
+  <p><small>✅ کاربر با کد ملی و رمزی که وارد کردید ساخته می‌شود. فقط کد ملی و رمز را به او بدهید.</small></p>
   </div><!-- user_create_form -->
   
   <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
@@ -2599,7 +2599,7 @@ function showEmailConstraintGuide(){
     '<h2 style="margin:0 0 12px;color:#e74c3c;font-size:18px">⚠️ خطای تکراری بودن ایمیل</h2>'+
     '<div style="background:#fadbd8;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#922b21">'+
       'ستون <code>email</code> در جدول <code>profiles</code> دارای محدودیت <code>UNIQUE</code> است.<br>'+
-      'چون ایمیل به‌صورت خودکار از شماره پرسنلی تولید می‌شود، اگر قبلاً کاربری با همین شماره پرسنلی ساخته شده باشد، خطا می‌دهد.<br><br>'+
+      'چون ایمیل به‌صورت خودکار از کد ملی تولید می‌شود، اگر قبلاً کاربری با همین کد ملی ساخته شده باشد، خطا می‌دهد.<br><br>'+
       '<b>راه‌حل:</b> محدودیت UNIQUE را حذف کنید — ایمیل دیگر برای احراز هویت استفاده نمی‌شود.'+
     '</div>'+
     '<div style="margin-bottom:12px">'+
@@ -3093,7 +3093,7 @@ async function handleLogin(e){
   var btn=$('login_btn');btn.disabled=true;btn.innerHTML='در حال ورود...<span class="auth-loading"></span>';
   var personnelId=toEnglishDigits(val('login_email'));
   var password=val('login_password');
-  if(!personnelId||!password){showAuthError('کد پرسنلی و رمز را وارد کنید.');btn.disabled=false;btn.textContent='ورود به سیستم';return;}
+  if(!personnelId||!password){showAuthError('کد ملی و رمز را وارد کنید.');btn.disabled=false;btn.textContent='ورود به سیستم';return;}
   try{
     const{data:loginData,error:loginError}=await sb.rpc('rpc_login',{p_personnel_id:personnelId,p_password:password});
     if(loginError){
@@ -3125,7 +3125,7 @@ async function handleLogin(e){
     else{document.body.classList.remove('guest-mode');document.body.classList.remove('no-log');}
     $('auth_screen').classList.add('hidden');
     $('main_app').classList.remove('hidden');
-    try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');setTimeout(checkUnreadNotifications,500);generateReminderAlerts();setTimeout(checkActiveAlerts,1500);}catch(e){console.warn('post-login:',e);}
+    try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');setTimeout(checkUnreadNotifications,500);generateReminderAlerts();setTimeout(checkActiveAlerts,1500);setTimeout(function(){showAlert('👋 خوش آمدید '+esc(currentUser.profile.first_name)+' '+esc(currentUser.profile.last_name)+'!\n\nشما با موفقیت وارد سامانه شدید.','success');},800);}catch(e){console.warn('post-login:',e);}
     updateUserBox();
     applyRoleBasedUI();
   }catch(err){
@@ -7022,13 +7022,13 @@ async function printLeave(id){
     w.document.write('<div class="subject">موضوع: درخواست مرخصی روزانه</div>\n');
     // متن نامه
     w.document.write('<div class="para">با سلام و احترام،</div>\n');
-    w.document.write('<div class="para">اینجانب '+esc(fullName)+' ، به شماره پرسنلی '+pidStr+' ، به استحضار می‌رسانم که به دلیل '+esc(reason)+' ، مایل هستم در تاریخ '+dateDisplay+' به تعداد '+daysStr+' روز از مرخصی روزانه استفاده کنم.</div>\n');
+    w.document.write('<div class="para">اینجانب '+esc(fullName)+' ، به کد ملی '+pidStr+' ، به استحضار می‌رسانم که به دلیل '+esc(reason)+' ، مایل هستم در تاریخ '+dateDisplay+' به تعداد '+daysStr+' روز از مرخصی روزانه استفاده کنم.</div>\n');
     w.document.write('<div class="para">خواهشمند است دستور فرمایید پس از بررسی، موافقت جنابعالی با این درخواست اعلام شود. پیشاپیش از توجه و همکاری شما سپاسگزارم.</div>\n');
     // امضای درخواست‌کننده
     w.document.write('<div class="sig-block">\n');
     w.document.write('با تشکر و احترام<br>\n');
     w.document.write(esc(fullName)+'<br>\n');
-    w.document.write('شماره پرسنلی: '+pidStr+'<br>\n');
+    w.document.write('کد ملی: '+pidStr+'<br>\n');
     w.document.write('<span class="sig-line">امضا</span>\n');
     w.document.write('</div>\n');
     // یادداشت هماهنگ‌کننده
@@ -7215,7 +7215,7 @@ async function sendNotification(){
 /* ═════ Users management ═════ */
 async function createInvitation(){
   var first=val('inv_first_name'),last=val('inv_last_name'),pid=toEnglishDigits(val('inv_personnel_id')),role=val('inv_role'),password=val('inv_password'),password2=val('inv_password2');
-  if(!first||!last||!pid){showAlert('نام، نام خانوادگی و شماره پرسنلی الزامی است.');return;}
+  if(!first||!last||!pid){showAlert('نام، نام خانوادگی و کد ملی الزامی است.');return;}
   if(!password){showAlert('رمز عبور الزامی است.');return;}
   if(password!==password2){showAlert('رمز و تکرار آن یکسان نیستند.');return;}
   if(!isPasswordStrong(password)){showAlert('رمز خیلی کوتاه است. حداقل ۴ کاراکتر وارد کنید.');return;}
@@ -7239,7 +7239,7 @@ async function createInvitation(){
         expiresAt=new Date(gExp[0],gExp[1]-1,gExp[2],23,59,59).toISOString();
       }
     }
-    // ایمیل از فرم حذف شد — به‌صورت خودکار از شماره پرسنلی تولید می‌شود
+    // ایمیل از فرم حذف شد — به‌صورت خودکار از کد ملی تولید می‌شود
     var email=pid+'@salam.health';
     var parent=null; // فیلد parent از فرم حذف شد
     // ─── نقش مستقیم ذخیره می‌شود ───
@@ -7285,7 +7285,7 @@ async function createInvitation(){
         showAlert('خطا در ایجاد کاربر: '+errMsg,'error');
       }
     }else{
-      showAlert('✅ کاربر ساخته شد. کد پرسنلی: '+pid+' — رمز را به کاربر بدهید.','success');
+      showAlert('✅ کاربر ساخته شد. کد ملی: '+pid+' — رمز را به کاربر بدهید.','success');
       $('inv_first_name').value='';$('inv_last_name').value='';$('inv_personnel_id').value='';$('inv_password').value='';$('inv_password2').value='';
       $('inv_strength_bar').style.width='0%';$('inv_strength_label').textContent='';
       await renderUsers();
@@ -7316,7 +7316,7 @@ async function renderUsers(){
     }else{
       visibleUsers=cachedPersons;
     }
-    var h='<table><tr><th class="sortable">نام</th><th class="sortable">نام خانوادگی</th><th class="sortable">شماره پرسنلی</th><th class="sortable">نقش</th><th class="sortable">نوع خوداظهاری</th><th>مسئول واحد</th><th>دسترسی‌ها</th><th class="sortable">وضعیت</th><th>عملیات</th></tr>';
+    var h='<table><tr><th class="sortable">نام</th><th class="sortable">نام خانوادگی</th><th class="sortable">کد ملی</th><th class="sortable">نقش</th><th class="sortable">نوع خوداظهاری</th><th>مسئول واحد</th><th>دسترسی‌ها</th><th class="sortable">وضعیت</th><th>عملیات</th></tr>';
     visibleUsers.forEach(function(p){
       var coord=p.parent_id?getPersonName(p.parent_id):'—';
       var isSelf=(p.id===currentUser.id);
@@ -7482,7 +7482,7 @@ async function changeRole(userId,newRole){
   hideLoading();
 }
 
-// ─── ویرایش اطلاعات کاربر (نام، نام خانوادگی، شماره پرسنلی، ایمیل) ───
+// ─── ویرایش اطلاعات کاربر (نام، نام خانوادگی، کد ملی) ───
 function editUserDetails(userId){
   var p=cachedPersons.filter(function(x){return x.id===userId;})[0];
   if(!p){showAlert('کاربر یافت نشد.','error');return;}
@@ -7510,7 +7510,7 @@ function editUserDetails(userId){
       '<div class="form-group"><label>نام خانوادگی:</label><input type="text" id="ed_last_name" value="'+esc(p.last_name||'')+'"></div>'+
     '</div>'+
     '<div class="form-row">'+
-      '<div class="form-group"><label>شماره پرسنلی:</label><input type="text" id="ed_personnel_id" dir="ltr" value="'+esc(p.personnel_id||'')+'"></div>'+
+      '<div class="form-group"><label>کد ملی:</label><input type="text" id="ed_personnel_id" dir="ltr" value="'+esc(p.personnel_id||'')+'"></div>'+
     '</div>'+
     // ─── نقش ───
     '<div class="form-row">'+
@@ -7567,7 +7567,7 @@ function editUserDetails(userId){
     var firstName=val('ed_first_name'),lastName=val('ed_last_name'),pid=toEnglishDigits(val('ed_personnel_id'));
     var newRole=$('ed_role').value;
     var newParent=val('ed_parent');
-    if(!firstName||!lastName||!pid){showAlert('نام، نام خانوادگی و شماره پرسنلی الزامی است.','error');return;}
+    if(!firstName||!lastName||!pid){showAlert('نام، نام خانوادگی و کد ملی الزامی است.','error');return;}
     // ─── بررسی تغییر نقش ───
     var roleChanged=(newRole!==currentDisplayRole);
     var roleLabel=getRoleLabel(newRole);
@@ -8386,7 +8386,7 @@ function personReport(person,logs,period){
   h+='</tbody></table>';
   return '<div class="rep rep-page">'+
     '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px"><div style="text-align:center;font-weight:bold;font-size:14px;color:var(--c-primary)">📊 گزارش کارکرد — روز به روز</div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>نام:</b> '+esc(person.first_name)+'</span><span><b>نام خانوادگی:</b> '+esc(person.last_name)+'</span><span><b>شماره پرسنلی:</b> '+esc(person.personnel_id)+'</span><span><b>نقش:</b> '+esc(getRoleLabel(person.role))+'</span><span><b>دوره:</b> '+esc(period)+'</span></div></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>نام:</b> '+esc(person.first_name)+'</span><span><b>نام خانوادگی:</b> '+esc(person.last_name)+'</span><span><b>کد ملی:</b> '+esc(person.personnel_id)+'</span><span><b>نقش:</b> '+esc(getRoleLabel(person.role))+'</span><span><b>دوره:</b> '+esc(period)+'</span></div></div>'+
     '<div class="sum" style="background:var(--c-bg-alt);padding:10px;border-radius:8px;margin-bottom:10px">'+summaryHtml(summarize(logs))+'</div>'+h+
     '<div style="margin-top:14px;display:flex;justify-content:space-between"><div>امضای کاربر: ..................</div><div>امضای مسئول: ..................</div></div>'+
     '<p style="text-align:center;margin:6px 0 0;font-size:9px;color:var(--c-text-muted)">این سند صرفاً گزارش اظهارات ثبت‌شده است — تولید شده در '+getTodayJalali()+'</p></div>';
@@ -8518,7 +8518,7 @@ async function generateEntryExitReport(){
         '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px">'+
           '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px">'+
             '<span><b>نام:</b> '+esc(p.first_name+' '+p.last_name)+'</span>'+
-            '<span><b>شماره پرسنلی:</b> '+esc(p.personnel_id)+'</span>'+
+            '<span><b>کد ملی:</b> '+esc(p.personnel_id)+'</span>'+
             '<span><b>دوره:</b> '+esc(period)+'</span>'+
           '</div>'+
         '</div>'+
