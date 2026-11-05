@@ -1215,12 +1215,18 @@ button,.btn{-webkit-touch-callout:none}
         <button class="nav-item" data-target="send_notification"><span class="ico">📢</span><span class="lbl">ارسال پیام</span></button>
       </div>
     </div>
-    <!-- ۶. مدیریت سامانه -->
+    <!-- ۶. مدیریت کاربران (قابل تفویض) -->
+    <div class="nav-section users-access">
+      <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">👥 مدیریت کاربران <span class="nav-chevron">▾</span></div>
+      <div class="nav-section-body">
+        <button class="nav-item users-access" data-target="users"><span class="ico">👥</span><span class="lbl">مدیریت کاربران و نقش‌ها</span></button>
+        <button class="nav-item roles-access" data-target="roles"><span class="ico">🎭</span><span class="lbl">تعریف نقش‌ها</span></button>
+      </div>
+    </div>
+    <!-- ۷. مدیریت سامانه (فقط مدیر) -->
     <div class="nav-section admin-only admin-zone">
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">⚙️ مدیریت سامانه <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
-        <button class="nav-item" data-target="users"><span class="ico">👥</span><span class="lbl">مدیریت کاربران و نقش‌ها</span></button>
-        <button class="nav-item roles-access" data-target="roles"><span class="ico">🎭</span><span class="lbl">تعریف نقش‌ها</span></button>
         <button class="nav-item" data-target="hierarchy"><span class="ico">🌳</span><span class="lbl">سلسله‌مراتب سازمانی</span></button>
         <button class="nav-item events-access hidden" data-target="events"><span class="ico">📅</span><span class="lbl">رویدادها و تعطیلات</span></button>
 
@@ -3268,14 +3274,19 @@ function applyRoleBasedUI(){
   // events-access: admin/super_admin یا کاربر با can_manage_events
   var canEvents=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_events);
   document.querySelectorAll('.events-access').forEach(function(el){el.classList.toggle('hidden',!canEvents);});
-  // shift-access: admin/super_admin یا کاربر با can_manage_shifts
-  // از cachedPersons هم چک می‌کنیم (برای دسترسی‌های جدید بدون نیاز به خروج/ورود)
+  // ─── دسترسی‌های قابل تفویض: لوح شیفت، تعریف نقش‌ها، مدیریت کاربران ───
+  // از cachedPersons (داده تازه از DB) و currentUser.profile چک می‌کنیم
   var meInCache=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
-  var myProfile=meInCache||currentUser.profile;
-  var canShifts=isAdmin||(myProfile&&myProfile.can_manage_shifts);
+  var myProfile=meInCache||currentUser.profile||{};
+  // بررسی can_manage_shifts (با پشتیبانی boolean و string)
+  var hasShiftAccess=myProfile.can_manage_shifts===true||myProfile.can_manage_shifts==='true'||myProfile.can_manage_shifts===1;
+  var canShifts=isAdmin||hasShiftAccess;
+  // shift-access: لوح شیفت
   document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
-  // roles-access: همان منطق shift-access
-  document.querySelectorAll('.roles-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
+  // roles-access و users-access: تعریف نقش‌ها و مدیریت کاربران
+  document.querySelectorAll('.roles-access,.users-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
+  // دیباگ: در کنسول لاگ بزن
+  console.log('applyRoleBasedUI: canShifts=',canShifts,'isAdmin=',isAdmin,'hasShiftAccess=',hasShiftAccess,'can_manage_shifts=',myProfile.can_manage_shifts);
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
   //   ۱. دسترسی تأیید مرخصی (can_approve_leaves)
