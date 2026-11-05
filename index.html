@@ -3908,6 +3908,7 @@ function showSection(id,skipHistory){
     if(!currentLogPerson)$('log_person_id').value=currentUser.id;
     currentLogPerson=$('log_person_id').value;
     toggleLogFields();syncLog();
+    setTimeout(prefillDefaultTimes,200);
   }
   /* leave_req section removed */
   if(id==='my_tasks')renderMyTasks();
@@ -5217,7 +5218,16 @@ function summaryHtml(s){
 }
 
 /* ═════ Daily Log ═════ */
-async function syncLog(){currentLogPerson=$('log_person_id').value;currentLogDate=$('log_date').value;updateDiscrepancyVisibility();updateDeclarationModeBanner();updateStandardHoursDisplay();if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();await renderDailyLogsList();if(currentLogPerson===currentUser.id)await renderVerificationPending();}
+async function syncLog(){currentLogPerson=$('log_person_id').value;currentLogDate=$('log_date').value;updateDeclarationModeBanner();updateStandardHoursDisplay();if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();await renderDailyLogsList();if(currentLogPerson===currentUser.id)await renderVerificationPending();}
+// پر کردن پیش‌فرض ساعت ورود/خروج با ساعات استاندارد (فقط فرم جدید)
+function prefillDefaultTimes(){
+  if($('log_id')&&$('log_id').value)return; // اگر ویرایش است، پر نکن
+  var dateStr=$('log_date')?$('log_date').value:'';
+  if(!dateStr)return;
+  var wh=getStandardWorkHours(dateStr);
+  if($('entry_time')&&!$('entry_time').value){setTimepickerValue('entry_time',wh.start_time);}
+  if($('exit_time')&&!$('exit_time').value){setTimepickerValue('exit_time',wh.end_time);}
+}
 async function renderDailyLogsList(){
   var c=$('daily_logs_list_container');
   if(!currentLogPerson||!currentLogDate){c.innerHTML='<p>پرسنل و تاریخ را انتخاب کنید.</p>';return;}
@@ -5409,14 +5419,20 @@ function checkTimeDiscrepancy(){
   actions.innerHTML=btns;
 }
 async function applyDiscrepancySuggestion(type){
-  // ذخیره ساعت ورود/خروج فعلی
+  // این تابع دیگر استفاده نمی‌شود — به‌جای آن showDiscrepancyModal استفاده می‌شود
+  // اما برای سازگاری باقی می‌ماند
+  showDiscrepancyModal();
+}
+// ═══ مودال مغایرت: بعد از ثبت حضور، همه مغایرت‌ها را نشان بده ═══
+async function savePresenceAndShowDiscrepancies(){
   var entryT=$('entry_time')?$('entry_time').value:'';
   var exitT=$('exit_time')?$('exit_time').value:'';
   var topic=$('normal_topic')?$('normal_topic').value:'';
   var dateStr=$('log_date')?$('log_date').value:'';
   var personId=$('log_person_id')?$('log_person_id').value:'';
-  if(!entryT||!exitT||!dateStr||!personId)return;
-  // ─── ۱. ابتدا رکورد حضور را ذخیره کن ───
+  if(!entryT||!exitT||!dateStr||!personId){showAlert('ساعت ورود، خروج، تاریخ و پرسنل الزامی است.','error');return;}
+  if(entryT==='--:--'||exitT==='--:--'){showAlert('ساعت ورود و خروج را انتخاب کنید.','error');return;}
+  // ─── ۱. ذخیره رکورد حضور ───
   showLoading('ثبت حضور...');
   try{
     var presenceLog={
@@ -5424,16 +5440,8 @@ async function applyDiscrepancySuggestion(type){
       user_id:personId,
       date:normJ(dateStr),
       status:'normal',
-      data:{
-        discrepancy:'',
-        fields:{
-          entry_time:entryT,
-          exit_time:exitT,
-          topic:topic
-        }
-      }
+      data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
     };
-    // اگر تفویض است
     if(personId!==currentUser.id){
       presenceLog.submitted_by=currentUser.id;
       presenceLog.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
@@ -5446,38 +5454,124 @@ async function applyDiscrepancySuggestion(type){
     return;
   }
   hideLoading();
-  // ─── ۲. حالا فرم را برای ثبت عدم حضور (مرخصی/مأموریت ساعتی) آماده کن ───
-  $('log_status').value='absence';
-  toggleLogFields();
-  $('absence_type').value=type;
-  toggleAbsenceFields();
-  // محاسبه ساعت‌های غیبت
+  // ─── ۲. محاسبه مغایرت‌ها ───
   var wh=getStandardWorkHours(dateStr);
   var entryMin=timeToMinutes(entryT);
   var exitMin=timeToMinutes(exitT);
   var stdStartMin=timeToMinutes(wh.start_time);
   var stdEndMin=timeToMinutes(wh.end_time);
-  if(type==='hourly_leave'){
-    // مرخصی ساعتی: ساعت‌های غیبت داخل ساعات اداری
-    var gapStart='',gapEnd='';
-    if(entryMin>stdStartMin){gapStart=wh.start_time;gapEnd=entryT;}
-    else if(exitMin<stdEndMin){gapStart=exitT;gapEnd=wh.end_time;}
-    if(gapStart&&gapEnd){
-      setTimepickerValue('abs_start_time',gapStart);
-      setTimepickerValue('abs_end_time',gapEnd);
-    }
-    if($('abs_reason'))$('abs_reason').value='مرخصی ساعتی — تأخیر/خروج زودهنگام';
-  }else if(type==='hourly_mission'){
-    // مأموریت ساعتی: ساعت‌های خارج از اداری
-    setTimepickerValue('abs_start_time',entryT);
-    setTimepickerValue('abs_end_time',exitT);
-    if($('mh_location'))$('mh_location').value='خارج از مرکز';
-    if($('abs_reason'))$('abs_reason').value='مأموریت ساعتی — خارج از ساعات اداری';
+  var discrepancies=[];
+  // الف) عدم حضور داخل ساعات اداری (تأخیر ورود یا خروج زودهنگام)
+  if(entryMin>stdStartMin){
+    discrepancies.push({type:'absence',start:wh.start_time,end:entryT,label:'عدم حضور ساعتی (تأخیر در ورود)',duration:formatMins(entryMin-stdStartMin)});
   }
-  // مخفی کردن کادر مغایرت
-  var box=$('discrepancy_suggestion');
-  if(box)box.classList.add('hidden');
-  showAlert('✅ حضور ثبت شد ('+entryT+' تا '+exitT+'). حالا مرخصی/مأموریت ساعتی را بررسی و ثبت کنید.','success');
+  if(exitMin<stdEndMin&&exitMin>stdStartMin){
+    discrepancies.push({type:'absence',start:exitT,end:wh.end_time,label:'عدم حضور ساعتی (خروج زودهنگام)',duration:formatMins(stdEndMin-exitMin)});
+  }
+  // ب) حضور خارج از ساعات اداری (اضافه‌کاری یا مأموریت)
+  if(exitMin>stdEndMin){
+    discrepancies.push({type:'overtime',start:wh.end_time,end:exitT,label:'حضور خارج از ساعات اداری (پس از ساعت کار)',duration:formatMins(exitMin-stdEndMin)});
+  }
+  if(entryMin<stdStartMin){
+    discrepancies.push({type:'overtime',start:entryT,end:wh.start_time,label:'حضور خارج از ساعات اداری (قبل از ساعت کار)',duration:formatMins(stdStartMin-entryMin)});
+  }
+  // اگر مغایرتی نیست
+  if(discrepancies.length===0){
+    showAlert('✅ حضور ثبت شد ('+entryT+' تا '+exitT+'). هیچ مغایرتی با ساعت استاندارد ('+wh.start_time+' تا '+wh.end_time+') وجود ندارد.','success');
+    resetDailyLogForm();
+    await renderDailyLogsList();
+    return;
+  }
+  // ─── ۳. نمایش مودال مغایرت ───
+  showDiscrepancyModal(discrepancies,dateStr,personId,entryT,exitT);
+}
+function showDiscrepancyModal(discrepancies,dateStr,personId,entryT,exitT){
+  var old=document.getElementById('discrepancy_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='discrepancy_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  var html='<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3);margin:20px auto">'+
+    '<h2 style="margin:0 0 8px;color:var(--c-primary);font-size:18px">⚠️ مغایرت با ساعت کاری استاندارد</h2>'+
+    '<div style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px">حضور شما از '+entryT+' تا '+exitT+' ثبت شد. موارد زیر نیاز به توضیح دارند:</div>';
+  discrepancies.forEach(function(d,i){
+    var bg=d.type==='absence'?'#fef3c7':'#d6eaf8';
+    var border=d.type==='absence'?'#f59e0b':'#3498db';
+    var icon=d.type==='absence'?'❌':'⚡';
+    var options=d.type==='absence'?
+      '<option value="hourly_leave">⏰ مرخصی ساعتی</option><option value="absence_no_leave">❌ غیبت</option>':
+      '<option value="overtime">⚡ اضافه‌کاری</option><option value="hourly_mission">🔁 مأموریت ساعتی</option>';
+    html+='<div style="background:'+bg+';border:1px solid '+border+';border-radius:8px;padding:12px;margin-bottom:12px">'+
+      '<div style="font-weight:700;font-size:13px;margin-bottom:6px">'+icon+' '+esc(d.label)+'</div>'+
+      '<div style="font-size:12px;color:var(--c-text-muted);margin-bottom:8px">از '+esc(d.start)+' تا '+esc(d.end)+' (مدت: '+esc(d.duration)+')</div>'+
+      '<div class="form-row" style="margin:0;align-items:flex-end">'+
+        '<div class="form-group" style="flex:1;margin:0">'+
+          '<label>علت:</label>'+
+          '<select id="disc_reason_'+i+'">'+options+'</select>'+
+        '</div>'+
+        '<div class="form-group" style="flex:1;margin:0">'+
+          '<label>توضیحات (اختیاری):</label>'+
+          '<input type="text" id="disc_desc_'+i+'" placeholder="توضیحات...">'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  });
+  html+='<div style="display:flex;gap:8px;margin-top:16px">'+
+    '<button class="btn btn-success" id="disc_save_all">✅ ثبت همه مغایرت‌ها</button>'+
+    '<button class="btn btn-warning" id="disc_edit_times">✏️ اصلاح ساعت‌ها</button>'+
+    '<button class="btn btn-secondary" id="disc_skip">رد شدن</button>'+
+  '</div></div>';
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  // دکمه ثبت همه
+  $('disc_save_all').onclick=async function(){
+    showLoading('ثبت مغایرت‌ها...');
+    try{
+      for(var i=0;i<discrepancies.length;i++){
+        var d=discrepancies[i];
+        var reason=$('disc_reason_'+i)?$('disc_reason_'+i).value:'';
+        var desc=$('disc_desc_'+i)?$('disc_desc_'+i).value:'';
+        var status=reason==='overtime'?'overtime':'absence';
+        var logObj={
+          id:genUUID(),
+          user_id:personId,
+          date:normJ(dateStr),
+          status:status,
+          data:{discrepancy:'',fields:{
+            start_time:d.start,end_time:d.end,
+            reason:desc||d.label,
+            absence_type:reason
+          }}
+        };
+        if(personId!==currentUser.id){
+          logObj.submitted_by=currentUser.id;
+          logObj.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
+        }
+        if(status==='absence')logObj.data.absence_type=reason;
+        await saveLogToDB(logObj);
+        await recordAudit('create','daily_logs',logObj.id,{status:status,type:reason,date:dateStr,start:d.start,end:d.end});
+      }
+      showAlert('✅ '+discrepancies.length+' مغایرت ثبت شد.','success');
+      overlay.remove();
+      resetDailyLogForm();
+      await renderDailyLogsList();
+    }catch(e){showAlert('خطا: '+e.message,'error');}
+    hideLoading();
+  };
+  // دکمه اصلاح ساعت‌ها
+  $('disc_edit_times').onclick=function(){
+    overlay.remove();
+    // برگشت به فرم حضور برای اصلاح
+    showAlert('ساعت‌ها را اصلاح کنید و دوباره ثبت کنید.','info');
+  };
+  // دکمه رد شدن
+  $('disc_skip').onclick=function(){
+    overlay.remove();
+    showAlert('حضور ثبت شد. مغایرت‌ها ثبت نشدند — می‌توانید بعداً ثبت کنید.','warning');
+    resetDailyLogForm();
+    renderDailyLogsList();
+  };
 }
 function dismissDiscrepancy(){
   var box=$('discrepancy_suggestion');
@@ -10691,7 +10785,16 @@ function init(){
   on('absence_type','change',toggleAbsenceFields);
   on('log_person_id','change',syncLog);
   on('log_date','change',syncLog);
-  on('btn_save_log','click',saveDailyLog);
+  on('btn_save_log','click',function(){
+    var st=$('log_status')?$('log_status').value:'normal';
+    if(st==='normal'&&!$('log_id').value){
+      // ثبت حضور جدید → بررسی مغایرت و نمایش مودال
+      savePresenceAndShowDiscrepancies();
+    }else{
+      // سایر حالت‌ها (عدم حضور، اضافه‌کاری، ویرایش)
+      saveDailyLog();
+    }
+  });
   on('btn_reset_log','click',resetDailyLogForm);
   delegate('daily_logs_list_container',function(a,id){if(a==='edit')editLog(id);else if(a==='delete')deleteLog(id);});
   // leave_req bindings حذف شدند — بخش leave_req از HTML حذف شده
