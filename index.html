@@ -1220,7 +1220,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">⚙️ مدیریت سامانه <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="users"><span class="ico">👥</span><span class="lbl">مدیریت کاربران و نقش‌ها</span></button>
-        <button class="nav-item" data-target="roles"><span class="ico">🎭</span><span class="lbl">تعریف نقش‌ها</span></button>
+        <button class="nav-item roles-access" data-target="roles"><span class="ico">🎭</span><span class="lbl">تعریف نقش‌ها</span></button>
         <button class="nav-item" data-target="hierarchy"><span class="ico">🌳</span><span class="lbl">سلسله‌مراتب سازمانی</span></button>
         <button class="nav-item events-access hidden" data-target="events"><span class="ico">📅</span><span class="lbl">رویدادها و تعطیلات</span></button>
 
@@ -3263,6 +3263,8 @@ function applyRoleBasedUI(){
   // shift-access: admin/super_admin یا کاربر با can_manage_shifts (تفویض دسترسی لوح شیفت)
   var canShifts=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_shifts);
   document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
+  // roles-access: admin/super_admin یا کاربر با can_manage_shifts (تعریف نقش‌ها هم قابل تفویض)
+  document.querySelectorAll('.roles-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
   //   ۱. دسترسی تأیید مرخصی (can_approve_leaves)
