@@ -5879,7 +5879,7 @@ async function saveDailyLog(){
   }
   showLoading('ذخیره...');
   try{
-    var logObj={id:id||genUUID(),user_id:actualPersonId,date:dateStr,status:status,data:d};
+    var logObj={id:id||('tmp-'+genUUID()),user_id:actualPersonId,date:dateStr,status:status,data:d};
     if(submittedBy){logObj.submitted_by=submittedBy;logObj.submitted_by_name=submittedByName;}
     var savedLog=await saveLogToDB(logObj);
     // پاک‌سازی رکوردهای تمام‌روز تکراری فقط پس از ذخیره موفق
