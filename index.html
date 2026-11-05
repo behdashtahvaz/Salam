@@ -1614,7 +1614,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>نوع بازه:</label><select id="rep_type" onchange="toggleReportDates()"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly" selected>ماهانه</option><option value="custom">بازه دلخواه</option></select></div>
   </div>
   <div class="form-row">
-    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option><option value="entry_exit">📊 ورود و خروج (نفر به نفر)</option></select></div>
+    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option></select></div>
     <div class="form-group" id="rep_start_box"><label>تاریخ شروع:</label><input type="text" id="rep_start_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
     <div class="form-group hidden" id="rep_end_box"><label>تاریخ پایان:</label><input type="text" id="rep_end_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
   </div>
@@ -8098,8 +8098,19 @@ function personReport(person,logs,period){
       var dur=formatMins(calcDuration(x.ot_start,x.ot_end));
       T.ot.push([d,dn,x.ot_start,x.ot_end,dur,x.ot_reason,x.ot_location,[x.ot_topic,x.ot_description].filter(Boolean).join(' — '),disc]);
     }else if(l.status==='normal'){
-      // ─── حضور عادی ───
-      T.normal.push([d,dn,disc||'—']);
+      // ─── حضور عادی با ساعت ورود/خروج ───
+      var entryT=x.entry_time||'—';
+      var exitT=x.exit_time||'—';
+      var nDur=(entryT!=='—'&&exitT!=='—')?formatMins(calcDuration(entryT,exitT)):'—';
+      T.normal.push([d,dn,entryT,exitT,nDur,x.topic||'',disc||'—']);
+    }else if(l.status==='official_record'){
+      // ─── کارکرد رسمی با ساعت ورود/خروج ───
+      var entryT2=x.official_entry_time||'—';
+      var exitT2=x.official_exit_time||'—';
+      var nDur2=(entryT2!=='—'&&exitT2!=='—')?formatMins(calcDuration(entryT2,exitT2)):'—';
+      var os=x.official_status||'';
+      var osLabel={present:'حضور رسمی',absent:'غیبت رسمی',mission:'مأموریت رسمی',leave:'مرخصی رسمی'}[os]||'کارکرد رسمی';
+      T.normal.push([d,dn,entryT2,exitT2,nDur2,osLabel,disc||'—']);
     }else if(l.status==='absence'){
       // بررسی نوع عدم حضور: روزانه یا ساعتی
       var typeLabel=ABS_TYPE_LABELS[t]||t||'نامشخص';
@@ -8130,7 +8141,7 @@ function personReport(person,logs,period){
   });
   // ─── جداول گزارش (سه دسته اصلی + حضور عادی) ───
   var tables=
-    repTable('✅ حضور و کارکرد عادی',['تاریخ','روز','توضیحات'],T.normal)+
+    repTable('✅ حضور و ورود/خروج',['تاریخ','روز','ساعت ورود','ساعت خروج','مدت کارکرد','موضوع','توضیحات'],T.normal)+
     repTable('📅 عدم حضورهای روزانه',['تاریخ','روز','نوع','جزئیات'],T.dailyAbs)+
     repTable('⏰ عدم حضورهای ساعتی',['تاریخ','روز','نوع','از ساعت','تا ساعت','مدت','جزئیات'],T.hourlyAbs)+
     repTable('⚡ اضافه‌کاری‌ها',['تاریخ','روز','از ساعت','تا ساعت','مدت','علت','محل','موضوع و شرح','توضیحات'],T.ot);
@@ -10469,7 +10480,7 @@ function init(){
   on('rep_type','change',toggleReportDates);
   on('btn_gen_report','click',function(){
     var mode=$('rep_mode')?$('rep_mode').value:'perperson';
-    if(mode==='entry_exit'){generateEntryExitReport();}
+    if(mode==='percategory'){generateReport();}
     else{generateReport();}
   });
   on('btn_print_report','click',printReport);
