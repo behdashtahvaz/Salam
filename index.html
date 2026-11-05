@@ -7628,13 +7628,21 @@ function editUserDetails(userId){
     }
     await updateUserProfileDB(userId,updates);
     await recordAudit('update','profiles',userId,{first_name:firstName,last_name:lastName,personnel_id:pid,role:newRole,parent:newParent||null,perms_updated:true});
-    if(userId===currentUser.id&&roleChanged){
-      currentUser.profile.role=updates.role||newRole;
-      currentUser.profile.can_approve_leaves=updates.can_approve_leaves||false;
-      currentUser.profile.can_schedule_tasks=updates.can_schedule_tasks||false;
-      currentRole=updates.role||newRole;
+    if(userId===currentUser.id){
+      // به‌روزرسانی پروفایل کاربر فعلی با مقادیر جدید
+      if(updates.role){currentUser.profile.role=updates.role;currentRole=updates.role;}
+      if(updates.can_approve_leaves!==undefined)currentUser.profile.can_approve_leaves=updates.can_approve_leaves;
+      if(updates.can_schedule_tasks!==undefined)currentUser.profile.can_schedule_tasks=updates.can_schedule_tasks;
+      if(updates.can_manage_shifts!==undefined)currentUser.profile.can_manage_shifts=updates.can_manage_shifts;
+      if(updates.can_view_reports!==undefined)currentUser.profile.can_view_reports=updates.can_view_reports;
+      if(updates.declaration_mode!==undefined)currentUser.profile.declaration_mode=updates.declaration_mode;
+      if(updates.employment_type!==undefined)currentUser.profile.employment_type=updates.employment_type;
+      if(updates.annual_leave_days!==undefined)currentUser.profile.annual_leave_days=updates.annual_leave_days;
+      if(updates.carry_over_days!==undefined)currentUser.profile.carry_over_days=updates.carry_over_days;
+      if(updates.manual_leave_used!==undefined)currentUser.profile.manual_leave_used=updates.manual_leave_used;
       updateUserBox();
       applyRoleBasedUI();
+      showAlert('✅ اطلاعات شما به‌روزرسانی شد. دسترسی‌های جدید اعمال شد.','success');
     }
     var msg='اطلاعات کاربر به‌روزرسانی شد.';
     if(roleChanged)msg+=' نقش: '+roleLabel+'.';
