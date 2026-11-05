@@ -2215,10 +2215,6 @@ function makeTableSortable(table){
     });
   });
 }
-// فعال‌سازی خودکار مرتب‌سازی برای همه جداول با th.sortable
-function initAllSortableTables(){
-  document.querySelectorAll('table').forEach(function(t){makeTableSortable(t);});
-}
 function showLoading(t){var o=$('loading_overlay');o.textContent=t||'در حال پردازش...';o.classList.remove('hidden');}
 function hideLoading(){$('loading_overlay').classList.add('hidden');}
 var alertTimer=null;
@@ -2382,13 +2378,6 @@ function getRoleColor(role){
   if(role==='super_admin')return'#e74c3c';
   if(role==='guest')return'#95a5a6';
   return'#3498db';
-}
-// بررسی محفوظ بودن یک نقش
-function isRoleProtected(role){
-  for(var i=0;i<cachedRoles.length;i++){
-    if(cachedRoles[i].role_key===role)return !!cachedRoles[i].is_protected;
-  }
-  return role==='admin'||role==='super_admin';
 }
 // ساخت HTML برای badge نقش
 function roleBadgeHtml(role,extraStyle){
@@ -2995,9 +2984,6 @@ async function saveLeaveToDB(leave,workflowTransition){
 async function loadMyTasks(filter){
   try{let q=sb.from('tasks').select('*').eq('assignee_id',currentUser.id);if(filter&&filter!=='all')q=q.eq('status',filter);const{data,error}=await q.order('task_date',{ascending:true});if(error)throw error;return data||[];}catch(e){console.error('loadMyTasks:',e);return[];}
 }
-async function loadCreatedTasks(){
-  try{const{data,error}=await sb.from('tasks').select('*').eq('creator_id',currentUser.id).order('created_at',{ascending:false});if(error)throw error;return data||[];}catch(e){console.error('loadCreatedTasks:',e);return[];}
-}
 async function createTaskInDB(task){
   try{const{data,error}=await sb.from('tasks').insert(task).select();if(error)throw error;return data[0];}catch(e){console.error('createTaskInDB:',e);throw e;}
 }
@@ -3034,15 +3020,6 @@ async function markNotificationRead(notificationId){
   try{const{error}=await sb.from('notification_reads').insert({notification_id:notificationId,user_id:currentUser.id});if(error)throw error;}catch(e){console.error('markNotificationRead:',e);}
 }
 
-// Invitations
-async function createInvitationDB(inv){
-  try{const{data,error}=await sb.from('invitations').insert(inv).select();if(error)throw error;if(data&&data[0])await recordAudit('create','invitations',data[0].id,{email:inv.email,personnel_id:inv.personnel_id,role:inv.role});return data[0];}catch(e){console.error('createInvitationDB:',e);throw e;}
-}
-async function loadInvitations(){
-  try{const{data,error}=await sb.from('invitations').select('*').order('created_at',{ascending:false});if(error)throw error;return data||[];}catch(e){console.error('loadInvitations:',e);return[];}
-}
-async function deleteInvitationDB(id){try{const{error}=await sb.from('invitations').delete().eq('id',id);if(error)throw error;}catch(e){throw e;}}
-
 // User management
 async function updateUserProfileDB(userId,updates){
   try{const{data,error}=await sb.from('profiles').update(updates).eq('id',userId).select('id');if(error)throw error;if(!data||!data.length)throw new Error('تغییر اعمال نشد؛ دسترسی یا وجود کاربر را بررسی کنید.');await recordAudit('update','profiles',userId,{changed_fields:Object.keys(updates)});}catch(e){throw e;}
@@ -3050,20 +3027,6 @@ async function updateUserProfileDB(userId,updates){
 async function loadTasksForDate(userId,date){
   try{const{data,error}=await sb.from('tasks').select('*').eq('assignee_id',userId).eq('task_date',date);if(error)throw error;return data||[];}catch(e){return[];}
 }
-async function loadProgramActivitiesForDate(userId,dateStr){
-  // فعالیت‌های برنامه که assignee این کاربر است و در این روز (تاریخ شمسی) مهلت دارند
-  try{
-    // محاسبه شروع و پایان روز به timestamp
-    var p=parseJalali(dateStr);
-    var g=jalaliToGregorian(p.jy,p.jm,p.jd);
-    var dayStart=new Date(g[0],g[1]-1,g[2],0,0,0);
-    var dayEnd=new Date(g[0],g[1]-1,g[2],23,59,59);
-    const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',userId).gte('deadline',dayStart.toISOString()).lte('deadline',dayEnd.toISOString());
-    if(error)throw error;
-    return data||[];
-  }catch(e){return[];}
-}
-
 /* ═════ Crypto — به js/crypto.js منتقل شد ═════ */
 /* توابع زیر در js/crypto.js تعریف شده‌اند و از طریق window گلوبال در دسترس‌اند:
    sha256, genSalt, genRecoveryCode, hashSecret,
@@ -4071,15 +4034,7 @@ function populatePersonDropdown(dropdownId,autoFirst){
     else if(!all&&persons.length&&dropdownId!=='rec_person'&&dropdownId!=='rep_person')select.value=persons[0].id;
   }
 }
-// populateSubordinateDropdown حذف شد — فقط در coordinator_tasks استفاده می‌شد که حذف شده است
-function populateCoordinatorDropdown(dropdownId){
-  var select=$(dropdownId);
-  if(!select)return; // فیلد parent از فرم ایجاد کاربر حذف شده
-  var coordinators=cachedPersons.filter(function(p){return p.role==='user'&&(p.can_approve_leaves||p.can_schedule_tasks);});
-  var o='<option value="">—</option>';
-  coordinators.forEach(function(p){o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';});
-  select.innerHTML=o;
-}
+// populateSubordinateDropdown و populateCoordinatorDropdown حذف شدند — فیلد parent از فرم ایجاد کاربر حذف شده است
 function populateRecipientDropdown(){
   // ─── تک‌گیرنده ───
   var select=$('notif_recipient');
@@ -4534,31 +4489,6 @@ function goToDailyLog(dateStr,personId){
   resetDailyLogForm();
   syncLog();
 }
-// ساخت مأموریت مناسبت — با فعالیت‌های زیرمجموعه
-function addManualEvent(dateStr){
-  var canManage=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_events);
-  if(!canManage){showAlert('دسترسی غیرمجاز.','error');return;}
-  var p=parseJalali(dateStr);
-  var year=p.jy;
-  var overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
-  overlay.innerHTML='<div style="background:var(--c-card);border-radius:12px;padding:20px;max-width:480px;width:100%">'+
-    '<h3 style="margin:0 0 12px">➕ رویداد جدید — '+esc(dateStr)+'</h3>'+
-    '<div class="form-group"><label>عنوان رویداد (الزامی):</label><input type="text" id="me_title" placeholder="مثلاً: همایش ماهانه"></div>'+
-    '<div class="form-group"><label>توضیحات:</label><textarea id="me_desc" rows="2"></textarea></div>'+
-    '<div class="form-row">'+
-      '<div class="form-group"><label>نوع:</label><select id="me_type"><option value="event">رویداد</option><option value="meeting">جلسه</option><option value="deadline">مهلت</option><option value="holiday">تعطیلی</option><option value="other">سایر</option></select></div>'+
-      '<div class="form-group"><label>اولویت:</label><select id="me_priority"><option value="low">🟢 پایین</option><option value="medium" selected>🟡 متوسط</option><option value="high">🟠 بالا</option><option value="force">🔴 اجباری</option></select></div>'+
-    '</div>'+
-    '<div class="form-group"><label><input type="checkbox" id="me_holiday"> روز تعطیل</label></div>'+
-    '<div style="display:flex;gap:8px;margin-top:14px">'+
-      '<button class="btn btn-success" onclick="saveManualEvent(\''+dateStr+'\','+year+')">ثبت رویداد</button>'+
-      '<button class="btn btn-secondary" onclick="this.closest(\'div[style*=fixed]\').remove()">انصراف</button>'+
-    '</div>'+
-    '<p style="font-size:11px;color:var(--c-text-muted);margin-top:10px">⚠️ این رویداد برای همه کاربران قابل مشاهده خواهد بود. کاربران مجاز می‌توانند روی آن مأموریت تعریف کنند.</p>'+
-  '</div>';
-  document.body.appendChild(overlay);
-}
 async function saveManualEvent(dateStr,year){
   var title=val('me_title'),desc=val('me_desc'),type=val('me_type'),priority=val('me_priority');
   var isHoliday=$('me_holiday')?$('me_holiday').checked:false;
@@ -4757,54 +4687,6 @@ function validateTimeOrder(startStr,endStr,label){
     return false;
   }
   return true;
-}
-function createEventAction(eventId,dateStr){
-  // جلوگیری از مأموریت روی رویدادهای گذشته
-  var todayTs=jalaliToTimestamp(getTodayJalali());
-  var eventTs=jalaliToTimestamp(dateStr);
-  if(eventTs<todayTs){
-    showAlert('⚠️ امکان تعریف مأموریت برای رویدادهای گذشته وجود ندارد.','warning');
-    return;
-  }
-  var personId=$('cal_person')?$('cal_person').value:currentUser.id;
-  // محاسبه آخرین مهلت اجرا = یک روز قبل از رویداد
-  var p=parseJalali(dateStr);
-  var g=jalaliToGregorian(p.jy,p.jm,p.jd);
-  var eventDate=new Date(g[0],g[1]-1,g[2]);
-  var maxDeadline=new Date(eventDate.getTime()-86400000); // یک روز قبل
-  var maxJ=gregorianToJalali(maxDeadline.getFullYear(),maxDeadline.getMonth()+1,maxDeadline.getDate());
-  _eventActionMaxStr=fmtJalali(maxJ[0],maxJ[1],maxJ[2]); // متغیر سراسری
-  var overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
-  overlay.innerHTML='<div style="background:var(--c-card);border-radius:12px;padding:20px;max-width:520px;width:100%;box-sizing:border-box">'+
-    '<h3 style="margin:0 0 12px">➕ مأموریت مناسبت</h3>'+
-    '<div class="form-group"><label>عنوان مأموریت:</label><input type="text" id="act_title" placeholder="مثلاً: آماده‌سازی تبریک نوروز"></div>'+
-    '<div class="form-group"><label>توضیحات:</label><textarea id="act_desc" rows="2"></textarea></div>'+
-    '<div class="form-row">'+
-      '<div class="form-group"><label>اولویت:</label><select id="act_priority"><option value="low">پایین</option><option value="medium" selected>متوسط</option><option value="high">بالا</option><option value="force">اجباری</option></select></div>'+
-      '<div class="form-group"><label>آخرین مهلت اجرا (شمسی):</label><input type="text" id="act_deadline" class="date-picker" value="'+_eventActionMaxStr+'" readonly><small style="color:var(--c-warning);font-size:11px;display:block;margin-top:2px">حداکثر یک روز قبل از رویداد</small></div>'+
-    '</div>'+
-    '<hr style="margin:12px 0;border:0;border-top:1px solid var(--c-border)">'+
-    '<h4 style="margin:0 0 8px;font-size:14px">📋 فعالیت‌های زیرمجموعه</h4>'+
-    '<div id="act_subtasks" style="margin-bottom:8px"></div>'+
-    '<button type="button" class="btn btn-sm btn-secondary" id="btn_add_subtask">➕ افزودن فعالیت</button>'+
-    '<div style="display:flex;gap:8px;margin-top:14px">'+
-      '<button type="button" class="btn btn-success" id="btn_save_event_action">ثبت مأموریت</button>'+
-      '<button type="button" class="btn btn-secondary" id="btn_cancel_event_action">انصراف</button>'+
-    '</div>'+
-  '</div>';
-  document.body.appendChild(overlay);
-  // اتصال رویدادها به‌جای onclick inline
-  $('btn_add_subtask').onclick=function(){addSubTask();};
-  $('btn_save_event_action').onclick=async function(){
-    try{await saveEventAction(eventId,dateStr);}catch(e){hideLoading();showAlert('خطا: '+e.message,'error');}
-  };
-  $('btn_cancel_event_action').onclick=function(){overlay.remove();};
-  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
-  act_subTaskList=[];
-  addSubTask();
-  // اتصال datepicker به فیلد اصلی
-  initDatepickers();
 }
 var _eventActionMaxStr='';
 var act_subTaskList=[];
@@ -6771,77 +6653,8 @@ async function completeTask(id){
   hideLoading();
 }
 
-/* ═════ Coordinator approvals (تأیید اولیه) ═════ */
-async function renderCoordinatorApprovals(){
-  var c=$('coordinator_approvals_container');
-  if(!c)return; // بخش هماهنگ‌کننده از UI حذف شده
-  if(!currentUser.profile.can_approve_leaves&&currentRole!=='admin'&&currentRole!=='super_admin'){c.innerHTML='<p>شما دسترسی تأیید هماهنگ‌کننده ندارید.</p>';return;}
-  try{
-    var leaves=await loadLeavesForCoordinator();
-    // درخواست‌های در انتظار مدیر که هماهنگ‌کننده هنوز نظر نداده
-    var pending=leaves.filter(function(l){return l.status==='manager_pending'&&!l.coordinator_note;});
-    // درخواست‌هایی که هماهنگ‌کننده نظر داده (برای نمایش در لیست قبلی)
-    var noted=leaves.filter(function(l){return l.coordinator_note;});
-    var html='';
-    if(pending.length){
-      html+='<h3>درخواست‌های دریافتی شما ('+pending.length+')</h3>';
-      html+='<p style="font-size:12px;color:var(--c-text-muted);margin-bottom:12px">📌 نقش شما: مشاوره و اطلاع. درخواست مستقیم به مدیر رفته ولی شما می‌توانید نظر بدهید (اختیاری). تأیید/رد فقط توسط مدیر انجام می‌شود.</p>';
-      pending.forEach(function(l){
-        html+='<div class="card" style="border-right:4px solid var(--warning);margin-bottom:10px">'+
-          '<h4 style="margin:0 0 8px">'+esc(getPersonName(l.user_id))+' — '+leavePeriod(l)+'</h4>'+
-          '<div style="font-size:13px;margin-bottom:8px">نوع: '+(l.type==='daily'?'روزانه':'ساعتی')+(l.reason?'<br>علت: '+esc(l.reason):'')+'</div>'+
-          '<div class="form-group"><label>یادداشت مشاوره (اختیاری):</label><textarea id="coord_note_'+l.id+'" placeholder="نظر، توضیح یا توصیه شما برای مدیر... (اختیاری)"></textarea></div>'+
-          '<button class="btn btn-info btn-sm" onclick="coordinatorAddNote(\''+l.id+'\')">📝 ثبت یادداشت</button>'+
-        '</div>';
-      });
-    }else{
-      html+='<p>درخواست جدیدی برای نظردهی نیست.</p>';
-    }
-    if(noted.length){
-      html+='<hr><h3>یادداشت‌های قبلی شما</h3><table><tr><th>پرسنل</th><th>بازه</th><th>وضعیت</th><th>یادداشت شما</th></tr>';
-      noted.forEach(function(l){
-        html+='<tr><td>'+esc(getPersonName(l.user_id))+'</td><td>'+esc(leavePeriod(l))+'</td><td>'+statusBadge(l.status)+'</td><td>'+esc(l.coordinator_note||'-')+'</td></tr>';
-      });
-      html+='</table>';
-    }
-    c.innerHTML=html;
-  }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
-}
-async function coordinatorAddNote(id){
-  var note=val('coord_note_'+id); // یادداشت اختیاری است — می‌تواند خالی باشد
-  if(!note){showAlert('یادداشت خالی است. چیزی بنویسید.','error');return;}
-  showLoading('ثبت یادداشت...');
-  try{
-    // فقط یادداشت ذخیره می‌شود — وضعیت تغییر نمی‌کند (درخواست مستقیم به مدیر رفته)
-    var updates={id:id,coordinator_note:note,coordinator_decided_at:new Date().toISOString()};
-    await saveLeaveToDB(updates,true);
-    // اعلان به مدیر
-    var leave=await loadLeaves();
-    var lv=leave.filter(function(l){return l.id===id;})[0];
-    if(lv){
-      var admins=cachedPersons.filter(function(p){return p.role==='admin'||p.role==='super_admin';});
-      for(var i=0;i<admins.length;i++){
-        if(admins[i].id===currentUser.id)continue;
-        try{
-          await sendNotificationDB({
-            sender_id:currentUser.id,
-            recipient_id:admins[i].id,
-            title:'📝 یادداشت هماهنگ‌کننده برای مرخصی',
-            body:'هماهنگ‌کننده ('+currentUser.profile.first_name+' '+currentUser.profile.last_name+') یادداشتی برای درخواست مرخصی '+getPersonName(lv.user_id)+' ثبت کرد.\n\nیادداشت: '+note,
-            priority:'normal',
-            related_type:'leave',
-            related_id:id
-          });
-        }catch(e){}
-      }
-    }
-    await renderCoordinatorApprovals();
-    await updateBadges();
-    showAlert('یادداشت ثبت شد و به مدیر اطلاع داده شد.','success');
-  }catch(e){showAlert('خطا: '+e.message,'error');}
-  hideLoading();
-}
-// coordinatorApprove و coordinatorReject حذف شدند — هماهنگ‌کننده فقط یادداشت می‌گذارد
+/* ═════ Coordinator approvals حذف شد ═════ */
+// renderCoordinatorApprovals و coordinatorAddNote حذف شدند — بخش هماهنگ‌کننده از UI حذف شده است.
 
 /* ═════ Coordinator: مدیریت وظایف زیرمجموعه — حذف شد ═════ */
 /* توابع createTask, renderCoordinatorTasks, cancelTask حذف شدند.
@@ -6872,10 +6685,6 @@ async function renderApprovals(){
     if(showCoord&&showAdmin)notice.textContent='شما هماهنگ‌کننده و مدیر هستید — هر دو نمای تأیید اولیه و نهایی نمایش داده می‌شود.';
     else if(showCoord)notice.textContent='شما هماهنگ‌کننده هستید — درخواست‌های زیرمجموعه‌های شما برای تأیید اولیه نمایش داده می‌شود.';
     else notice.textContent='شما مدیر هستید — درخواست‌های در انتظار تأیید نهایی نمایش داده می‌شود.';
-  }
-  // رندر بخش هماهنگ‌کننده
-  if(showCoord){
-    await renderCoordinatorApprovals();
   }
   // رندر بخش مدیر
   if(!showAdmin){
@@ -7071,9 +6880,6 @@ async function rejectLeave(id){
 }
 
 /* ═════ Send messages ═════ */
-function quickNotify(){
-  showSection('send_notification');
-}
 // آرشیو پیام‌ها با دسته‌بندی روزانه/هفتگی/ماهانه/سالانه
 var msgArchiveData=[];
 async function renderMsgArchive(){
@@ -7185,19 +6991,6 @@ async function sendNotification(){
   }catch(e){showAlert('خطا: '+e.message,'error');}
   hideLoading();
 }
-async function renderNotificationsList(){
-  var c=$('notifications_list_container');
-  try{
-    var notifs=await loadAllNotifications();
-    if(!notifs.length){c.innerHTML='<p>پیامی ارسال نشده است.</p>';return;}
-    var h='<table><tr><th>گیرنده</th><th>عنوان</th><th>اولویت</th><th>تاریخ</th></tr>';
-    notifs.forEach(function(n){
-      h+='<tr><td>'+(n.recipient_id?esc(getPersonName(n.recipient_id)):'همه')+'</td><td>'+esc(n.title)+'</td><td><span class="badge badge-'+(n.priority==='high'?'high':n.priority==='low'?'low':'normal-priority')+'">'+(n.priority==='high'?'بالا':n.priority==='low'?'پایین':'معمول')+'</span></td><td>'+new Date(n.created_at).toLocaleDateString('fa-IR')+'</td></tr>';
-    });
-    c.innerHTML=h+'</table>';
-  }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
-}
-
 /* ═════ Users management ═════ */
 async function createInvitation(){
   var first=val('inv_first_name'),last=val('inv_last_name'),pid=toEnglishDigits(val('inv_personnel_id')),role=val('inv_role'),password=val('inv_password'),password2=val('inv_password2');
@@ -9775,232 +9568,9 @@ function toggleCatRepDates(){
   }
 }
 
-// محاسبه امتیاز یک کاربر از فعالیت‌های فیلترشده + قوانین امتیازدهی (محلی، درون بازه)
-function computeUserScore(acts,rules){
-  var breakdown={force:{done_on_time:0,done_late:0,not_done:0,cancelled:0},high:{done_on_time:0,done_late:0,not_done:0,cancelled:0},medium:{done_on_time:0,done_late:0,not_done:0,cancelled:0},low:{done_on_time:0,done_late:0,not_done:0,cancelled:0}};
-  var total=0;
-  acts.forEach(function(a){
-    var pr=a.priority||'medium';
-    if(!breakdown[pr])pr='medium';
-    var st='not_done';
-    if(a.status==='cancelled'){st='cancelled';}
-    else if(a.status==='done'){
-      if(a.reported_at&&a.deadline&&new Date(a.reported_at).getTime()<=new Date(a.deadline).getTime())st='done_on_time';
-      else st='done_late';
-    }else{st='not_done';}
-    breakdown[pr][st]++;
-    var rule=rules.filter(function(r){return r.priority===pr&&r.completion_status===st;})[0];
-    if(rule)total+=parseInt(rule.points,10)||0;
-  });
-  return {total:total,breakdown:breakdown};
-}
-
-async function generateCategorizedReport(){
-  var c=$('catrep_area');
-  var filterUser=val('catrep_user');
-  if(currentRole!=='admin'&&currentRole!=='super_admin'){c.innerHTML='<p>دسترسی غیرمجاز.</p>';return;}
-  // ─── محاسبه بازه زمانی (مشابه گزارش کارکرد) ───
-  var type=val('catrep_type'),startStr=val('catrep_start_date'),endStr=val('catrep_end_date');
-  var startJ,endJ,period;
-  if(!isValidJalaliDate(startStr)){showAlert('تاریخ شروع نامعتبر است.','error');return;}
-  var p=parseJalali(startStr);
-  if(type==='monthly'){startJ=fmtJalali(p.jy,p.jm,1);endJ=fmtJalali(p.jy,p.jm,jalaliMonthLength(p.jy,p.jm));period=MONTH_NAMES[p.jm-1]+' '+p.jy;}
-  else{
-    startJ=normJ(startStr);
-    if(type==='daily'){endJ=startJ;period='روز '+startJ+' ('+dayName(startJ)+')';}
-    else if(type==='weekly'){endJ=addDaysToJalali(startJ,6);period='هفته '+startJ+' تا '+endJ;}
-    else{
-      if(!isValidJalaliDate(endStr)){showAlert('تاریخ پایان نامعتبر است.','error');return;}
-      endJ=normJ(endStr);
-      if(jalaliToTimestamp(endJ)<jalaliToTimestamp(startJ)){showAlert('تاریخ پایان نباید قبل از شروع باشد.','error');return;}
-      period=startJ+' تا '+endJ;
-    }
-  }
-  var startTs=jalaliToTimestamp(startJ);          // نیمه‌شب روز شروع
-  var endTs=jalaliToTimestamp(endJ)+86399999;     // پایان روز پایان (۲۳:۵۹:۵۹.۹۹۹)
-  c.innerHTML='<p>در حال تولید گزارش...</p>';
-  showLoading('تولید گزارش...');
-  try{
-    // بارگذاری قوانین امتیازدهی (برای محاسبه امتیاز درون بازه)
-    if(!cachedScoringRules||!cachedScoringRules.length)await loadScoringRules();
-    // بارگذاری همه فعالیت‌ها (priority از خود فعالیت)
-    const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title,status)').order('assignee_id');
-    if(error)throw error;
-    var allActs=data||[];
-    // فیلتر بر اساس کاربر
-    if(filterUser)allActs=allActs.filter(function(a){return a.assignee_id===filterUser;});
-    // فیلتر بر اساس بازه زمانی (مهلت فعالیت درون بازه باشد)
-    allActs=allActs.filter(function(a){
-      if(!a.deadline)return false;
-      var dl=new Date(a.deadline).getTime();
-      return dl>=startTs&&dl<=endTs;
-    });
-    // گروه‌بندی بر اساس کاربر
-    var byUser={};
-    allActs.forEach(function(a){
-      if(!byUser[a.assignee_id])byUser[a.assignee_id]={acts:[],name:getPersonName(a.assignee_id)};
-      byUser[a.assignee_id].acts.push(a);
-    });
-    var html='<div class="rep rep-page" style="border:1px solid #000;padding:14px;margin-bottom:14px">';
-    html+='<div style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:14px"><h2 style="margin:0">📊 گزارش تحلیلی فعالیت‌ها و امتیازها</h2><p style="margin:4px 0 0;font-size:12px">سلام — بازه: '+esc(period)+(filterUser?' | کاربر: '+esc(getPersonName(filterUser)):' | همه کاربران')+'</p></div>';
-    var userIds=Object.keys(byUser);
-    // ─── جدول خلاصه امتیاز همه کاربران (مرتب بر اساس امتیاز) ───
-    if(userIds.length){
-      var summaryRows=[];
-      for(var i=0;i<userIds.length;i++){
-        var uid=userIds[i];var u=byUser[uid];var sc=computeUserScore(u.acts,cachedScoringRules);
-        summaryRows.push({name:u.name,acts:u.acts.length,score:sc.total});
-      }
-      summaryRows.sort(function(a,b){return b.score-a.score;});
-      html+='<h3 style="margin:0 0 8px">🏆 جدول امتیازها (مرتب بر اساس امتیاز)</h3>';
-      html+='<table style="margin-bottom:18px"><thead><tr><th>رتبه</th><th>کاربر</th><th>تعداد فعالیت</th><th>امتیاز بازه</th></tr></thead><tbody>';
-      summaryRows.forEach(function(r,idx){
-        html+='<tr><td style="text-align:center;font-weight:700">'+(idx+1)+'</td><td>'+esc(r.name)+'</td><td style="text-align:center">'+r.acts+'</td><td style="text-align:center;font-weight:700'+(r.score>0?';color:#196f3d':r.score<0?';color:#922b21':'')+'">'+r.score+'</td></tr>';
-      });
-      html+='</tbody></table>';
-    }
-    // ─── جزئیات هر کاربر ───
-    for(var i=0;i<userIds.length;i++){
-      var uid=userIds[i];
-      var u=byUser[uid];
-      var acts=u.acts;
-      var total=acts.length;
-      var done=acts.filter(function(a){return a.status==='done';}).length;
-      var notDone=acts.filter(function(a){return a.status==='not_done';}).length;
-      var pending=acts.filter(function(a){return a.status==='pending'||a.status==='in_progress';}).length;
-      var cancelled=acts.filter(function(a){return a.status==='cancelled';}).length;
-      var overdue=acts.filter(function(a){return(a.status==='pending'||a.status==='in_progress')&&new Date(a.deadline).getTime()<Date.now();}).length;
-      var doneOnTime=acts.filter(function(a){return a.status==='done'&&a.reported_at&&new Date(a.reported_at).getTime()<=new Date(a.deadline).getTime();}).length;
-      var doneLate=done-doneOnTime;
-      var completionPct=total>0?Math.round((done/total)*100):0;
-      var byPriority={force:0,high:0,medium:0,low:0};
-      acts.forEach(function(a){var pr=a.priority||'medium';byPriority[pr]=(byPriority[pr]||0)+1;});
-      var forceDone=acts.filter(function(a){return a.priority==='force'&&a.status==='done';}).length;
-      var forceTotal=byPriority.force;
-      // محاسبه امتیاز درون بازه (محلی، از قوانین امتیازدهی)
-      var sc=computeUserScore(acts,cachedScoringRules);
-      var score=sc.total;
-      html+='<div style="background:var(--c-bg-alt,#f9f9f9);border:1px solid #ddd;padding:14px;border-radius:8px;margin-bottom:14px">';
-      html+='<h3 style="margin:0 0 10px">'+esc(u.name)+' <span class="score-badge '+(score>0?'':score<0?'negative':'zero')+'">🏆 امتیاز بازه: '+score+'</span></h3>';
-      html+='<div class="report-grid">'+
-        '<div class="report-stat"><div class="rs-label">کل فعالیت‌ها</div><div class="rs-value">'+total+'</div></div>'+
-        '<div class="report-stat success"><div class="rs-label">انجام‌شده</div><div class="rs-value">'+done+'</div></div>'+
-        '<div class="report-stat danger"><div class="rs-label">انجام‌نشده</div><div class="rs-value">'+notDone+'</div></div>'+
-        '<div class="report-stat warning"><div class="rs-label">در انتظار</div><div class="rs-value">'+pending+'</div></div>'+
-        '<div class="report-stat danger"><div class="rs-label">تأخیر</div><div class="rs-value">'+overdue+'</div></div>'+
-        '<div class="report-stat"><div class="rs-label">لغوشده</div><div class="rs-value">'+cancelled+'</div></div>'+
-      '</div>';
-      html+='<div style="margin:10px 0"><b>درصد انجام:</b> '+completionPct+'% <div class="progress-bar"><div class="progress-fill '+(completionPct<50?'low':'')+'" style="width:'+completionPct+'%"></div></div></div>';
-      html+='<div style="margin:10px 0"><b>به تفکیک اولویت:</b> ';
-      ['force','high','medium','low'].forEach(function(pr){
-        if(byPriority[pr]>0){
-          var prLabel=PRIORITY_LABELS[pr];
-          var prClass=pr==='force'?'force':pr;
-          html+='<span class="priority-tag '+prClass+'" style="margin-right:4px">'+prLabel+': '+byPriority[pr]+'</span> ';
-        }
-      });
-      html+='</div>';
-      html+='<div style="margin:10px 0;font-size:12px"><b>جزئیات انجام:</b> به‌موقع: '+doneOnTime+' | با تأخیر: '+doneLate;
-      if(forceTotal>0)html+=' | فوری انجام‌شده: '+forceDone+'/'+forceTotal;
-      html+='</div>';
-      // ─── جدول تفکیک امتیاز (اولویت × وضعیت) ───
-      var statuses=[{k:'done_on_time',l:'✅ به‌موقع'},{k:'done_late',l:'⏰ با تأخیر'},{k:'not_done',l:'❌ انجام‌نشده'},{k:'cancelled',l:'🚫 لغو'}];
-      var priorities=['force','high','medium','low'];
-      html+='<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:600">📊 تفکیک امتیاز (اولویت × وضعیت)</summary>';
-      html+='<table style="margin-top:8px"><thead><tr><th>اولویت</th>';
-      statuses.forEach(function(s){html+='<th>'+s.l+'</th>';});
-      html+='<th>جمع</th></tr></thead><tbody>';
-      priorities.forEach(function(pr){
-        var rowTotal=0;
-        var prLabel=PRIORITY_LABELS[pr];
-        html+='<tr><td><span class="priority-tag '+pr+'">'+prLabel+'</span></td>';
-        statuses.forEach(function(s){
-          var cnt=sc.breakdown[pr][s.k];
-          var rule=cachedScoringRules.filter(function(r){return r.priority===pr&&r.completion_status===s.k;})[0];
-          var pts=rule?parseInt(rule.points,10)||0:0;
-          var cellPts=cnt*pts;
-          rowTotal+=cellPts;
-          html+='<td style="text-align:center">'+cnt+(cellPts?' <span style="font-size:10px;color:'+(cellPts>0?'#196f3d':'#922b21')+'">('+cellPts+')</span>':'')+'</td>';
-        });
-        html+='<td style="text-align:center;font-weight:700'+(rowTotal>0?';color:#196f3d':rowTotal<0?';color:#922b21':'')+'">'+rowTotal+'</td></tr>';
-      });
-      html+='</tbody></table></details>';
-      html+='</div>';
-    }
-    if(!userIds.length)html+='<p>فعالیتی در این بازه یافت نشد.</p>';
-    html+='</div>';
-    c.innerHTML=html;
-    showAlert('گزارش برای بازه «'+period+'» تولید شد.','success');
-  }catch(e){
-    c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';
-  }
-  hideLoading();
-}
-
-/* ═════ Scoring Config (admin) ═════ */
-var cachedScoringRules=[];
-async function loadScoringRules(){
-  try{const{data,error}=await sb.from('scoring_rules').select('*').order('priority',{ascending:false}).order('completion_status');if(error)throw error;cachedScoringRules=data||[];return cachedScoringRules;}catch(e){console.error('loadScoringRules:',e);return[];}
-}
-async function renderScoringRules(){
-  var c=$('scoring_rules_container');
-  if(currentRole!=='admin'&&currentRole!=='super_admin'){c.innerHTML='<p>دسترسی غیرمجاز.</p>';return;}
-  c.innerHTML='<p>در حال بارگذاری...</p>';
-  try{
-    await loadScoringRules();
-    var priorities=['force','high','medium','low'];
-    var statuses=[{k:'done_on_time',l:'✅ انجام به‌موقع'},{k:'done_late',l:'⏰ انجام با تأخیر'},{k:'not_done',l:'❌ انجام‌نشده'},{k:'cancelled',l:'🚫 لغوشده'}];
-    var html='<table><thead><tr><th>اولویت</th>';
-    statuses.forEach(function(s){html+='<th>'+s.l+'</th>';});
-    html+='</tr></thead><tbody>';
-    priorities.forEach(function(pr){
-      var prLabel=PRIORITY_LABELS[pr];
-      var prClass=pr;
-      html+='<tr><td><span class="priority-tag '+prClass+'">'+prLabel+'</span></td>';
-      statuses.forEach(function(s){
-        var rule=cachedScoringRules.filter(function(r){return r.priority===pr&&r.completion_status===s.k;})[0];
-        var points=rule?rule.points:0;
-        html+='<td><input type="number" id="score_'+pr+'_'+s.k+'" value="'+points+'" style="width:70px;text-align:center" step="1"></td>';
-      });
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-    html+='<p style="font-size:12px;color:var(--c-text-muted,#666);margin-top:10px">💡 مثال: اگر «فوری × انجام به‌موقع = ۲۰» باشد، کاربری که یک فعالیت فوری را به‌موقع انجام دهد، ۲۰ امتیاز می‌گیرد.</p>';
-    c.innerHTML=html;
-  }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
-}
-async function saveScoringRules(){
-  if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز.','error');return;}
-  showLoading('ذخیره تنظیمات...');
-  try{
-    var priorities=['force','high','medium','low'];
-    var statuses=['done_on_time','done_late','not_done','cancelled'];
-    for(var i=0;i<priorities.length;i++){
-      for(var j=0;j<statuses.length;j++){
-        var pr=priorities[i],st=statuses[j];
-        var inputId='score_'+pr+'_'+st;
-        var inputEl=$(inputId);
-        if(inputEl){
-          var points=parseInt(inputEl.value,10);
-          if(isNaN(points))points=0;
-          // آپدیت یا درج رکورد
-          var existing=cachedScoringRules.filter(function(r){return r.priority===pr&&r.completion_status===st;})[0];
-          if(existing){
-            const{error}=await sb.from('scoring_rules').update({points:points,updated_by:currentUser.id}).eq('id',existing.id);
-            if(error)console.error('Update scoring rule failed:',error);
-          }else{
-            const{error:insErr}=await sb.from('scoring_rules').insert({priority:pr,completion_status:st,points:points,updated_by:currentUser.id});
-            if(insErr)console.error('Insert scoring rule failed:',insErr);
-          }
-        }
-      }
-    }
-    showAlert('تنظیمات امتیازدهی ذخیره شد.','success');
-    await loadScoringRules();
-    await renderScoringRules();
-  }catch(e){showAlert('خطا: '+e.message);}
-  hideLoading();
-}
+/* ═════ سیستم امتیازدهی و گزارش تحلیلی حذف شد ═════ */
+// توابع computeUserScore, generateCategorizedReport, loadScoringRules, renderScoringRules, saveScoringRules
+// و متغیر cachedScoringRules حذف شدند — سیستم امتیازدهی غیرفعال است.
 
 async function renderAuditLog(){
   var c=$('audit_log_container');if(!c)return;c.innerHTML='<p style="color:var(--c-text-muted)">در حال بارگذاری...</p>';
@@ -10809,14 +10379,11 @@ function init(){
   on('btn_export_report_csv','click',exportReportCSV);
   on('approval_filter','change',renderApprovals);
   on('btn_send_notification','click',sendNotification);
-  on('btn_gen_catrep','click',generateCategorizedReport);
-  on('btn_print_catrep','click',function(){var c=$('catrep_area');if(!c.innerHTML.trim()||c.querySelector('p')){showAlert('ابتدا گزارش را تولید کنید.');return;}$('print_area').innerHTML=c.innerHTML;window.print();});
   // گزارش داینامیک برنامه‌ها
   on('btn_gen_prog_report','click',generateProgramReport);
   on('btn_print_prog_report','click',printProgramReport);
   on('btn_export_prog_report','click',exportProgramReportCSV);
   on('btn_clear_prog_filters','click',function(){clearProgramReportFilters();generateProgramReport();});
-  on('btn_save_scoring','click',saveScoringRules);
   on('btn_create_invitation','click',createInvitation);
   on('btn_change_password','click',changePassword);
   on('btn_save_reminder','click',saveReminder);
