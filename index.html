@@ -1614,7 +1614,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>نوع بازه:</label><select id="rep_type" onchange="toggleReportDates()"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly" selected>ماهانه</option><option value="custom">بازه دلخواه</option></select></div>
   </div>
   <div class="form-row">
-    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="table" selected>📋 جدول زنده (با ویرایش/حذف)</option><option value="perperson">👤 نفر به نفر (صفحه مجزا)</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option></select></div>
+    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option><option value="entry_exit">📊 ورود و خروج (غیر مکمل)</option></select></div>
     <div class="form-group" id="rep_start_box"><label>تاریخ شروع:</label><input type="text" id="rep_start_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
     <div class="form-group hidden" id="rep_end_box"><label>تاریخ پایان:</label><input type="text" id="rep_end_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
   </div>
@@ -2956,7 +2956,14 @@ async function saveLogToDB(log){
     if(log.id&&log.id.startsWith('tmp-')){const{id,...rest}=log;({data,error}=await sb.from('daily_logs').insert(rest).select());}
     else if(log.id){({data,error}=await sb.from('daily_logs').update({status:log.status,data:log.data}).eq('id',log.id).select());}
     else throw new Error('شناسه اظهار معتبر نیست.');
-    if(error)throw error;if(!data||!data.length)throw new Error('هیچ رکوردی ذخیره نشد؛ دسترسی یا وجود رکورد را بررسی کنید.');
+    if(error){
+      var em=error.message||'';
+      if(em.indexOf('row-level security')!==-1||em.indexOf('RLS')!==-1){
+        throw new Error('محدودیت امنیتی (RLS) روی جدول daily_logs فعال است. این SQL را در Supabase اجرا کنید:\nALTER TABLE daily_logs DISABLE ROW LEVEL SECURITY;');
+      }
+      throw error;
+    }
+    if(!data||!data.length)throw new Error('ذخیره نشد — احتمالاً RLS فعال است. دستور ALTER TABLE daily_logs DISABLE ROW LEVEL SECURITY را در Supabase اجرا کنید.');
     await recordAudit(log.id&&log.id.startsWith('tmp-')?'create':'update','daily_logs',data[0].id,{date:data[0].date,status:data[0].status});return data[0];
   }catch(e){console.error('saveLogToDB:',e);throw e;}
 }
@@ -3872,6 +3879,11 @@ async function showSection(id,skipHistory){
     if(!cachedPersons||!cachedPersons.length){
       await loadAllPersons();
     }
+    // Fallback: اگر cachedPersons خالی است (مثلاً RLS جلوی query را گرفته)،
+    // حداقل کاربر فعلی را اضافه کن
+    if((!cachedPersons||!cachedPersons.length)&&currentUser&&currentUser.profile){
+      cachedPersons=[currentUser.profile];
+    }
     populatePersonDropdown('log_person_id',true);
     if(!currentLogPerson)$('log_person_id').value=currentUser.id;
     currentLogPerson=$('log_person_id').value;
@@ -3888,7 +3900,7 @@ async function showSection(id,skipHistory){
     renderShiftCalendar();
   }
   if(id==='programs')renderPrograms();
-  if(id==='records'){populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();if($('rep_mode').value==='table')renderRecords();}
+  if(id==='records'){if(!cachedPersons||!cachedPersons.length)await loadAllPersons();populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();}
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
   if(id==='reports'){showSection('records');return;}
   if(id==='coordinator_tasks'){/* بخش حذف شده — redirect به approvals */showSection('approvals');return;}
@@ -5241,7 +5253,7 @@ function checkTimeDiscrepancy(){
   var box=$('discrepancy_suggestion');
   var detail=$('discrepancy_detail');
   var actions=$('discrepancy_actions');
-  if(!box||!detail||!actions)return;
+  if(!box||!detail)return;
   var entryT=$('entry_time')?$('entry_time').value:'';
   var exitT=$('exit_time')?$('exit_time').value:'';
   // اگر هر دو ساعت وارد نشده، کادر را مخفی کن
@@ -5259,46 +5271,32 @@ function checkTimeDiscrepancy(){
   var stdStartMin=timeToMinutes(stdStart);
   var stdEndMin=timeToMinutes(stdEnd);
   var discrepancies=[];
-  var suggestion='';
-  // بررسی تأخیر در ورود (مرخصی ساعتی)
+  // بررسی تأخیر در ورود
   if(entryMin>stdStartMin){
-    var lateMins=entryMin-stdStartMin;
-    discrepancies.push('⏰ تأخیر در ورود: '+formatMins(lateMins)+' ('+stdStart+' تا '+entryT+')');
-    suggestion='hourly_leave';
+    discrepancies.push('⏰ تأخیر در ورود: '+formatMins(entryMin-stdStartMin)+' ('+stdStart+' تا '+entryT+')');
   }
-  // بررسی خروج زودهنگام (مرخصی ساعتی)
+  // بررسی خروج زودهنگام
   if(exitMin<stdEndMin&&exitMin>stdStartMin){
-    var earlyMins=stdEndMin-exitMin;
-    discrepancies.push('🏃 خروج زودهنگام: '+formatMins(earlyMins)+' ('+exitT+' تا '+stdEnd+')');
-    if(suggestion!=='mission')suggestion='hourly_leave';
+    discrepancies.push('🏃 خروج زودهنگام: '+formatMins(stdEndMin-exitMin)+' ('+exitT+' تا '+stdEnd+')');
   }
-  // بررسی کامل خارج از ساعت اداری (مأموریت ساعتی)
-  if((entryMin>=stdEndMin||exitMin<=stdStartMin)){
-    discrepancies.push('🔄 ساعت‌های خارج از کارکرد استاندارد ('+entryT+' تا '+exitT+')');
-    suggestion='mission';
+  // بررسی حضور خارج از ساعت اداری (پس از کار)
+  if(exitMin>stdEndMin){
+    discrepancies.push('⚡ حضور پس از ساعت کار: '+formatMins(exitMin-stdEndMin)+' ('+stdEnd+' تا '+exitT+')');
+  }
+  // بررسی حضور قبل از ساعت کار
+  if(entryMin<stdStartMin){
+    discrepancies.push('⚡ حضور قبل از ساعت کار: '+formatMins(stdStartMin-entryMin)+' ('+entryT+' تا '+stdStart+')');
   }
   if(discrepancies.length===0){
-    // بدون مغایرت
     box.classList.add('hidden');
     return;
   }
-  // نمایش کادر مغایرت
+  // نمایش اطلاعات مغایرت — بدون دکمه (ثبت از طریق دکمه اصلی «ثبت اظهار» انجام می‌شود)
   box.classList.remove('hidden');
   detail.innerHTML='<b>ساعت استاندارد:</b> '+stdStart+' تا '+stdEnd+'<br>'+
-    discrepancies.join('<br>')+'<br><br>'+
-    '<b>پیشنهاد:</b> ';
-  // دکمه‌های اقدام
-  var btns='';
-  if(suggestion==='hourly_leave'){
-    detail.innerHTML+='ثبت مرخصی ساعتی برای زمان غیبت داخل ساعات اداری';
-    btns='<button class="btn btn-sm btn-warning" onclick="applyDiscrepancySuggestion(\'hourly_leave\')">📝 ثبت مرخصی ساعتی</button>';
-  }else if(suggestion==='mission'){
-    detail.innerHTML+='ثبت مأموریت ساعتی برای زمان خارج از ساعات اداری';
-    btns='<button class="btn btn-sm btn-info" onclick="applyDiscrepancySuggestion(\'hourly_mission\')">🔁 ثبت مأموریت ساعتی</button>';
-  }
-  // همیشه امکان نادیده گرفتن
-  btns+=' <button class="btn btn-sm btn-secondary" onclick="dismissDiscrepancy()">✓ بدون مغایرت — ثبت حضور</button>';
-  actions.innerHTML=btns;
+    discrepancies.join('<br>')+'<br>'+
+    '<small style="color:var(--c-text-muted)">📌 با زدن دکمه «ثبت اظهار»، حضور ذخیره و سپس دلیل هر مغایرت پرسیده می‌شود.</small>';
+  if(actions)actions.innerHTML=''; // بدون دکمه
 }
 async function applyDiscrepancySuggestion(type){
   // این تابع دیگر استفاده نمی‌شود — به‌جای آن showDiscrepancyModal استفاده می‌شود
@@ -8012,28 +8010,18 @@ function setQuickDiscText(text){
 }
 // تعویض حالت نمایش: جدول زنده (با ویرایش) یا گزارش رسمی
 function onRepModeChange(){
-  var mode=$('rep_mode')?$('rep_mode').value:'table';
+  var mode=$('rep_mode')?$('rep_mode').value:'perperson';
   var notifyWrap=$('rep_notify_wrap');
   var genBtn=$('btn_gen_report');
   var printRecordsBtn=$('btn_print_records');
   var printReportBtn=$('btn_print_report');
   var csvBtn=$('btn_export_report_csv');
-  if(mode==='table'){
-    // حالت جدول زنده: ویرایش/حذف، چاپ فهرست، بدون اطلاع‌رسانی
-    if(notifyWrap)notifyWrap.style.display='none';
-    if(genBtn)genBtn.innerHTML='🔄 بارگذازی/به‌روزرسانی جدول';
-    if(printRecordsBtn)printRecordsBtn.style.display='inline-flex';
-    if(printReportBtn)printReportBtn.style.display='none';
-    if(csvBtn)csvBtn.style.display='none';
-    renderRecords();
-  }else{
-    // حالت گزارش رسمی: تولید گزارش، چاپ/PDF، CSV، اطلاع‌رسانی
-    if(notifyWrap)notifyWrap.style.display='flex';
-    if(genBtn)genBtn.innerHTML='📊 تولید گزارش';
-    if(printRecordsBtn)printRecordsBtn.style.display='none';
-    if(printReportBtn)printReportBtn.style.display='inline-flex';
-    if(csvBtn)csvBtn.style.display='inline-flex';
-  }
+  // همه حالت‌ها گزارش رسمی هستند
+  if(notifyWrap)notifyWrap.style.display='flex';
+  if(genBtn)genBtn.innerHTML='📊 تولید گزارش';
+  if(printRecordsBtn)printRecordsBtn.style.display='none';
+  if(printReportBtn)printReportBtn.style.display='inline-flex';
+  if(csvBtn)csvBtn.style.display='inline-flex';
 }
 // switchWorkTab حذف شد — با onRepModeChange جایگزین شده بود
 function toggleReportDates(){
@@ -8228,6 +8216,71 @@ function categoryReport(persons,allLogs,period){
   
   if(!page1&&!page2&&!page3)return'<p style="text-align:center;padding:20px;color:var(--c-text-muted)">عدم حضور یا اضافه‌کاری در این بازه ثبت نشده است.</p>';
   return header+page1+page2+page3;
+}
+
+// ═══ گزارش ورود و خروج (برای نفرات غیر مکمل) ═══
+async function generateEntryExitReport(){
+  var c=$('report_area');
+  if(!c)return;
+  var personId=$('rep_person')?$('rep_person').value:'';
+  var isAdmin=currentRole==='admin'||currentRole==='super_admin';
+  var canViewReports=isAdmin||(currentUser.profile&&currentUser.profile.can_view_reports);
+  showLoading('تولید گزارش ورود و خروج...');
+  try{
+    // تعیین بازه
+    var type=$('rep_type')?$('rep_type').value:'monthly';
+    var start,end,period;
+    var today=getTodayJalali();
+    var tp=parseJalali(today);
+    if(type==='daily'){start=today;end=today;period='روز '+today+' ('+dayName(today)+')';}
+    else if(type==='weekly'){start=addDaysToJalali(today,-6);end=today;period='هفته '+start+' تا '+end;}
+    else if(type==='custom'){
+      start=val('rep_start_date');end=val('rep_end_date');
+      if(!isValidJalaliDate(start)){showAlert('تاریخ شروع نامعتبر است.','error');hideLoading();return;}
+      if(!isValidJalaliDate(end)){showAlert('تاریخ پایان نامعتبر است.','error');hideLoading();return;}
+      period=start+' تا '+end;
+    }else{start=fmtJalali(tp.jy,tp.jm,1);end=today;period=MONTH_NAMES[tp.jm-1]+' '+tp.jy;}
+    // بارگذاری پرسنل
+    var persons;
+    if(personId){
+      persons=cachedPersons.filter(function(p){return p.id===personId;});
+    }else{
+      persons=cachedPersons.filter(function(p){return p.role!=='super_admin'&&(p.status||'active')==='active';});
+      if(!isAdmin&&!canViewReports){
+        persons=persons.filter(function(p){return p.id===currentUser.id;});
+      }
+    }
+    if(!persons.length){c.innerHTML='<p>پرسنلی یافت نشد.</p>';hideLoading();return;}
+    // ساخت گزارش
+    var html='<div style="background:var(--c-primary-light);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"><b>📊 گزارش ورود و خروج</b> — دوره: '+esc(period)+(personId?' | کاربر: '+esc(getPersonName(personId)):' | همه پرسنل')+'</div>';
+    html+='<table><thead><tr><th class="sortable">ردیف</th><th class="sortable">نام</th><th class="sortable">نام خانوادگی</th><th class="sortable">شماره پرسنلی</th><th class="sortable">تاریخ</th><th class="sortable">روز</th><th class="sortable">ساعت ورود</th><th class="sortable">ساعت خروج</th><th>مدت کارکرد</th><th class="sortable">نوع</th></tr></thead><tbody>';
+    var rowIdx=0;
+    for(var pi=0;pi<persons.length;pi++){
+      var p=persons[pi];
+      var logs=await loadLogs(p.id,start,end);
+      if(!logs||!logs.length)continue;
+      logs.sort(function(a,b){return jalaliToTimestamp(a.date)-jalaliToTimestamp(b.date);});
+      logs.forEach(function(l){
+        if(l.status!=='normal'&&l.status!=='official_record')return;
+        var f=(l.data&&l.data.fields)||{};
+        var entryT=f.entry_time||f.official_entry_time||'—';
+        var exitT=f.exit_time||f.official_exit_time||'—';
+        var dur='';
+        if(entryT!=='—'&&exitT!=='—'){dur=formatMins(calcDuration(entryT,exitT));}
+        var typeLabel=l.status==='official_record'?'رسمی':'خوداظهاری';
+        var dn=dayName(l.date);
+        rowIdx++;
+        html+='<tr><td>'+rowIdx+'</td><td>'+esc(p.first_name)+'</td><td>'+esc(p.last_name)+'</td><td>'+esc(p.personnel_id)+'</td><td>'+esc(l.date)+'</td><td>'+esc(dn)+'</td><td dir="ltr">'+esc(entryT)+'</td><td dir="ltr">'+esc(exitT)+'</td><td>'+esc(dur)+'</td><td>'+esc(typeLabel)+'</td></tr>';
+      });
+    }
+    html+='</tbody></table>';
+    if(rowIdx===0){html='<p style="text-align:center;padding:20px;color:var(--c-text-muted)">در این بازه رکورد ورود/خروجی ثبت نشده است.</p>';}
+    c.innerHTML=html;
+    // فعال‌سازی مرتب‌سازی
+    var tbl=c.querySelector('table');
+    if(tbl)makeTableSortable(tbl);
+  }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
+  hideLoading();
 }
 
 async function generateReport(){
@@ -10397,7 +10450,11 @@ function init(){
   on('btn_clear_rec_dates','click',function(){$('rep_start_date').value='';$('rep_end_date').value='';if($('rep_mode').value==='table')renderRecords();});
   on('btn_print_records','click',function(){var c=$('report_area');if(!c.querySelector('table')){showAlert('موردی برای چاپ نیست.');return;}var today=getTodayJalali();var td=toPersianDigits(today)+' ('+dayName(today)+')';$('print_area').innerHTML='<div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px"><h2 style="margin:0">📋 فهرست کارکرد</h2><p style="margin:4px 0 0;font-size:12px;color:#666">تاریخ تولید: '+td+'</p></div><div>'+c.innerHTML+'</div>';window.print();});
   on('rep_type','change',toggleReportDates);
-  on('btn_gen_report','click',function(){if($('rep_mode').value==='table')renderRecords();else generateReport();});
+  on('btn_gen_report','click',function(){
+    var mode=$('rep_mode')?$('rep_mode').value:'perperson';
+    if(mode==='entry_exit'){generateEntryExitReport();}
+    else{generateReport();}
+  });
   on('btn_print_report','click',printReport);
   on('btn_export_report_csv','click',exportReportCSV);
   on('approval_filter','change',renderApprovals);
