@@ -1188,7 +1188,8 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-section-body">
         <button class="nav-item" data-target="records"><span class="ico">📊</span><span class="lbl">گزارش کارکرد</span></button>
         <button class="nav-item" data-target="program_reports"><span class="ico">📋</span><span class="lbl">گزارش برنامه‌ها</span></button>
-        <button class="nav-item" data-target="categorized_reports"><span class="ico">🗂️</span><span class="lbl">گزارش دسته‌بندی</span></button>
+        <!-- گزارش دسته‌بندی حذف شد -->
+
       </div>
     </div>
     <!-- ۳. وظایف و برنامه‌ها -->
@@ -3926,9 +3927,9 @@ function showSection(id,skipHistory){
   if(id==='coordinator_tasks'){/* بخش حذف شده — redirect به approvals */showSection('approvals');return;}
   if(id==='approvals')renderApprovals();
   if(id==='send_notification'){populateRecipientDropdown();renderMsgArchive();}
-  if(id==='categorized_reports'){populatePersonDropdown('catrep_user');if(!isValidJalaliDate(val('catrep_start_date')))toggleCatRepDates();}
+  if(id==='categorized_reports'){/* حذف شد */showSection('records');return;}
   if(id==='program_reports'){populateProgramReportFilters();renderProgramHistory();}
-  if(id==='scoring_config')renderScoringRules();
+  if(id==='scoring_config'){/* حذف شد */showSection('settings');return;}
   if(id==='settings'){
     // نمایش فیلد کد بازیابی فقط برای سوپرادمین
     var isSA=currentRole==='super_admin';
@@ -4175,8 +4176,7 @@ async function renderDashboard(){
     var pendingLeaves=myLeaves.filter(function(l){return l.status==='pending'||l.status==='coordinator_pending';}).length;
     var myTasks=await loadMyTasks('pending');
     var myActs=await loadActiveActivitiesForCountdown();
-    var myScore=0;
-    try{const{data:scoreData,error:scoreError}=await sb.rpc('get_user_score',{target_user:currentUser.id});if(!scoreError&&typeof scoreData==='number')myScore=scoreData;}catch(e){}
+    // امتیاز حذف شد — سیستم امتیازدهی غیرفعال است
     var displayRole=getDisplayRole();
     var roleLabel=getDisplayRoleLabel();
 
@@ -4190,7 +4190,7 @@ async function renderDashboard(){
           '<div style="font-size:13px;opacity:.9">👤 '+esc(roleLabel)+' | '+esc(currentUser.profile.personnel_id)+' | امروز: '+esc(todayStr)+'</div>'+
         '</div>'+
       '</div>'+
-      '<span class="score-badge '+(myScore>0?'':myScore<0?'negative':'zero')+'" style="font-size:16px">🏆 '+myScore+'</span>'+
+      // امتیاز حذف شد
     '</div>';
 
     // ═══ هدر وضعیت مرخصی (زنده، اتوماتیک) ═══
@@ -5436,7 +5436,7 @@ async function savePresenceAndShowDiscrepancies(){
   showLoading('ثبت حضور...');
   try{
     var presenceLog={
-      id:genUUID(),
+      id:'tmp-'+genUUID(),  // پیشوند tmp- برای اینکه saveLogToDB آن را به‌عنوان رکورد جدید شناسایی کند
       user_id:personId,
       date:normJ(dateStr),
       status:'normal',
@@ -5534,7 +5534,7 @@ function showDiscrepancyModal(discrepancies,dateStr,personId,entryT,exitT){
         var desc=$('disc_desc_'+i)?$('disc_desc_'+i).value:'';
         var status=reason==='overtime'?'overtime':'absence';
         var logObj={
-          id:genUUID(),
+          id:'tmp-'+genUUID(),  // پیشوند tmp- برای رکورد جدید
           user_id:personId,
           date:normJ(dateStr),
           status:status,
