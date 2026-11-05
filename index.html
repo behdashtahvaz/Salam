@@ -1614,7 +1614,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>نوع بازه:</label><select id="rep_type" onchange="toggleReportDates()"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly" selected>ماهانه</option><option value="custom">بازه دلخواه</option></select></div>
   </div>
   <div class="form-row">
-    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option><option value="entry_exit">📊 ورود و خروج (غیر مکمل)</option></select></div>
+    <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option><option value="entry_exit">📊 ورود و خروج (نفر به نفر)</option></select></div>
     <div class="form-group" id="rep_start_box"><label>تاریخ شروع:</label><input type="text" id="rep_start_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
     <div class="form-group hidden" id="rep_end_box"><label>تاریخ پایان:</label><input type="text" id="rep_end_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
   </div>
@@ -8218,7 +8218,7 @@ function categoryReport(persons,allLogs,period){
   return header+page1+page2+page3;
 }
 
-// ═══ گزارش ورود و خروج (برای نفرات غیر مکمل) ═══
+// ═══ گزارش ورود و خروج (نفر به نفر) ═══
 async function generateEntryExitReport(){
   var c=$('report_area');
   if(!c)return;
@@ -8251,34 +8251,51 @@ async function generateEntryExitReport(){
       }
     }
     if(!persons.length){c.innerHTML='<p>پرسنلی یافت نشد.</p>';hideLoading();return;}
-    // ساخت گزارش
-    var html='<div style="background:var(--c-primary-light);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"><b>📊 گزارش ورود و خروج</b> — دوره: '+esc(period)+(personId?' | کاربر: '+esc(getPersonName(personId)):' | همه پرسنل')+'</div>';
-    html+='<table><thead><tr><th class="sortable">ردیف</th><th class="sortable">نام</th><th class="sortable">نام خانوادگی</th><th class="sortable">شماره پرسنلی</th><th class="sortable">تاریخ</th><th class="sortable">روز</th><th class="sortable">ساعت ورود</th><th class="sortable">ساعت خروج</th><th>مدت کارکرد</th><th class="sortable">نوع</th></tr></thead><tbody>';
-    var rowIdx=0;
+    // ساخت گزارش — نفر به نفر
+    var html='<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px"><div style="text-align:center;font-weight:bold;font-size:14px;color:var(--c-primary)">📊 گزارش ورود و خروج</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px"><span><b>دوره:</b> '+esc(period)+'</span>'+(personId?'<span><b>کاربر:</b> '+esc(getPersonName(personId))+'</span>':'<span><b>پرسنل:</b> همه</span>')+'</div></div>';
+    var hasAny=false;
     for(var pi=0;pi<persons.length;pi++){
       var p=persons[pi];
       var logs=await loadLogs(p.id,start,end);
       if(!logs||!logs.length)continue;
-      logs.sort(function(a,b){return jalaliToTimestamp(a.date)-jalaliToTimestamp(b.date);});
-      logs.forEach(function(l){
-        if(l.status!=='normal'&&l.status!=='official_record')return;
+      // فیلتر فقط رکوردهای حضور و کارکرد رسمی
+      var entryLogs=logs.filter(function(l){return l.status==='normal'||l.status==='official_record';});
+      if(!entryLogs.length)continue;
+      entryLogs.sort(function(a,b){return jalaliToTimestamp(a.date)-jalaliToTimestamp(b.date);});
+      hasAny=true;
+      // بخش نفر
+      html+='<div class="rep rep-page" style="margin-bottom:20px;page-break-after:always">'+
+        '<div style="border:2px solid var(--c-primary);padding:8px 12px;margin-bottom:8px;border-radius:8px">'+
+          '<div style="display:flex;flex-wrap:wrap;gap:2px 24px;margin-top:6px;font-size:12px">'+
+            '<span><b>نام:</b> '+esc(p.first_name+' '+p.last_name)+'</span>'+
+            '<span><b>شماره پرسنلی:</b> '+esc(p.personnel_id)+'</span>'+
+            '<span><b>دوره:</b> '+esc(period)+'</span>'+
+          '</div>'+
+        '</div>'+
+        '<table><thead><tr><th class="sortable">ردیف</th><th class="sortable">تاریخ</th><th class="sortable">روز</th><th class="sortable">ساعت ورود</th><th class="sortable">ساعت خروج</th><th>مدت کارکرد</th><th class="sortable">نوع</th></tr></thead><tbody>';
+      var totalMins=0;
+      entryLogs.forEach(function(l,idx){
         var f=(l.data&&l.data.fields)||{};
         var entryT=f.entry_time||f.official_entry_time||'—';
         var exitT=f.exit_time||f.official_exit_time||'—';
-        var dur='';
-        if(entryT!=='—'&&exitT!=='—'){dur=formatMins(calcDuration(entryT,exitT));}
+        var mins=0;
+        if(entryT!=='—'&&exitT!=='—'){mins=calcDuration(entryT,exitT);totalMins+=mins;}
         var typeLabel=l.status==='official_record'?'رسمی':'خوداظهاری';
         var dn=dayName(l.date);
-        rowIdx++;
-        html+='<tr><td>'+rowIdx+'</td><td>'+esc(p.first_name)+'</td><td>'+esc(p.last_name)+'</td><td>'+esc(p.personnel_id)+'</td><td>'+esc(l.date)+'</td><td>'+esc(dn)+'</td><td dir="ltr">'+esc(entryT)+'</td><td dir="ltr">'+esc(exitT)+'</td><td>'+esc(dur)+'</td><td>'+esc(typeLabel)+'</td></tr>';
+        html+='<tr><td>'+(idx+1)+'</td><td>'+esc(l.date)+'</td><td>'+esc(dn)+'</td><td dir="ltr">'+esc(entryT)+'</td><td dir="ltr">'+esc(exitT)+'</td><td>'+esc(mins?formatMins(mins):'—')+'</td><td>'+esc(typeLabel)+'</td></tr>';
       });
+      // جمع کل
+      html+='<tr style="font-weight:700;background:var(--c-card-alt)"><td colspan="5">جمع کل کارکرد</td><td>'+esc(formatMins(totalMins))+'</td><td></td></tr>';
+      html+='</tbody></table>';
+      // امضا
+      html+='<div style="margin-top:14px;display:flex;justify-content:space-between"><div>امضای کاربر: ..................</div><div>امضای مسئول: ..................</div></div>';
+      html+='</div>';
     }
-    html+='</tbody></table>';
-    if(rowIdx===0){html='<p style="text-align:center;padding:20px;color:var(--c-text-muted)">در این بازه رکورد ورود/خروجی ثبت نشده است.</p>';}
+    if(!hasAny){html='<p style="text-align:center;padding:20px;color:var(--c-text-muted)">در این بازه رکورد ورود/خروجی ثبت نشده است.</p>';}
     c.innerHTML=html;
-    // فعال‌سازی مرتب‌سازی
-    var tbl=c.querySelector('table');
-    if(tbl)makeTableSortable(tbl);
+    // فعال‌سازی مرتب‌سازی برای هر جدول
+    c.querySelectorAll('table').forEach(function(t){makeTableSortable(t);});
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
   hideLoading();
 }
