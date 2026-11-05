@@ -1187,7 +1187,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">📊 گزارش‌گیری <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="records"><span class="ico">📊</span><span class="lbl">گزارش کارکرد</span></button>
-        <button class="nav-item" data-target="program_reports"><span class="ico">📋</span><span class="lbl">گزارش برنامه‌ها</span></button>
+        <!-- گزارش برنامه‌ها حذف شد -->
         <!-- گزارش دسته‌بندی حذف شد -->
 
       </div>
@@ -3928,7 +3928,7 @@ function showSection(id,skipHistory){
   if(id==='approvals')renderApprovals();
   if(id==='send_notification'){populateRecipientDropdown();renderMsgArchive();}
   if(id==='categorized_reports'){/* حذف شد */showSection('records');return;}
-  if(id==='program_reports'){populateProgramReportFilters();renderProgramHistory();}
+  if(id==='program_reports'){/* حذف شد */showSection('records');return;}
   if(id==='scoring_config'){/* حذف شد */showSection('settings');return;}
   if(id==='settings'){
     // نمایش فیلد کد بازیابی فقط برای سوپرادمین
@@ -4345,10 +4345,6 @@ async function renderDashboard(){
         '<div class="dash-stat" onclick="showSection(\'approvals\')" style="cursor:pointer">'+
           '<div class="stat-icon red">⏰</div>'+
           '<div class="stat-info"><div class="num">'+allPending.length+'</div><div class="lbl">مرخصی‌های در انتظار</div></div>'+
-        '</div>'+
-        '<div class="dash-stat" onclick="showSection(\'program_reports\')" style="cursor:pointer">'+
-          '<div class="stat-icon orange">📋</div>'+
-          '<div class="stat-info"><div class="num">گزارش</div><div class="lbl">گزارش برنامه‌ها</div></div>'+
         '</div>'+
       '</div>';
       if(allPending.length){
