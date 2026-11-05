@@ -1619,16 +1619,6 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group hidden" id="rep_end_box"><label>تاریخ پایان:</label><input type="text" id="rep_end_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
   </div>
   <div class="form-row" id="rep_options_box" style="align-items:center">
-    <div class="form-group" style="flex:0 0 auto;display:flex;align-items:center;gap:6px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-        <input type="checkbox" id="rep_include_guests" checked> 👁️ شامل مهمان‌ها
-      </label>
-    </div>
-    <div class="form-group" id="rep_notify_wrap" style="flex:0 0 auto;display:flex;align-items:center;gap:6px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-        <input type="checkbox" id="rep_notify_users"> 📢 اطلاع به کاربران
-      </label>
-    </div>
     <div class="form-group" style="flex:0 0 auto">
       <button class="btn btn-sm" id="btn_clear_rec_dates">پاک کردن بازه</button>
     </div>
@@ -3889,6 +3879,7 @@ async function showSection(id,skipHistory){
     currentLogPerson=$('log_person_id').value;
     toggleLogFields();syncLog();
     setTimeout(prefillDefaultTimes,200);
+    setTimeout(showPendingDiscrepancyWarnings,300);
   }
   /* leave_req section removed */
   if(id==='my_tasks')renderMyTasks();
@@ -5220,13 +5211,128 @@ async function editLog(id){
 async function deleteLog(id){
   if(!confirm('حذف این اظهار؟'))return;
   showLoading('حذف...');
-  try{await deleteLogFromDB(id);await recordAudit('delete','daily_logs',id,{});if($('log_id').value===id)resetDailyLogForm();await renderDailyLogsList();
+  try{
+    // ─── تشخیص نوع رکورد قبل از حذف ───
+    var allLogs=await loadLogs(currentLogPerson,currentLogDate,currentLogDate);
+    var targetLog=allLogs.filter(function(l){return l.id===id;})[0];
+    var logStatus=targetLog?targetLog.status:'';
+    var logDate=targetLog?targetLog.date:currentLogDate;
+    var logUserId=targetLog?targetLog.user_id:currentLogPerson;
+    // ─── حذف رکورد ───
+    await deleteLogFromDB(id);
+    await recordAudit('delete','daily_logs',id,{status:logStatus,date:logDate});
+    // ─── اگر حضور (normal) حذف شد، همه مغایرت‌های آن روز هم حذف شوند ───
+    if(logStatus==='normal'){
+      var dayLogs=await loadLogs(logUserId,logDate,logDate);
+      var otherLogs=dayLogs.filter(function(l){return l.id!==id;});
+      var deletedCount=0;
+      for(var i=0;i<otherLogs.length;i++){
+        try{await deleteLogFromDB(otherLogs[i].id);await recordAudit('delete','daily_logs',otherLogs[i].id,{reason:'cascade_delete_with_presence',date:logDate});deletedCount++;}catch(e){}
+      }
+      if(deletedCount>0){
+        showAlert('✅ حضور و '+deletedCount+' مغایرت مرتبط آن روز حذف شد.','success');
+      }else{
+        showAlert('✅ حذف شد.','success');
+      }
+    }else{
+      // ─── اگر مغایرت حذف شد، بررسی کن آیا حضور هنوز مغایرت دارد ───
+      showAlert('✅ حذف شد.','success');
+      // بررسی مغایرت باقی‌مانده
+      setTimeout(function(){checkRemainingDiscrepancies(logUserId,logDate);},500);
+    }
+    if($('log_id').value===id)resetDailyLogForm();
+    await renderDailyLogsList();
     // به‌روزرسانی لیست سوابق اگر در حال نمایش است
     var recSec=$('section-records');
-    if(recSec&&!recSec.classList.contains('hidden'))renderRecords();
-    showAlert('حذف شد.','success');
+    if(recSec&&!recSec.classList.contains('hidden')){
+      var mode=$('rep_mode')?$('rep_mode').value:'perperson';
+      if(mode==='perperson'||mode==='percategory')generateReport();
+    }
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
+}
+// ═══ بررسی مغایرت‌های باقی‌مانده برای یک روز ═══
+async function checkRemainingDiscrepancies(userId,dateStr){
+  try{
+    var dayLogs=await loadLogs(userId,dateStr,dateStr);
+    var presenceLog=dayLogs.filter(function(l){return l.status==='normal'||l.status==='official_record';})[0];
+    if(!presenceLog)return; // حضور ندارد، نیازی به بررسی نیست
+    var f=(presenceLog.data&&presenceLog.data.fields)||{};
+    var entryT=f.entry_time||f.official_entry_time||'';
+    var exitT=f.exit_time||f.official_exit_time||'';
+    if(!entryT||!exitT)return;
+    // محاسبه مغایرت‌های مورد انتظار
+    var wh=getStandardWorkHours(dateStr);
+    var entryMin=timeToMinutes(entryT);
+    var exitMin=timeToMinutes(exitT);
+    var stdStartMin=timeToMinutes(wh.start_time);
+    var stdEndMin=timeToMinutes(wh.end_time);
+    var expectedGaps=[];
+    if(entryMin>stdStartMin)expectedGaps.push({start:wh.start_time,end:entryT,type:'absence'});
+    if(exitMin<stdEndMin&&exitMin>stdStartMin)expectedGaps.push({start:exitT,end:wh.end_time,type:'absence'});
+    if(exitMin>stdEndMin)expectedGaps.push({start:wh.end_time,end:exitT,type:'overtime'});
+    if(entryMin<stdStartMin)expectedGaps.push({start:entryT,end:wh.start_time,type:'overtime'});
+    if(expectedGaps.length===0)return; // بدون مغایرت
+    // بررسی اینکه چه مغایرت‌هایی ثبت شده
+    var registeredAbsence=dayLogs.filter(function(l){return l.status==='absence';});
+    var registeredOT=dayLogs.filter(function(l){return l.status==='overtime';});
+    // بررسی تطابق هر gap با رکوردهای ثبت‌شده
+    var unregistered=[];
+    expectedGaps.forEach(function(gap){
+      var gapStart=timeToMinutes(gap.start);
+      var gapEnd=timeToMinutes(gap.end);
+      var found=false;
+      var pool=gap.type==='absence'?registeredAbsence:registeredOT;
+      pool.forEach(function(l){
+        var lf=(l.data&&l.data.fields)||{};
+        var ls=lf.start_time||lf.ot_start||'';
+        var le=lf.end_time||lf.ot_end||'';
+        if(ls&&le){
+          var lsM=timeToMinutes(ls),leM=timeToMinutes(le);
+          // اگر هم‌پوشانی دارد → این gap پوشش داده شده
+          if(lsM<gapEnd&&leM>gapStart)found=true;
+        }
+      });
+      if(!found)unregistered.push(gap);
+    });
+    if(unregistered.length>0){
+      var msg='⚠️ مغایرت ثبت‌نشده برای تاریخ '+dateStr+'\n\n';
+      unregistered.forEach(function(g){
+        var label=g.type==='absence'?'عدم حضور':'اضافه‌کاری';
+        msg+='• '+label+': از '+g.start+' تا '+g.end+'\n';
+      });
+      msg+='\nبرای این روز حضور ثبت شده اما مغایرت‌های آن هنوز ثبت نشده است.\nبرای ثبت، به بخش خوداظهاری بروید.';
+      showAlert(msg,'warning');
+      // ذخیره در session برای نمایش مجدد
+      try{
+        var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
+        pending=pending.filter(function(p){return p.userId!==userId||p.dateStr!==dateStr;});
+        pending.push({userId:userId,dateStr:dateStr,count:unregistered.length});
+        sessionStorage.setItem('pending_discrepancies',JSON.stringify(pending));
+      }catch(e){}
+    }
+  }catch(e){console.warn('checkRemainingDiscrepancies:',e);}
+}
+// ═══ بررسی مغایرت‌های معوق هنگام ورود به خوداظهاری ═══
+function showPendingDiscrepancyWarnings(){
+  try{
+    var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
+    if(!pending.length)return;
+    // فقط برای کاربر فعلی یا اگر مدیر است برای کاربر انتخاب‌شده
+    var personId=$('log_person_id')?$('log_person_id').value:currentUser.id;
+    var dateStr=$('log_date')?$('log_date').value:'';
+    pending=pending.filter(function(p){
+      if(p.userId===personId){
+        if(!dateStr||p.dateStr===dateStr){
+          showAlert('⚠️ شما '+p.count+' مغایرت ثبت‌نشده برای تاریخ '+p.dateStr+' دارید.\nبرای ثبت، حضور آن روز را ویرایش کنید و دوباره ثبت کنید.','warning');
+          return false; // حذف از لیست — پیام نشان داده شد
+        }
+        return true; // نگه داشتن برای روز دیگر
+      }
+      return true;
+    });
+    sessionStorage.setItem('pending_discrepancies',JSON.stringify(pending));
+  }catch(e){}
 }
 function toggleLogFields(){
   var st=$('log_status').value;
@@ -5377,6 +5483,12 @@ async function savePresenceAndShowDiscrepancies(){
   // اگر مغایرتی نیست
   if(discrepancies.length===0){
     showAlert('✅ حضور ثبت شد ('+entryT+' تا '+exitT+'). هیچ مغایرتی با ساعت استاندارد ('+wh.start_time+' تا '+wh.end_time+') وجود ندارد.','success');
+    // پاک کردن هشدار مغایرت معوق برای این روز
+    try{
+      var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
+      pending=pending.filter(function(p){return !(p.userId===personId&&p.dateStr===normJ(dateStr));});
+      sessionStorage.setItem('pending_discrepancies',JSON.stringify(pending));
+    }catch(e){}
     resetDailyLogForm();
     await renderDailyLogsList();
     return;
@@ -8011,13 +8123,12 @@ function setQuickDiscText(text){
 // تعویض حالت نمایش: جدول زنده (با ویرایش) یا گزارش رسمی
 function onRepModeChange(){
   var mode=$('rep_mode')?$('rep_mode').value:'perperson';
-  var notifyWrap=$('rep_notify_wrap');
+  var notifyWrap=$('rep_notify_wrap'); if(notifyWrap)notifyWrap.style.display='none'; // حذف شد
   var genBtn=$('btn_gen_report');
   var printRecordsBtn=$('btn_print_records');
   var printReportBtn=$('btn_print_report');
   var csvBtn=$('btn_export_report_csv');
   // همه حالت‌ها گزارش رسمی هستند
-  if(notifyWrap)notifyWrap.style.display='flex';
   if(genBtn)genBtn.innerHTML='📊 تولید گزارش';
   if(printRecordsBtn)printRecordsBtn.style.display='none';
   if(printReportBtn)printReportBtn.style.display='inline-flex';
@@ -8366,7 +8477,7 @@ async function generateReport(){
     showAlert('دسترسی غیرمجاز.','error');return;
   }
   // ─── فیلتر مهمان‌ها ───
-  var includeGuests=$('rep_include_guests')?$('rep_include_guests').checked:true;
+  var includeGuests=true; // همیشه شامل همه
   showLoading('تولید گزارش...');
   try{
     var persons;
@@ -8413,30 +8524,10 @@ async function generateReport(){
     
     if(!h)h='<p>اظهاری در این بازه یافت نشد.</p>';
     else{
-      h='<div style="background:var(--c-primary-light);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"><b>📊 گزارش کارکرد</b> — دوره: '+esc(period)+' | '+personsWithLogs+' نفر | '+(includeGuests?'شامل مهمان‌ها':'بدون مهمان‌ها')+' | '+(repMode==='percategory'?'حالت دسته‌بندی':'حالت نفر به نفر')+'</div>'+h;
+      h='<div style="background:var(--c-primary-light);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px"><b>📊 گزارش کارکرد</b> — دوره: '+esc(period)+' | '+personsWithLogs+' نفر | '+(repMode==='percategory'?'حالت دسته‌بندی':'حالت نفر به نفر')+'</div>'+h;
     }
     $('report_area').innerHTML=h;
-    
-    // ─── اطلاع به کاربران ───
-    var notifyUsers=$('rep_notify_users')?$('rep_notify_users').checked:false;
-    if(notifyUsers&&(currentRole==='admin'||currentRole==='super_admin')){
-      showLoading('ارسال اطلاعیه به کاربران...');
-      var managerName=currentUser.profile.first_name+' '+currentUser.profile.last_name;
-      var notifTitle='📊 گزارش کارکرد تولید شد';
-      var notifBody='مدیر سامانه ('+managerName+') یک گزارش کارکرد برای دوره «'+period+'» تولید کرد.\n\nتعداد نفرات: '+personsWithLogs+'\nنوع: '+type+'\n\nبرای مشاهده گزارش کارکرد خود، به بخش «گزارش‌ها» مراجعه کنید.';
-      var targetUsers=includeGuests?cachedPersons:cachedPersons.filter(function(x){return x.role!=='guest';});
-      var sent=0;
-      for(var ui=0;ui<targetUsers.length;ui++){
-        if(targetUsers[ui].id===currentUser.id)continue;
-        try{
-          await sendNotificationDB({sender_id:currentUser.id,recipient_id:targetUsers[ui].id,title:notifTitle,body:notifBody,priority:'normal',related_type:'report'});
-          sent++;
-        }catch(e){}
-      }
-      showAlert('گزارش تولید شد و به '+sent+' کاربر اطلاعیه ارسال شد.','success');
-    }else{
-      showAlert('گزارش تولید شد.','success');
-    }
+    showAlert('گزارش تولید شد.','success');
   }catch(e){showAlert('خطا: '+e.message,'error');}
   hideLoading();
 }
