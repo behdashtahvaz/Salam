@@ -3301,9 +3301,9 @@ function applyRoleBasedUI(){
   // گروه «کارکرد فردی»: مخفی برای سوپرادمین
   document.querySelectorAll('.no-super-admin').forEach(function(el){el.classList.toggle('hidden',currentRole==='super_admin');});
   // مخفی کردن گروه‌های خالی (اگر همه آیتم‌های یک گروه hidden باشند، گروه را هم hidden کن)
-  document.querySelectorAll('#main_nav .nav-group').forEach(function(g){
+  document.querySelectorAll('#main_nav .nav-section').forEach(function(g){
     var visible=g.querySelectorAll('.nav-item:not(.hidden)').length;
-    g.classList.toggle('hidden',visible===0);
+    if(visible===0){g.classList.add('hidden');}else{g.classList.remove('hidden');}
   });
 }
 
@@ -10465,21 +10465,25 @@ async function changePassword(){
       // نمایش کد بازیابی جدید
       showNewRecoveryCode(newCode);
     }else{
-      // کاربر عادی/مدیر
-      const{data,error}=await sb.rpc('rpc_change_own_password',{
-        p_user_id:currentUser.id,
-        p_old_hash:oldHash,
-        p_new_hash:newHash,
-        p_new_salt:newSalt
-      });
-      if(error)throw error;
-      if(data&&data.error)throw new Error(data.error);
-      // به‌روزرسانی Supabase Auth
+      // کاربر عادی/مدیر — تغییر مستقیم در دیتابیس
+      // ابتدا تأیید رمز فعلی
+      if(oldHash!==profile.password_hash){
+        showAlert('❌ رمز فعلی اشتباه است.','error');hideLoading();return;
+      }
+      // ذخیره رمز جدید
+      const{data:errorData,error:updateError}=await sb.from('profiles')
+        .update({password_hash:newHash,password_salt:newSalt})
+        .eq('id',currentUser.id)
+        .select('id');
+      if(updateError)throw updateError;
+      if(!errorData||!errorData.length)throw new Error('تغییر رمز اعمال نشد.');
+      // به‌روزرسانی Supabase Auth (اختیاری)
       try{await sb.auth.updateUser({password:p1});}catch(e){console.warn('Supabase Auth sync:',e);}
       $('cp_old_password').value='';$('new_password').value='';$('new_password2').value='';
       $('cp_strength_bar').style.width='0%';$('cp_strength_label').textContent='';
       currentUser.profile.password_hash=newHash;
       currentUser.profile.password_salt=newSalt;
+      await recordAudit('change_password','profiles',currentUser.id,{});
       showAlert('✅ رمز با موفقیت تغییر کرد.','success');
     }
     await loadAllPersons();
