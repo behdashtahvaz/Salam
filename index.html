@@ -1387,6 +1387,13 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <!-- نمایش ساعات استاندارد این روز -->
   <div id="standard_hours_display" style="background:var(--c-card-alt);padding:8px 12px;border-radius:var(--c-radius-sm);margin-bottom:10px;font-size:13px;border:1px solid var(--c-border)"></div>
+  <!-- ═══ بنر مغایرت‌های ثبت‌نشده (دائمی تا ثبت شود) ═══ -->
+  <div id="pending_discrepancy_banner" class="hidden" style="background:var(--c-warning-light,#fef3c7);border:2px solid var(--c-warning,#f59e0b);border-radius:10px;padding:14px;margin-bottom:12px">
+    <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:8px;font-size:14px">⚠️ مغایرت ثبت‌نشده</div>
+    <div id="pending_disc_detail" style="font-size:13px;color:var(--c-text);margin-bottom:10px;line-height:1.7"></div>
+    <button class="btn btn-warning" id="btn_register_disc" onclick="registerPendingDiscrepancy()">📝 ثبت مغایرت</button>
+    <button class="btn btn-sm btn-secondary" style="margin-right:6px" onclick="dismissPendingBanner()">بستن</button>
+  </div>
   <!-- نمایش موجودی مرخصی -->
   <div id="leave_balance_display" style="margin-bottom:12px"></div>
   <!-- delegate_box حذف شد — ثبت به نمایندگی از کاربر دیگر -->
@@ -5103,7 +5110,7 @@ function summaryHtml(s){
 }
 
 /* ═════ Daily Log ═════ */
-async function syncLog(){currentLogPerson=$('log_person_id').value;currentLogDate=$('log_date').value;updateDeclarationModeBanner();updateStandardHoursDisplay();if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();await renderDailyLogsList();if(currentLogPerson===currentUser.id)await renderVerificationPending();}
+async function syncLog(){currentLogPerson=$('log_person_id').value;currentLogDate=$('log_date').value;updateDeclarationModeBanner();updateStandardHoursDisplay();if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();await renderDailyLogsList();if(currentLogPerson===currentUser.id)await renderVerificationPending();showPendingDiscrepancyWarnings();}
 // پر کردن پیش‌فرض ساعت ورود/خروج با ساعات استاندارد (فقط فرم جدید)
 function prefillDefaultTimes(){
   if($('log_id')&&$('log_id').value)return; // اگر ویرایش است، پر نکن
@@ -5314,25 +5321,106 @@ async function checkRemainingDiscrepancies(userId,dateStr){
   }catch(e){console.warn('checkRemainingDiscrepancies:',e);}
 }
 // ═══ بررسی مغایرت‌های معوق هنگام ورود به خوداظهاری ═══
+var pendingDiscData=null; // داده مغایرت معوق برای استفاده در دکمه ثبت
 function showPendingDiscrepancyWarnings(){
+  var banner=$('pending_discrepancy_banner');
+  var detail=$('pending_disc_detail');
+  if(!banner||!detail)return;
   try{
     var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
-    if(!pending.length)return;
-    // فقط برای کاربر فعلی یا اگر مدیر است برای کاربر انتخاب‌شده
+    if(!pending.length){banner.classList.add('hidden');return;}
     var personId=$('log_person_id')?$('log_person_id').value:currentUser.id;
     var dateStr=$('log_date')?$('log_date').value:'';
-    pending=pending.filter(function(p){
-      if(p.userId===personId){
-        if(!dateStr||p.dateStr===dateStr){
-          showAlert('⚠️ شما '+p.count+' مغایرت ثبت‌نشده برای تاریخ '+p.dateStr+' دارید.\nبرای ثبت، حضور آن روز را ویرایش کنید و دوباره ثبت کنید.','warning');
-          return false; // حذف از لیست — پیام نشان داده شد
-        }
-        return true; // نگه داشتن برای روز دیگر
-      }
-      return true;
-    });
-    sessionStorage.setItem('pending_discrepancies',JSON.stringify(pending));
+    // پیدا کردن مغایرت معوق برای این کاربر و این تاریخ
+    var match=pending.filter(function(p){return p.userId===personId&&p.dateStr===dateStr;});
+    if(match.length===0){banner.classList.add('hidden');return;}
+    // بررسی واقعی مغایرت‌های ثبت‌نشده
+    checkAndShowPendingBanner(personId,dateStr);
   }catch(e){}
+}
+// بررسی واقعی و نمایش بنر
+async function checkAndShowPendingBanner(personId,dateStr){
+  var banner=$('pending_discrepancy_banner');
+  var detail=$('pending_disc_detail');
+  if(!banner||!detail)return;
+  try{
+    var dayLogs=await loadLogs(personId,dateStr,dateStr);
+    var presenceLog=dayLogs.filter(function(l){return l.status==='normal'||l.status==='official_record';})[0];
+    if(!presenceLog){banner.classList.add('hidden');return;}
+    var f=(presenceLog.data&&presenceLog.data.fields)||{};
+    var entryT=f.entry_time||f.official_entry_time||'';
+    var exitT=f.exit_time||f.official_exit_time||'';
+    if(!entryT||!exitT){banner.classList.add('hidden');return;}
+    // محاسبه مغایرت‌های مورد انتظار
+    var wh=getStandardWorkHours(dateStr);
+    var entryMin=timeToMinutes(entryT);
+    var exitMin=timeToMinutes(exitT);
+    var stdStartMin=timeToMinutes(wh.start_time);
+    var stdEndMin=timeToMinutes(wh.end_time);
+    var expectedGaps=[];
+    if(entryMin>stdStartMin)expectedGaps.push({start:wh.start_time,end:entryT,type:'absence',label:'عدم حضور (تأخیر در ورود)'});
+    if(exitMin<stdEndMin&&exitMin>stdStartMin)expectedGaps.push({start:exitT,end:wh.end_time,type:'absence',label:'عدم حضور (خروج زودهنگام)'});
+    if(exitMin>stdEndMin)expectedGaps.push({start:wh.end_time,end:exitT,type:'overtime',label:'حضور خارج از ساعت کار'});
+    if(entryMin<stdStartMin)expectedGaps.push({start:entryT,end:wh.start_time,type:'overtime',label:'حضور قبل از ساعت کار'});
+    if(expectedGaps.length===0){banner.classList.add('hidden');return;}
+    // بررسی چه مغایرت‌هایی ثبت شده
+    var registeredAbsence=dayLogs.filter(function(l){return l.status==='absence';});
+    var registeredOT=dayLogs.filter(function(l){return l.status==='overtime';});
+    var unregistered=[];
+    expectedGaps.forEach(function(gap){
+      var gapStart=timeToMinutes(gap.start);
+      var gapEnd=timeToMinutes(gap.end);
+      var found=false;
+      var pool=gap.type==='absence'?registeredAbsence:registeredOT;
+      pool.forEach(function(l){
+        var lf=(l.data&&l.data.fields)||{};
+        var ls=lf.start_time||lf.ot_start||'';
+        var le=lf.end_time||lf.ot_end||'';
+        if(ls&&le){
+          var lsM=timeToMinutes(ls),leM=timeToMinutes(le);
+          if(lsM<gapEnd&&leM>gapStart)found=true;
+        }
+      });
+      if(!found)unregistered.push(gap);
+    });
+    if(unregistered.length===0){
+      // همه مغایرت‌ها ثبت شده — بنر را مخفی کن و از session پاک کن
+      banner.classList.add('hidden');
+      try{
+        var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
+        pending=pending.filter(function(p){return !(p.userId===personId&&p.dateStr===dateStr);});
+        sessionStorage.setItem('pending_discrepancies',JSON.stringify(pending));
+      }catch(e){}
+      return;
+    }
+    // نمایش بنر
+    pendingDiscData={personId:personId,dateStr:dateStr,entryT:entryT,exitT:exitT,unregistered:unregistered};
+    var html='برای تاریخ <b>'+esc(dateStr)+'</b> حضور شما از <b dir="ltr">'+esc(entryT)+'</b> تا <b dir="ltr">'+esc(exitT)+'</b> ثبت شده است.<br>';
+    html+='موارد زیر نیاز به ثبت دارند:<br>';
+    unregistered.forEach(function(g){
+      var icon=g.type==='absence'?'❌':'⚡';
+      html+='<div style="margin-top:4px">'+icon+' '+esc(g.label)+': از <b dir="ltr">'+esc(g.start)+'</b> تا <b dir="ltr">'+esc(g.end)+'</b></div>';
+    });
+    detail.innerHTML=html;
+    banner.classList.remove('hidden');
+  }catch(e){console.warn('checkAndShowPendingBanner:',e);}
+}
+// ثبت مغایرت معوق — بدون ذخیره مجدد حضور (حضور قبلاً ثبت شده)
+async function registerPendingDiscrepancy(){
+  if(!pendingDiscData)return;
+  var d=pendingDiscData;
+  // محاسبه مغایرت‌ها و نمایش مودال — بدون ذخیره مجدد حضور
+  var discrepancies=[];
+  d.unregistered.forEach(function(g){
+    var dur=formatMins(calcDuration(g.start,g.end));
+    discrepancies.push({type:g.type,start:g.start,end:g.end,label:g.label,duration:dur});
+  });
+  // نمایش مودال مغایرت (بدون ذخیره مجدد حضور)
+  showDiscrepancyModal(discrepancies,d.dateStr,d.personId,d.entryT,d.exitT);
+}
+function dismissPendingBanner(){
+  var banner=$('pending_discrepancy_banner');
+  if(banner)banner.classList.add('hidden');
 }
 function toggleLogFields(){
   var st=$('log_status').value;
