@@ -5408,26 +5408,57 @@ function checkTimeDiscrepancy(){
   btns+=' <button class="btn btn-sm btn-secondary" onclick="dismissDiscrepancy()">✓ بدون مغایرت — ثبت حضور</button>';
   actions.innerHTML=btns;
 }
-function applyDiscrepancySuggestion(type){
-  // ذخیره ساعت ورود/خروج فعلی، سپس تغییر به حالت عدم حضور با نوع مناسب
+async function applyDiscrepancySuggestion(type){
+  // ذخیره ساعت ورود/خروج فعلی
   var entryT=$('entry_time')?$('entry_time').value:'';
   var exitT=$('exit_time')?$('exit_time').value:'';
   var topic=$('normal_topic')?$('normal_topic').value:'';
-  // ابتدا حضور را ثبت می‌کنیم
-  // سپس یک رکورد عدم حضور اضافه می‌کنیم
+  var dateStr=$('log_date')?$('log_date').value:'';
+  var personId=$('log_person_id')?$('log_person_id').value:'';
+  if(!entryT||!exitT||!dateStr||!personId)return;
+  // ─── ۱. ابتدا رکورد حضور را ذخیره کن ───
+  showLoading('ثبت حضور...');
+  try{
+    var presenceLog={
+      id:genUUID(),
+      user_id:personId,
+      date:normJ(dateStr),
+      status:'normal',
+      data:{
+        discrepancy:'',
+        fields:{
+          entry_time:entryT,
+          exit_time:exitT,
+          topic:topic
+        }
+      }
+    };
+    // اگر تفویض است
+    if(personId!==currentUser.id){
+      presenceLog.submitted_by=currentUser.id;
+      presenceLog.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
+    }
+    await saveLogToDB(presenceLog);
+    await recordAudit('create','daily_logs',presenceLog.id,{status:'normal',date:dateStr,entry:entryT,exit:exitT});
+  }catch(e){
+    showAlert('خطا در ثبت حضور: '+e.message,'error');
+    hideLoading();
+    return;
+  }
+  hideLoading();
+  // ─── ۲. حالا فرم را برای ثبت عدم حضور (مرخصی/مأموریت ساعتی) آماده کن ───
   $('log_status').value='absence';
   toggleLogFields();
   $('absence_type').value=type;
   toggleAbsenceFields();
-  // اگر مرخصی ساعتی، ساعت‌های غیبت را تنظیم کن
+  // محاسبه ساعت‌های غیبت
+  var wh=getStandardWorkHours(dateStr);
+  var entryMin=timeToMinutes(entryT);
+  var exitMin=timeToMinutes(exitT);
+  var stdStartMin=timeToMinutes(wh.start_time);
+  var stdEndMin=timeToMinutes(wh.end_time);
   if(type==='hourly_leave'){
-    var dateStr=$('log_date')?$('log_date').value:'';
-    var wh=getStandardWorkHours(dateStr);
-    var entryMin=timeToMinutes(entryT);
-    var exitMin=timeToMinutes(exitT);
-    var stdStartMin=timeToMinutes(wh.start_time);
-    var stdEndMin=timeToMinutes(wh.end_time);
-    // ساعات غیبت: یا تأخیر ورود یا خروج زودهنگام
+    // مرخصی ساعتی: ساعت‌های غیبت داخل ساعات اداری
     var gapStart='',gapEnd='';
     if(entryMin>stdStartMin){gapStart=wh.start_time;gapEnd=entryT;}
     else if(exitMin<stdEndMin){gapStart=exitT;gapEnd=wh.end_time;}
@@ -5435,17 +5466,18 @@ function applyDiscrepancySuggestion(type){
       setTimepickerValue('abs_start_time',gapStart);
       setTimepickerValue('abs_end_time',gapEnd);
     }
-    if($('abs_reason'))$('abs_reason').value='مرخصی ساعتی — ثبت خودکار از مغایرت';
+    if($('abs_reason'))$('abs_reason').value='مرخصی ساعتی — تأخیر/خروج زودهنگام';
   }else if(type==='hourly_mission'){
+    // مأموریت ساعتی: ساعت‌های خارج از اداری
     setTimepickerValue('abs_start_time',entryT);
     setTimepickerValue('abs_end_time',exitT);
     if($('mh_location'))$('mh_location').value='خارج از مرکز';
-    if($('abs_reason'))$('abs_reason').value='مأموریت ساعتی — ثبت خودکار از مغایرت';
+    if($('abs_reason'))$('abs_reason').value='مأموریت ساعتی — خارج از ساعات اداری';
   }
   // مخفی کردن کادر مغایرت
   var box=$('discrepancy_suggestion');
   if(box)box.classList.add('hidden');
-  showAlert('نوع عدم حضور روی «'+ABS_LABEL[type]+'» تنظیم شد. ساعت‌ها به‌صورت خودکار پر شدند. در صورت نیاز ویرایش کنید و سپس ثبت کنید.','info');
+  showAlert('✅ حضور ثبت شد ('+entryT+' تا '+exitT+'). حالا مرخصی/مأموریت ساعتی را بررسی و ثبت کنید.','success');
 }
 function dismissDiscrepancy(){
   var box=$('discrepancy_suggestion');
@@ -5939,10 +5971,33 @@ function updateDeclarationModeBanner(){
   if(titleEl)titleEl.textContent=title;
   if(descEl)descEl.textContent=desc;
   banner.style.display='block';
-  // اگر کاربر فعلی مدیر است و کاربر انتخاب‌شده verification است، به‌صورت خودکار به حالت official_record برو
+  // در حالت مکمل (verification): کاربر عادی فقط عدم حضور/اضافه‌کار ثبت می‌کند
+  // گزینه «حضور» فقط برای مدیر قابل مشاهده است (ثبت کارکرد رسمی)
   var _isAdmin=currentRole==='admin'||currentRole==='super_admin';
+  var logStatusSel=$('log_status');
+  if(logStatusSel){
+    if(mode==='verification'&&!_isAdmin){
+      // کاربر عادی در حالت مکمل — فقط عدم حضور و اضافه‌کار
+      // گزینه «حضور» را مخفی کن
+      Array.prototype.forEach.call(logStatusSel.options,function(opt){
+        if(opt.value==='normal'){
+          opt.style.display='none';
+          // اگر روی normal بود، به absence تغییر بده
+          if(logStatusSel.value==='normal'){
+            logStatusSel.value='absence';
+            toggleLogFields();
+          }
+        }
+      });
+    }else{
+      // حالت عادی — همه گزینه‌ها قابل مشاهده
+      Array.prototype.forEach.call(logStatusSel.options,function(opt){
+        opt.style.display='';
+      });
+    }
+  }
+  // اگر مدیر است و کاربر انتخاب‌شده verification است، به حالت official_record برو
   if(_isAdmin&&mode==='verification'){
-    // فقط اگر کاربر چیزی انتخاب نکرده یا در حالت normal است
     var curStatus=$('log_status').value;
     if(curStatus==='normal'||curStatus==='overtime'){
       $('log_status').value='official_record';
