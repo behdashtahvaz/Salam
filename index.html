@@ -5506,6 +5506,33 @@ async function savePresenceAndShowDiscrepancies(){
   var personId=$('log_person_id')?$('log_person_id').value:'';
   if(!entryT||!exitT||!dateStr||!personId){showAlert('ساعت ورود، خروج، تاریخ و پرسنل الزامی است.','error');return;}
   if(entryT==='--:--'||exitT==='--:--'){showAlert('ساعت ورود و خروج را انتخاب کنید.','error');return;}
+  // ─── هشدار روز غیر کاری (پنجشنبه، جمعه، یا تعطیل رسمی) ───
+  var dateP=parseJalali(dateStr);
+  var dow=getJalaliDayOfWeek(dateP.jy,dateP.jm,dateP.jd);
+  var isHoliday=isHolidayDow(dow);
+  var holidayName='';
+  if(isHoliday){holidayName=dow===5?'پنجشنبه':'جمعه';}
+  // بررسی رویدادهای تعطیل
+  if(!isHoliday){
+    try{
+      const{data:evData}=await sb.from('calendar_events').select('*').eq('event_year',dateP.jy);
+      if(evData){
+        var dayEv=evData.filter(function(e){
+          try{return e.date===dateStr||normJ(e.date)===normJ(dateStr);}catch(x){return false;}
+        });
+        var holEv=dayEv.filter(function(e){return e.is_holiday;});
+        if(holEv.length){isHoliday=true;holidayName=holEv[0].title||'تعطیل رسمی';}
+      }
+    }catch(e){}
+  }
+  if(isHoliday){
+    if(!confirm('⚠️ هشدار: روز غیر کاری\n\n'+
+      'تاریخ '+dateStr+' یک روز غیر کاری است ('+holidayName+').\n'+
+      'شما در حال ثبت حضور برای این روز هستید.\n\n'+
+      'آیا از ثبت ادامه می‌دهید؟')){
+      return;
+    }
+  }
   // ─── ۱. ذخیره رکورد حضور (با بررسی رکورد موجود) ───
   showLoading('ثبت حضور...');
   try{
@@ -5701,7 +5728,34 @@ async function saveDailyLog(){
   if(status==='absence_hourly')status='absence';
   if(!personId){showAlert('پرسنل را انتخاب کنید.','error');return;}
   if(!isValidJalaliDate(dateStr)){showAlert('تاریخ نامعتبر است.','error');return;}
-  // ─── بررسی امنیتی: کاربر عادی فقط برای خودش ثبت می‌کند (تفویض از UI حذف شده) ───
+  // ─── هشدار روز غیر کاری برای ثبت مغایرت (عدم حضور/اضافه‌کاری) ───
+  var dateP=parseJalali(dateStr);
+  var dow=getJalaliDayOfWeek(dateP.jy,dateP.jm,dateP.jd);
+  var isHoliday=isHolidayDow(dow);
+  var holidayName='';
+  if(isHoliday){holidayName=dow===5?'پنجشنبه':'جمعه';}
+  if(!isHoliday){
+    try{
+      const{data:evData}=await sb.from('calendar_events').select('*').eq('event_year',dateP.jy);
+      if(evData){
+        var dayEv=evData.filter(function(e){
+          try{return e.date===dateStr||normJ(e.date)===normJ(dateStr);}catch(x){return false;}
+        });
+        var holEv=dayEv.filter(function(e){return e.is_holiday;});
+        if(holEv.length){isHoliday=true;holidayName=holEv[0].title||'تعطیل رسمی';}
+      }
+    }catch(e){}
+  }
+  if(isHoliday&&!id){
+    // فقط برای ثبت جدید (نه ویرایش)
+    if(!confirm('⚠️ هشدار: روز غیر کاری\n\n'+
+      'تاریخ '+dateStr+' یک روز غیر کاری است ('+holidayName+').\n'+
+      'شما در حال ثبت اظهار برای این روز هستید.\n\n'+
+      'آیا از ثبت ادامه می‌دهید؟')){
+      return;
+    }
+  }
+  // ─── بررسی امنیتی: کاربر عادی فقط برای خودش ثبت می‌کند ───
   var _isAdmin=currentRole==='admin'||currentRole==='super_admin';
   if(!_isAdmin&&personId!==currentUser.id){
     showAlert('دسترسی غیرمجاز: نمی‌توانید برای این کاربر ثبت کنید.','error');return;
@@ -6947,114 +7001,12 @@ async function renderApprovals(){
         var apDays=l.approved_days?(typeof l.approved_days==='string'?JSON.parse(l.approved_days):l.approved_days):[];
         h+='<small>تصمیم گرفته شده</small>'+(apDays.length?'<br><small>روزهای تأییدشده: '+esc(apDays.join(', '))+'</small>':'')+(l.admin_note?'<br><small>یادداشت مدیر: '+esc(l.admin_note)+'</small>':'');
       }
-      h+='</td><td><button class="btn btn-sm btn-info" onclick="printLeave(\''+l.id+'\')" title="چاپ فرم">🖨️</button></td></tr>';
+      h+='</td></tr>';
     }
     c.innerHTML=h+'</table>';
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
-// چاپ نامه رسمی درخواست مرخصی — قالب A5
-async function printLeave(id){
-  try{
-    var all=await loadLeaves();
-    var lv=all.filter(function(l){return l.id===id;})[0];
-    if(!lv){showAlert('درخواست یافت نشد.','error');return;}
-    var u=cachedPersons.filter(function(p){return p.id===lv.user_id;})[0];
-    var fullName=u?(u.first_name+' '+u.last_name):getPersonName(lv.user_id);
-    var personnelId=u?u.personnel_id:'—';
-    var admin=cachedPersons.filter(function(p){return p.role==='admin';})[0];
-    var adminLastName=admin?admin.last_name:'[نام خانوادگی مدیر]';
-    var reason=lv.reason||'—';
-    var dateStr=lv.start_date===lv.end_date?lv.start_date:(lv.start_date+' تا '+lv.end_date);
-    var days=1;
-    if(lv.type==='daily'&&lv.start_date&&lv.end_date){
-      var range=jalaliDateRange(lv.start_date,lv.end_date);
-      days=range.length;
-    }
-    var coordNote=lv.coordinator_note||'';
-    var deciderName=lv.decided_by?getPersonName(lv.decided_by):'';
-    var adminNote=lv.admin_note||'';
-    var decisionText='';
-    if(lv.status==='approved')decisionText='موافقت شد';
-    else if(lv.status==='rejected')decisionText='عدم موافقت';
-    else if(lv.status==='partial')decisionText='موافقت جزئی';
-    else decisionText='در انتظار پاسخ';
-    var regDate=toPersianDigits(lv.reg_date||getTodayJalali());
-    var dateDisplay=toPersianDigits(dateStr);
-    var daysStr=toPersianDigits(String(days));
-    var pidStr=toPersianDigits(personnelId);
-    var w=window.open('','_blank');
-    w.document.open();
-    w.document.write('<!DOCTYPE html>\n<html dir="rtl" lang="fa">\n<head>\n<meta charset="UTF-8">\n');
-    w.document.write('<meta name="viewport" content="width=device-width,initial-scale=1">\n');
-    w.document.write('<title>نامه درخواست مرخصی — '+esc(fullName)+'</title>\n');
-    w.document.write('<style>\n');
-    w.document.write('@page{size:A5 portrait;margin:15mm 18mm}\n');
-    w.document.write('*{margin:0;padding:0;box-sizing:border-box}\n');
-    w.document.write('body{font-family:Tahoma,Arial,sans-serif;background:#e9ecef;padding:20px;display:flex;justify-content:center}\n');
-    w.document.write('.page{width:148mm;min-height:210mm;background:#fff;padding:15mm 18mm;box-shadow:0 4px 20px rgba(0,0,0,.15);font-size:12pt;line-height:1.3;color:#000;text-align:justify}\n');
-    w.document.write('.bismillah{text-align:center;font-size:11pt;margin-bottom:14pt}\n');
-    w.document.write('.header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10pt;direction:rtl}\n');
-    w.document.write('.recipient{font-size:12pt;flex:1;text-align:right}\n');
-    w.document.write('.date{font-size:11pt;text-align:left;white-space:nowrap}\n');
-    w.document.write('.subject{font-weight:bold;font-size:12pt;margin:8pt 0 8pt;border-bottom:1px solid #ddd;padding-bottom:4pt}\n');
-    w.document.write('.para{margin-bottom:8pt;font-size:12pt;line-height:1.3;text-align:justify}\n');
-    w.document.write('.sig-block{margin-top:14pt;text-align:left;font-size:12pt;line-height:1.6}\n');
-    w.document.write('.sig-line{display:inline-block;border-bottom:1px solid #000;width:180px;text-align:center;margin-top:6pt}\n');
-    w.document.write('.coord-box{margin-top:10pt;border:1px dashed #aaa;padding:8pt;font-size:10.5pt;background:#f8f9fa;border-radius:4pt}\n');
-    w.document.write('.coord-title{font-weight:bold;margin-bottom:3pt}\n');
-    w.document.write('.admin-box{margin-top:8pt;border:1.5pt solid #000;padding:8pt;font-size:10.5pt;border-radius:4pt}\n');
-    w.document.write('.admin-title{font-weight:bold;margin-bottom:3pt}\n');
-    w.document.write('.admin-sig{margin-top:10pt;text-align:right;font-size:12pt;line-height:1.6}\n');
-    w.document.write('.toolbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:100}\n');
-    w.document.write('.toolbar button{padding:8px 24px;font-size:14px;cursor:pointer;border:none;border-radius:8px;background:#1769AA;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2)}\n');
-    w.document.write('@media print{body{background:#fff;padding:0}.page{width:auto;min-height:auto;box-shadow:none;padding:0}.toolbar{display:none}}\n');
-    w.document.write('</style>\n</head>\n<body>\n');
-    w.document.write('<div class="toolbar"><button onclick="window.print()">🖨️ چاپ</button></div>\n');
-    w.document.write('<div class="page">\n');
-    // بسمه تعالی
-    w.document.write('<div class="bismillah">بسمه تعالی</div>\n');
-    // هدر: گیرنده در راست، تاریخ در چپ
-    w.document.write('<div class="header-row">\n');
-    w.document.write('<div class="recipient">جناب آقای '+esc(adminLastName)+'</div>\n');
-    w.document.write('<div class="date">تاریخ: '+regDate+'</div>\n');
-    w.document.write('</div>\n');
-    // موضوع
-    w.document.write('<div class="subject">موضوع: درخواست مرخصی روزانه</div>\n');
-    // متن نامه
-    w.document.write('<div class="para">با سلام و احترام،</div>\n');
-    w.document.write('<div class="para">اینجانب '+esc(fullName)+' ، به کد ملی '+pidStr+' ، به استحضار می‌رسانم که به دلیل '+esc(reason)+' ، مایل هستم در تاریخ '+dateDisplay+' به تعداد '+daysStr+' روز از مرخصی روزانه استفاده کنم.</div>\n');
-    w.document.write('<div class="para">خواهشمند است دستور فرمایید پس از بررسی، موافقت جنابعالی با این درخواست اعلام شود. پیشاپیش از توجه و همکاری شما سپاسگزارم.</div>\n');
-    // امضای درخواست‌کننده
-    w.document.write('<div class="sig-block">\n');
-    w.document.write('با تشکر و احترام<br>\n');
-    w.document.write(esc(fullName)+'<br>\n');
-    w.document.write('کد ملی: '+pidStr+'<br>\n');
-    w.document.write('<span class="sig-line">امضا</span>\n');
-    w.document.write('</div>\n');
-    // یادداشت هماهنگ‌کننده
-    if(coordNote){
-      w.document.write('<div class="coord-box">\n');
-      w.document.write('<div class="coord-title">یادداشت هماهنگ‌کننده:</div>\n');
-      w.document.write(esc(coordNote)+'\n');
-      w.document.write('</div>\n');
-    }
-    // جوابیه مدیر
-    w.document.write('<div class="admin-box">\n');
-    w.document.write('<div class="admin-title">جوابیه مدیر:</div>\n');
-    w.document.write(decisionText);
-    if(adminNote)w.document.write('<br>\n'+esc(adminNote));
-    if(deciderName)w.document.write('<br>\n<small>تصمیم‌گیرنده: '+esc(deciderName)+'</small>');
-    w.document.write('\n</div>\n');
-    // امضای مدیر
-    w.document.write('<div class="admin-sig">\n');
-    w.document.write('مدیر محترم<br>\n');
-    w.document.write('<span class="sig-line">امضا و مهر</span>\n');
-    w.document.write('</div>\n');
-    w.document.write('</div>\n'); // end .page
-    w.document.write('</body>\n</html>\n');
-    w.document.close();
-  }catch(e){showAlert('خطا در چاپ: '+e.message,'error');}
-}
+// printLeave حذف شد — سیستم نامه مرخصی غیرفعال است
 async function approveLeave(id){
   var note=val('admin_note_'+id);
   showLoading('تأیید...');
