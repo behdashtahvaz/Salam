@@ -1201,13 +1201,7 @@ button,.btn{-webkit-touch-callout:none}
 
       </div>
     </div>
-    <!-- ۴. هماهنگی و تأیید -->
-    <div class="nav-section coordinator-admin-only">
-      <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">👥 هماهنگی و تأیید <span class="nav-chevron">▾</span></div>
-      <div class="nav-section-body">
-        <button class="nav-item" data-target="approvals"><span class="ico">✅</span><span class="lbl">تأیید درخواست‌ها</span><span class="nav-badge hidden" id="admin_approvals_badge">۰</span></button>
-      </div>
-    </div>
+    <!-- ۴. هماهنگی و تأیید — حذف شد (سیستم درخواست مرخصی غیرفعال) -->
     <!-- ۵. ارتباطات -->
     <div class="nav-section admin-only">
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">📢 ارتباطات <span class="nav-chevron">▾</span></div>
@@ -1653,35 +1647,11 @@ button,.btn{-webkit-touch-callout:none}
   <p>این بخش حذف شده است.</p>
 </div>
 
-<!-- ═══ تأیید درخواست‌ها (یکپارچه — هماهنگ‌کننده + مدیر) ═══ -->
+<!-- ═══ تأیید درخواست‌ها — حذف شد (سیستم درخواست مرخصی غیرفعال) ═══ -->
 <div id="section-approvals" class="card hidden">
-  <h2>✅ تأیید درخواست‌ها</h2>
-  <p id="approvals_role_notice">درخواست‌های مرخصی بر اساس نقش شما نمایش داده می‌شوند. هماهنگ‌کننده‌ها تأیید اولیه و مدیران تأیید نهایی انجام می‌دهند.</p>
-  <div class="form-row">
-    <div class="form-group"><label>فیلتر مرحله:</label><select id="approval_filter" onchange="renderApprovals()">
-      <option value="pending">در انتظار مأموریت من</option>
-      <option value="all">همه درخواست‌ها</option>
-      <option value="approved">تأییدشده</option>
-      <option value="rejected">ردشده</option>
-      <option value="partial">جزئی</option>
-    </select></div>
-    <div class="form-group"><label>نقش نمایش:</label><select id="approval_role_view" onchange="renderApprovals()">
-      <option value="auto">خودکار (بر اساس نقش من)</option>
-      <option value="admin">نمای مدیر (تأیید نهایی)</option>
-    </select></div>
-  </div>
-  <!-- بخش هماهنگ‌کننده (مشاوره و یادداشت) — حذف شد -->
-  <!-- بخش مدیر (تأیید نهایی) -->
-  <div id="admin_approvals_section">
-    <h3 style="margin:0 0 10px">🔑 درخواست‌های در انتظار تصمیم شما</h3>
-    <p style="font-size:12px;color:var(--c-text-muted);margin-bottom:10px">برای مرخصی‌های روزانه چندروزه، می‌توانید هر روز را جداگانه تأیید/رد کنید.</p>
-    <div id="approvals_list_container" class="table-wrap"></div>
-  </div>
+  <h2>تأیید درخواست‌ها</h2>
+  <p>این بخش حذف شده است.</p>
 </div>
-
-<!-- section-coordinator_approvals و section-coordinator_tasks حذف شدند (ادغام در بخش‌های دیگر) -->
-
-<!-- تأیید مرخصی‌ها (ادمین) — حذف شد: در section-approvals بالا ادغام شده -->
 
 <!-- ارسال پیام + آرشیو -->
 <div id="section-send_notification" class="card hidden">
@@ -3275,18 +3245,16 @@ function applyRoleBasedUI(){
   var canEvents=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_events);
   document.querySelectorAll('.events-access').forEach(function(el){el.classList.toggle('hidden',!canEvents);});
   // ─── دسترسی‌های قابل تفویض: لوح شیفت، تعریف نقش‌ها، مدیریت کاربران ───
-  // از cachedPersons (داده تازه از DB) و currentUser.profile چک می‌کنیم
   var meInCache=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
   var myProfile=meInCache||currentUser.profile||{};
-  // بررسی can_manage_shifts (با پشتیبانی boolean و string)
   var hasShiftAccess=myProfile.can_manage_shifts===true||myProfile.can_manage_shifts==='true'||myProfile.can_manage_shifts===1;
   var canShifts=isAdmin||hasShiftAccess;
+  // مدیر همیشه همه را می‌بیند
+  if(isAdmin)canShifts=true;
   // shift-access: لوح شیفت
-  document.querySelectorAll('.shift-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
+  document.querySelectorAll('.shift-access').forEach(function(el){if(!canShifts)el.classList.add('hidden');else el.classList.remove('hidden');});
   // roles-access و users-access: تعریف نقش‌ها و مدیریت کاربران
-  document.querySelectorAll('.roles-access,.users-access').forEach(function(el){el.classList.toggle('hidden',!canShifts);});
-  // دیباگ: در کنسول لاگ بزن
-  console.log('applyRoleBasedUI: canShifts=',canShifts,'isAdmin=',isAdmin,'hasShiftAccess=',hasShiftAccess,'can_manage_shifts=',myProfile.can_manage_shifts);
+  document.querySelectorAll('.roles-access,.users-access').forEach(function(el){if(!canShifts)el.classList.add('hidden');else el.classList.remove('hidden');});
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
   //   ۱. دسترسی تأیید مرخصی (can_approve_leaves)
@@ -3302,6 +3270,8 @@ function applyRoleBasedUI(){
   document.querySelectorAll('.no-super-admin').forEach(function(el){el.classList.toggle('hidden',currentRole==='super_admin');});
   // مخفی کردن گروه‌های خالی (اگر همه آیتم‌های یک گروه hidden باشند، گروه را هم hidden کن)
   document.querySelectorAll('#main_nav .nav-section').forEach(function(g){
+    // اگر خود گروه hidden شده (توسط admin-only یا users-access)، skip کن
+    if(g.classList.contains('hidden'))return;
     var visible=g.querySelectorAll('.nav-item:not(.hidden)').length;
     if(visible===0){g.classList.add('hidden');}else{g.classList.remove('hidden');}
   });
@@ -3925,8 +3895,8 @@ async function showSection(id,skipHistory){
   if(id==='records'){if(!cachedPersons||!cachedPersons.length)await loadAllPersons();populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();}
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
   if(id==='reports'){showSection('records');return;}
-  if(id==='coordinator_tasks'){/* بخش حذف شده — redirect به approvals */showSection('approvals');return;}
-  if(id==='approvals')renderApprovals();
+  if(id==='coordinator_tasks'){/* حذف شد */showSection('dashboard');return;}
+  if(id==='approvals'){/* حذف شد */return;}
   if(id==='send_notification'){populateRecipientDropdown();renderMsgArchive();}
   if(id==='categorized_reports'){/* حذف شد */showSection('records');return;}
   if(id==='program_reports'){/* حذف شد */showSection('records');return;}
@@ -4316,7 +4286,7 @@ async function renderDashboard(){
       '<button class="btn btn-success" onclick="showSection(\'reports\')">📊 گزارش ماهانه</button>'+
       (currentRole!=='super_admin'?'<button class="btn btn-purple" onclick="showSection(\'my_tasks\')">✅ وظایف و فعالیت‌ها ('+totalPending+')</button>':'')+
       (currentRole==='admin'||currentRole==='super_admin'?'<button class="btn btn-info" onclick="showSection(\'calendar\')">📅 تقویم و مأموریت</button>':'')+
-      (currentRole==='admin'||currentRole==='super_admin'?'<button class="btn btn-danger" onclick="showSection(\'approvals\')">✅ تأیید درخواست‌ها</button><button class="btn btn-danger" onclick="showSection(\'send_notification\')">📢 ارسال پیام</button><button class="btn btn-danger" onclick="showSection(\'users\')">👥 مدیریت کاربران</button>':'')+
+      (currentRole==='admin'||currentRole==='super_admin'?'<button class="btn btn-danger" onclick="showSection(\'send_notification\')">📢 ارسال پیام</button><button class="btn btn-danger" onclick="showSection(\'users\')">👥 مدیریت کاربران</button>':'')+
     '</div>';
 
     // ─── نمای مدیریتی (فقط مدیر/سوپرادمین) ───
@@ -4335,17 +4305,7 @@ async function renderDashboard(){
           '<div class="stat-icon green">📝</div>'+
           '<div class="stat-info"><div class="num">'+allMonthLogs.length+'</div><div class="lbl">اظهارات این ماه (کل)</div></div>'+
         '</div>'+
-        '<div class="dash-stat" onclick="showSection(\'approvals\')" style="cursor:pointer">'+
-          '<div class="stat-icon red">⏰</div>'+
-          '<div class="stat-info"><div class="num">'+allPending.length+'</div><div class="lbl">مرخصی‌های در انتظار</div></div>'+
-        '</div>'+
       '</div>';
-      if(allPending.length){
-        html+='<div style="background:var(--c-warning-light);padding:14px;border-radius:10px;margin-top:14px;border-right:4px solid var(--c-warning);display:flex;justify-content:space-between;align-items:center">'+
-          '<b>⏰ '+allPending.length+' درخواست مرخصی در انتظار تأیید</b>'+
-          '<button class="btn btn-sm btn-warning" onclick="showSection(\'approvals\')">مشاهده و تأیید ←</button>'+
-        '</div>';
-      }
     }
 
     c.innerHTML=html;
@@ -7589,10 +7549,8 @@ function editUserDetails(userId){
     }
     // دسترسی‌های ساده‌شده — فقط لوح شیفت و گزارش
     updates.can_manage_shifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
-    // can_view_reports فقط اگر ستون در DB وجود داشته باشد
-    if(p.can_view_reports!==undefined){
-      updates.can_view_reports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
-    }
+    // can_view_reports — همیشه ارسال می‌کنیم (اگر ستون وجود ندارد، Supabase خطا می‌دهد که handled می‌شود)
+    updates.can_view_reports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
     if($('ed_can_log')&&p.can_log!==undefined){
       updates.can_log=$('ed_can_log').checked;
     }
@@ -7648,23 +7606,45 @@ function editUserDetails(userId){
         }
       }
     }
-    await updateUserProfileDB(userId,updates);
+    // ─── ذخیره در دیتابیس با مدیریت خطا ───
+    try{
+      await updateUserProfileDB(userId,updates);
+    }catch(saveErr){
+      var errMsg=saveErr.message||'';
+      if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
+        showAlert('خطا: RLS روی جدول profiles فعال است.\nاین SQL را اجرا کنید:\nALTER TABLE profiles DISABLE ROW LEVEL SECURITY;','error');
+      }else if(errMsg.indexOf('column')!==-1&&errMsg.indexOf('does not exist')!==-1){
+        showAlert('خطا: ستون در دیتابیس وجود ندارد.\nاین SQL را اجرا کنید:\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;','error');
+      }else if(errMsg.indexOf('تغییر اعمال نشد')!==-1){
+        showAlert('خطا: تغییر اعمال نشد — احتمالاً RLS فعال است.\nاین SQL را اجرا کنید:\nALTER TABLE profiles DISABLE ROW LEVEL SECURITY;','error');
+      }else{
+        showAlert('خطا در ذخیره: '+errMsg,'error');
+      }
+      hideLoading();
+      return;
+    }
     await recordAudit('update','profiles',userId,{first_name:firstName,last_name:lastName,personnel_id:pid,role:newRole,parent:newParent||null,perms_updated:true});
+    // ─── به‌روزرسانی cachedPersons از دیتابیس ───
+    await loadAllPersons();
+    // ─── اگر کاربر فعلی است، دسترسی‌ها فوراً اعمال شود ───
     if(userId===currentUser.id){
-      // به‌روزرسانی پروفایل کاربر فعلی با مقادیر جدید
-      if(updates.role){currentUser.profile.role=updates.role;currentRole=updates.role;}
-      if(updates.can_approve_leaves!==undefined)currentUser.profile.can_approve_leaves=updates.can_approve_leaves;
-      if(updates.can_schedule_tasks!==undefined)currentUser.profile.can_schedule_tasks=updates.can_schedule_tasks;
-      if(updates.can_manage_shifts!==undefined)currentUser.profile.can_manage_shifts=updates.can_manage_shifts;
-      if(updates.can_view_reports!==undefined)currentUser.profile.can_view_reports=updates.can_view_reports;
-      if(updates.declaration_mode!==undefined)currentUser.profile.declaration_mode=updates.declaration_mode;
-      if(updates.employment_type!==undefined)currentUser.profile.employment_type=updates.employment_type;
-      if(updates.annual_leave_days!==undefined)currentUser.profile.annual_leave_days=updates.annual_leave_days;
-      if(updates.carry_over_days!==undefined)currentUser.profile.carry_over_days=updates.carry_over_days;
-      if(updates.manual_leave_used!==undefined)currentUser.profile.manual_leave_used=updates.manual_leave_used;
       updateUserBox();
       applyRoleBasedUI();
       showAlert('✅ اطلاعات شما به‌روزرسانی شد. دسترسی‌های جدید اعمال شد.','success');
+    }else{
+      // ─── اگر کاربر دیگری است، نوتیفیکیشن بفرست ───
+      if(updates.can_manage_shifts!==undefined){
+        try{
+          await sendNotificationDB({
+            sender_id:currentUser.id,
+            recipient_id:userId,
+            title:'🔑 دسترسی جدید اعطا شد',
+            body:'مدیر سامانه دسترسی جدیدی به شما اعطا کرده است.\nبرای فعال‌سازی، صفحه را رفرش کنید (F5) یا خارج/وارد شوید.',
+            priority:'high',
+            related_type:'permission_update'
+          });
+        }catch(e){}
+      }
     }
     var msg='اطلاعات کاربر به‌روزرسانی شد.';
     if(roleChanged)msg+=' نقش: '+roleLabel+'.';
