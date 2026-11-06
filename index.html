@@ -1195,7 +1195,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="nav-section no-super-admin">
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">📝 کارتابل من <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
-        <button class="nav-item" data-target="daily_log"><span class="ico">📝</span><span class="lbl">خوداظهاری و مرخصی</span></button>
+        <button class="nav-item" data-target="daily_log"><span class="ico">📝</span><span class="lbl">خوداظهاری</span></button>
         <button class="nav-item" data-target="calendar"><span class="ico">📅</span><span class="lbl">تقویم ماهانه</span></button>
       </div>
     </div>
@@ -4064,7 +4064,18 @@ async function showSection(id,skipHistory){
     if(typeof resetProgramForm==='function')resetProgramForm();
     renderPrograms();
   }
-  if(id==='records'){if(!cachedPersons||!cachedPersons.length)await loadAllPersons();populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();}
+  if(id==='records'){
+    if(!cachedPersons||!cachedPersons.length)await loadAllPersons();
+    // ─── اصلاح دسترسی: اگر کاربر بدون can_view_reports وارد بخش گزارش شد، فقط سوابق خودش را می‌بیند ───
+    var _isAdminRec=currentRole==='admin'||currentRole==='super_admin';
+    var _canViewAllRec=_isAdminRec||(currentUser.profile&&currentUser.profile.can_view_reports);
+    populatePersonDropdown('rep_person');
+    // اگر کاربر عادی است، فقط خودش را در rep_person انتخاب کن
+    if(!_canViewAllRec){
+      $('rep_person').value=currentUser.id;
+    }
+    toggleReportDates();onRepModeChange();
+  }
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
   if(id==='reports'){showSection('records');return;}
   if(id==='coordinator_tasks'){/* حذف شد */showSection('dashboard');return;}
@@ -4172,14 +4183,15 @@ function populatePersonDropdown(dropdownId,autoFirst){
   }else{
     var all=(canViewAllReports||dropdownId==='cal_person');
   }
-  // برای rec_person / rep_person: مدیر یا کسی با can_view_reports همه را می‌بیند؛ کاربر عادی فقط خودش + تفویض‌شوندگان
-  // برای تقویم: کاربر عادی هم خودش را می‌بیند هم تفویض‌شده‌ها
+  // ─── اصلاح دسترسی به گزارش: کاربر بدون can_view_reports فقط خودش را می‌بیند ───
+  // برای rec_person / rep_person: مدیر یا کسی با can_view_reports همه را می‌بیند؛ کاربر عادی فقط خودش
+  // برای تقویم: کاربر فعلی همیشه اول + سایر پرسنل (برای مشاهده تقویم دیگران توسط مدیر/کاربر با دسترسی)
   var persons;
   if(dropdownId==='cal_person'){
     // کاربر فعلی + همه (برای انتخاب تفویض‌شده‌ها)
     persons=cachedPersons;
   }else if((dropdownId==='rec_person'||dropdownId==='rep_person')&&!canViewAllReports){
-    // کاربر عادی: فقط خودش (تفویض‌ها از UI حذف شده)
+    // ─── کاربر عادی بدون can_view_reports: فقط خودش (نه «همه») ───
     persons=cachedPersons.filter(function(p){return p.id===currentUser.id;});
   }else if(all){
     persons=cachedPersons;
@@ -4212,18 +4224,29 @@ function populatePersonDropdown(dropdownId,autoFirst){
     else if(me.length)select.value=me[0].id;
     else if(persons.length)select.value=persons[0].id;
   }else{
-    // برای rec_person / rep_person کاربر عادی: «همه» یعنی همه قابل‌دسترسی‌ها (من + تفویض‌شوندگان)
-    var delegLabel='همه (من + تفویض‌شوندگان)';
-    var allLabel=all?'همه':(dropdownId==='rec_person'||dropdownId==='rep_person'?delegLabel:'انتخاب...');
+    // ─── اصلاح دسترسی به گزارش: کاربر بدون can_view_reports فقط خودش را می‌بیند ───
+    // برچسب «همه (من + تفویض‌شوندگان)» فقط برای کاربرانی است که can_view_reports دارند
+    var isReportsDropdown=(dropdownId==='rec_person'||dropdownId==='rep_person');
+    var allLabel;
+    if(all){
+      // مدیر یا کاربر با can_view_reports → «همه کاربران»
+      allLabel='همه کاربران';
+    }else if(isReportsDropdown){
+      // کاربر عادی در dropdown گزارش: فقط خودش — برچسب اولین option «شما» است
+      allLabel='— انتخاب پرسنل —';
+    }else{
+      allLabel='انتخاب...';
+    }
     var o='<option value="">'+allLabel+'</option>';
     persons.forEach(function(p){
-      var icon=p.id===currentUser.id?' 👤':' 🔄';
+      var icon=p.id===currentUser.id?' 👤':'';
       o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+icon+'</option>';
     });
     select.innerHTML=o;
     if(cur&&persons.some(function(p){return p.id===cur;}))select.value=cur;
     else if(autoFirst&&persons.length)select.value=persons[0].id;
-    // rec_person / rep_person: پیش‌فرض «همه» باشد تا کاربر همه سوابق قابل‌دسترسی‌اش را ببیند
+    // ─── اصلاح: برای کاربر عادی در rec_person/rep_person، فقط خودش را انتخاب کن (نه «همه») ───
+    else if(isReportsDropdown&&!all&&persons.length)select.value=persons[0].id;
     else if(!all&&persons.length&&dropdownId!=='rec_person'&&dropdownId!=='rep_person')select.value=persons[0].id;
   }
 }
