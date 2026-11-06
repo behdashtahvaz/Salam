@@ -7646,10 +7646,15 @@ async function createInvitation(){
   if(!isPasswordStrong(password)){showAlert('رمز خیلی کوتاه است. حداقل ۴ کاراکتر وارد کنید.');return;}
   // ─── N1: چک نقش خالی — جلوگیری از ساخت کاربر بدون نقش ───
   if(!role){showAlert('نقش را انتخاب کنید.','error');return;}
-  if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز.');return;}
-  // ─── محدودیت برداشته شد: مدیر و سوپرادمین هر دو می‌توانند هر نقشی (به‌جز super_admin برای غیر سوپرادمین) بسازند ───
-  // فقط سوپرادمین می‌تواند super_admin بسازد
-  if(role==='super_admin'&&currentRole!=='super_admin'){showAlert('فقط سوپرادمین می‌تواند کاربر سوپرادمین بسازد.','error');return;}
+  // ─── اصلاح: کاربر با can_manage_users هم می‌تواند کاربر بسازد ───
+  var _canManageUsers=currentRole==='admin'||currentRole==='super_admin'||
+    (currentUser.profile&&(currentUser.profile.can_manage_users===true||currentUser.profile.can_manage_users==='true'||currentUser.profile.can_manage_users===1));
+  if(!_canManageUsers){showAlert('دسترسی غیرمجاز.','error');return;}
+  // ─── محدودیت: کاربر با can_manage_users (غیر مدیر/سوپرادمین) نمی‌تواند super_admin یا admin بسازد ───
+  if(currentRole!=='admin'&&currentRole!=='super_admin'){
+    if(role==='super_admin'){showAlert('فقط سوپرادمین می‌تواند کاربر سوپرادمین بسازد.','error');return;}
+    if(role==='admin'){showAlert('فقط مدیر/سوپرادمین می‌تواند کاربر مدیر بسازد.','error');return;}
+  }
   showLoading('ایجاد حساب کاربری...');
   try{
     // هش رمز در سمت کلاینت (SHA-256 + Salt + 5000 دور)
@@ -7732,11 +7737,13 @@ async function renderUsers(){
   var c=$('users_list_container');
   var isAdmin=currentRole==='admin'||currentRole==='super_admin';
   var isCoord=isCoordinatorRole();
-  // دسترسی: مدیر/سوپرادمین یا هماهنگ‌کننده (با زیرمجموعه)
-  if(!isAdmin&&!isCoord){c.innerHTML='<p>دسترسی غیرمجاز.</p>';return;}
-  if(isCoord&&!isAdmin&&cachedSubordinates.length===0){c.innerHTML='<p>شما زیرمجموعه‌ای ندارید.</p>';return;}
+  // ─── اصلاح: کاربر با can_manage_users هم دسترسی دارد ───
+  var hasManageUsers=currentUser.profile&&(currentUser.profile.can_manage_users===true||currentUser.profile.can_manage_users==='true'||currentUser.profile.can_manage_users===1);
+  // دسترسی: مدیر/سوپرادمین، هماهنگ‌کننده (با زیرمجموعه)، یا کاربر با can_manage_users
+  if(!isAdmin&&!isCoord&&!hasManageUsers){c.innerHTML='<p>دسترسی غیرمجاز.</p>';return;}
+  if(isCoord&&!isAdmin&&!hasManageUsers&&cachedSubordinates.length===0){c.innerHTML='<p>شما زیرمجموعه‌ای ندارید.</p>';return;}
   // مدیر بدون can_manage_users فقط می‌تواند کاربران عادی را ببیند
-  var canManageAll=currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_users);
+  var canManageAll=currentRole==='super_admin'||hasManageUsers||isAdmin;
   try{
     await loadAllPersons();
     if(!cachedPersons.length){c.innerHTML='<p>کاربری یافت نشد.</p>';return;}
