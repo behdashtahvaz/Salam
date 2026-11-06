@@ -1864,7 +1864,7 @@ button,.btn{-webkit-touch-callout:none}
   
   <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
   <h3>فهرست کاربران</h3>
-  <p><small>🎫 = تفویض اختیار مدیریت کاربران (فقط سوپرادمین به مدیران) &nbsp;|&nbsp; 🔑 = بازنشانی رمز کاربر</small></p>
+  <p><small>🎫 = تفویض اختیار مدیریت کاربران (مدیر و سوپرادمین به همه کاربران) &nbsp;|&nbsp; 🔑 = بازنشانی رمز کاربر</small></p>
   <div id="users_list_container" class="table-wrap"></div>
 </div>
 
@@ -7630,8 +7630,9 @@ async function createInvitation(){
   // ─── N1: چک نقش خالی — جلوگیری از ساخت کاربر بدون نقش ───
   if(!role){showAlert('نقش را انتخاب کنید.','error');return;}
   if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز.');return;}
-  // مدیر (بدون تفویض) فقط می‌تواند کاربر عادی بسازد
-  if(currentRole==='admin'&&!currentUser.profile.can_manage_users&&role!=='user'){showAlert('مدیر بدون تفویض اختیار فقط می‌تواند کاربر عادی بسازد.');return;}
+  // ─── محدودیت برداشته شد: مدیر و سوپرادمین هر دو می‌توانند هر نقشی (به‌جز super_admin برای غیر سوپرادمین) بسازند ───
+  // فقط سوپرادمین می‌تواند super_admin بسازد
+  if(role==='super_admin'&&currentRole!=='super_admin'){showAlert('فقط سوپرادمین می‌تواند کاربر سوپرادمین بسازد.','error');return;}
   showLoading('ایجاد حساب کاربری...');
   try{
     // هش رمز در سمت کلاینت (SHA-256 + Salt + 5000 دور)
@@ -7733,7 +7734,8 @@ async function renderUsers(){
       var canEdit=!isSelf&&(canManageAll||p.role==='user');
       // مدیر/سوپرادمین می‌تواند رمز همه را تغییر دهد (مدیر نمی‌تواند رمز سوپرادمین را)
       var canReset=!isSelf&&isAdmin&&(currentRole==='super_admin'||p.role!=='super_admin');
-      var canDelegate=currentRole==='super_admin'&&p.role==='admin';
+      // ─── محدودیت برداشته شد: مدیر و سوپرادمین هر دو می‌توانند به هر کاربری (به‌جز خودشان و سوپرادمین) تفویض کنند ───
+      var canDelegate=!isSelf&&isAdmin&&p.role!=='super_admin';
       // ─── نقش فقط‌خواندن (badge پویا از جدول roles) ───
       var roleBadge=roleBadgeHtml(p.role);
       // افزودن نشان دسترسی‌های ویژه برای کاربران عادی (مسئول واحد/مسئول کارکرد)
@@ -8261,17 +8263,30 @@ async function changeUserStatus(userId,newStatus){
   hideLoading();
 }
 
-// ═══ تفویض / سلب اختیار مدیریت کاربران (فقط سوپرادمین به مدیر) ═══
+// ═══ تفویض / سلب اختیار مدیریت کاربران (مدیر و سوپرادمین به همه کاربران) ═══
 async function toggleDelegate(targetId,value){
   var action=value?'تفویض':'سلب';
   var target=cachedPersons.filter(function(p){return p.id===targetId;})[0];
   if(!target){showAlert('کاربر یافت نشد.');return;}
+  // ─── محدودیت برداشته شد: مدیر و سوپرادمین هر دو می‌توانند به هر کاربری تفویض کنند ───
+  // فقط چک خودت و سوپرادمین هدف
+  if(targetId===currentUser.id){showAlert('نمی‌توانید به خودتان تفویض کنید.','error');return;}
+  if(target.role==='super_admin'){showAlert('نمی‌توانید به سوپرادمین تفویض کنید.','error');return;}
   if(!confirm(action+' اختیار مدیریت کاربران از/به «'+target.first_name+' '+target.last_name+'»؟'))return;
   showLoading(action+' اختیار...');
   try{
-    const{data,error}=await sb.rpc('rpc_set_delegate',{p_requester_id:currentUser.id,p_target_id:targetId,p_value:value});
-    if(error)throw error;
-    if(data&&data.error)throw new Error(data.error);
+    // روش ۱: تلاش با RPC
+    var rpcSuccess=false;
+    try{
+      const{data,error}=await sb.rpc('rpc_set_delegate',{p_requester_id:currentUser.id,p_target_id:targetId,p_value:value});
+      if(!error&&!(data&&data.error))rpcSuccess=true;
+    }catch(e){console.warn('RPC delegate failed, trying direct:',e);}
+    // روش ۲: اگر RPC کار نکرد، آپدیت مستقیم
+    if(!rpcSuccess){
+      const{error:updateError}=await sb.from('profiles').update({can_manage_users:value}).eq('id',targetId);
+      if(updateError)throw updateError;
+    }
+    await recordAudit(value?'delegate':'revoke_delegate','profiles',targetId,{target_name:target.first_name+' '+target.last_name});
     showAlert('✅ '+action+' اختیار انجام شد.','success');
     await loadAllPersons();
     await renderUsers();
