@@ -114,8 +114,11 @@ function toPersianDigits(str){
 
 // ─── تجزیه و قالب‌بندی ───
 function isValidJalaliDate(str){
-  var p=toEnglishDigits(str).replace(/\s/g,'').split('/');
-  if(p.length!==3)return false;
+  if(str==null)return false;
+  // ابتدا regex سخت‌گیرانه: فقط ۴/۱-۲/۱-۲ رقم با /
+  var normalized=toEnglishDigits(String(str)).replace(/\s/g,'');
+  if(!/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(normalized))return false;
+  var p=normalized.split('/');
   var jy=parseInt(p[0],10),jm=parseInt(p[1],10),jd=parseInt(p[2],10);
   if(isNaN(jy)||isNaN(jm)||isNaN(jd))return false;
   if(jy<1300||jy>1500||jm<1||jm>12)return false;
@@ -123,12 +126,19 @@ function isValidJalaliDate(str){
 }
 
 function parseJalali(str){
-  var p=toEnglishDigits(str).replace(/\s/g,'').split('/');
+  var p=toEnglishDigits(String(str==null?'':str)).replace(/\s/g,'').split('/');
+  if(p.length!==3)return{jy:NaN,jm:NaN,jd:NaN};
   return{jy:parseInt(p[0],10),jm:parseInt(p[1],10),jd:parseInt(p[2],10)};
 }
 
-function fmtJalali(jy,jm,jd){return jy+'/'+pad2(jm)+'/'+pad2(jd);}
-function normJ(str){var p=parseJalali(str);return fmtJalali(p.jy,p.jm,p.jd);}
+function fmtJalali(jy,jm,jd){
+  if(!isFinite(jy)||!isFinite(jm)||!isFinite(jd))return'';
+  return jy+'/'+pad2(jm)+'/'+pad2(jd);
+}
+function normJ(str){
+  if(!isValidJalaliDate(str))return null;
+  var p=parseJalali(str);return fmtJalali(p.jy,p.jm,p.jd);
+}
 
 // ─── توابع تاریخ ───
 function getTodayJalali(){
@@ -904,6 +914,12 @@ body.guest-mode .admin-only,body.guest-mode .coordinator-only{display:none!impor
   /* تیتر گروه‌ها در موبایل همیشه visible */
   .sidebar .nav-group-title{display:flex!important}
   .sidebar.collapsed .nav-group-title{display:flex!important}
+  /* نام سامانه در موبایل */
+  .sidebar .brand-text{font-size:18px!important}
+  /* یکنواخت‌سازی select در مرورگرهای مختلف */
+  select{-webkit-appearance:none;-moz-appearance:none;appearance:none}
+  /* یکنواخت‌سازی scroll در سامسونگ براوزر */
+  .sidebar-nav{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
 
   /* اورلری تیره پشت دراور */
   .sidebar-overlay{background:rgba(0,0,0,.5);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
@@ -1162,8 +1178,9 @@ button,.btn{-webkit-touch-callout:none}
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="payvand-logo-sm" role="img" aria-label="سلام"></div>
-    <span class="brand-text">سامانه کارکرد</span>
+    <span class="brand-text">سلام</span>
   </div>
+  <div style="text-align:center;font-size:10px;color:rgba(255,255,255,.6);padding:0 8px 8px;line-height:1.4;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px">مرکز بهداشت شماره یک<br>کوت‌عبدالله</div>
   <nav class="sidebar-nav" id="main_nav">
     <!-- ۱. اصلی — همیشه باز -->
     <div class="nav-section" data-open="1">
@@ -1247,6 +1264,10 @@ button,.btn{-webkit-touch-callout:none}
       <div id="db_status_light" style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0" title="بررسی اتصال..."></div>
       <div class="payvand-logo-topbar" onclick="showSection('dashboard')" title="سامانه مدیریت کارکرد مرکز بهداشت شماره یک کوت‌عبدالله"></div>
     </div>
+    <!-- ─── آیکون نوتیفیکیشن ─── -->
+    <button class="topbar-toggle" onclick="showNotificationsModal()" id="btn_notif" title="اعلان‌ها" style="position:relative">
+      🔔<span class="nav-badge hidden" id="notif_badge" style="position:absolute;top:-2px;left:-2px;background:var(--danger);color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px">۰</span>
+    </button>
     <!-- ─── تم سوییچر ─── -->
     <button class="theme-toggle-icon" onclick="toggleTheme()" title="تغییر تم">☾</button>
     <!-- ─── کاربر + خروج ─── -->
@@ -1373,7 +1394,7 @@ button,.btn{-webkit-touch-callout:none}
   <div class="form-row">
     <div class="form-group"><label>پرسنل:</label><select id="log_person_id" class="person-dropdown" onchange="syncLog()"></select></div>
     <div class="form-group"><label>تاریخ شمسی:</label><input type="text" id="log_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور روزانه</option><option value="absence_hourly">⏰ عدم حضور ساعتی</option><option value="overtime">⚡ اضافه‌کار</option></select></div>
+    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور روزانه</option><option value="absence_hourly">⏰ عدم حضور ساعتی</option><option value="overtime">⚡ اضافه‌کار</option><option value="official_record" id="opt_official" style="display:none">🔍 کارکرد رسمی (فقط مدیر)</option></select></div>
   </div>
   <!-- بنر نمایش نوع خوداظهاری کاربر انتخاب‌شده -->
   <div id="declaration_mode_banner" style="display:none;background:var(--c-info-light);border-right:4px solid var(--c-info);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px">
@@ -2170,8 +2191,11 @@ function makeTableSortable(table){
         var bCell=b.children[colIdx];
         if(!aCell||!bCell)return 0;
         // تلاش برای خواندن data-sort-value، در غیر اینصورت textContent
-        var aVal=aCell.getAttribute('data-sort-value')||aCell.textContent.trim();
-        var bVal=bCell.getAttribute('data-sort-value')||bCell.textContent.trim();
+        var aRawVal=aCell.getAttribute('data-sort-value')||aCell.textContent.trim();
+        var bRawVal=bCell.getAttribute('data-sort-value')||bCell.textContent.trim();
+        // تبدیل ارقام فارسی/عربی به انگلیسی برای مرتب‌سازی عددی صحیح
+        var aVal=toEnglishDigits(aRawVal);
+        var bVal=toEnglishDigits(bRawVal);
         // تشخیص عدد
         var aNum=parseFloat(aVal.replace(/[^\d.-]/g,''));
         var bNum=parseFloat(bVal.replace(/[^\d.-]/g,''));
@@ -2179,7 +2203,7 @@ function makeTableSortable(table){
         if(!isNaN(aNum)&&!isNaN(bNum)&&aVal.match(/\d/)&&bVal.match(/\d/)){
           comparison=aNum-bNum;
         }else{
-          comparison=aVal.localeCompare(bVal,'fa');
+          comparison=aRawVal.localeCompare(bRawVal,'fa');
         }
         return newDir==='asc'?comparison:-comparison;
       });
@@ -2247,7 +2271,16 @@ function copyMigrationSQL(btn){
 }
 async function recordAudit(action,entity,entityId,details){
   if(!sb||!currentUser||!AUDIT_TABLE_AVAILABLE)return;
-  try{var row={actor_id:currentUser.id,action:String(action||'').slice(0,80),entity:String(entity||'').slice(0,80),entity_id:entityId?String(entityId):null,details:details&&typeof details==='object'?details:{},created_at:new Date().toISOString()};var{error}=await sb.from('audit_logs').insert(row);if(error){if(error.code==='42P01'||error.code==='PGRST205')AUDIT_TABLE_AVAILABLE=false;console.warn('Audit log unavailable; apply the supplied SQL migration.',error.message);}}catch(e){console.warn('Audit log failed:',e);}
+  try{
+    // details می‌تواند string، عدد، یا object باشد — برای حفظ اطلاعات غیرآبجکت
+    var safeDetails;
+    if(details==null)safeDetails={};
+    else if(typeof details==='object')safeDetails=details;
+    else safeDetails={text:String(details)};
+    var row={actor_id:currentUser.id,action:String(action||'').slice(0,80),entity:String(entity||'').slice(0,80),entity_id:entityId?String(entityId):null,details:safeDetails,created_at:new Date().toISOString()};
+    var{error}=await sb.from('audit_logs').insert(row);
+    if(error){if(error.code==='42P01'||error.code==='PGRST205')AUDIT_TABLE_AVAILABLE=false;console.warn('Audit log unavailable; apply the supplied SQL migration.',error.message);}
+  }catch(e){console.warn('Audit log failed:',e);}
 }
 
 /* ═════ Jalali Calendar — به js/jalali.js منتقل شد ═════ */
@@ -2312,8 +2345,13 @@ var DEFAULT_ROLES_TREE=[
   // ─── نقش‌های مستقل (بدون دسته) ───
   {role_key:'guest',label:'مهمان',color:'#95a5a6',is_protected:false,description:'دسترسی محدود با انقضا',category:'',station:'',sort_order:90}
 ];
-// بارگذاری نقش‌ها از دیتابیس
-async function loadRoles(){
+// بارگذاری نقش‌ها از دیتابیس (با کش ۶۰ ثانیه‌ای برای جلوگیری از کوئری تکراری)
+var _rolesLoadedAt=0;
+async function loadRoles(force){
+  // کش: اگر در ۶۰ ثانیه اخیر بارگذاری شده و اجبار نیست، از کش استفاده کن
+  if(!force&&cachedRoles.length&&Date.now()-_rolesLoadedAt<60000){
+    return cachedRoles;
+  }
   try{
     const{data,error}=await sb.from('roles').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true});
     if(error)throw error;
@@ -2322,11 +2360,13 @@ async function loadRoles(){
     if(!cachedRoles.length){
       cachedRoles=DEFAULT_ROLES_TREE.slice();
     }
+    _rolesLoadedAt=Date.now();
     return cachedRoles;
   }catch(e){
     console.warn('loadRoles:',e);
     // در صورت خطا (مثلاً جدول roles وجود ندارد)، نقش‌های پیش‌فرض درون‌برنامه‌ای
     cachedRoles=DEFAULT_ROLES_TREE.slice();
+    _rolesLoadedAt=Date.now();
     return cachedRoles;
   }
 }
@@ -2420,6 +2460,7 @@ function populateRoleDropdown(selectId,currentValue,includeSuperAdmin){
   if(currentValue&&!cachedRoles.some(function(r){return r.role_key===currentValue;})){
     opts='<optgroup label="⚠️ نقش قدیمی"><option value="'+esc(currentValue)+'" selected>'+esc(ROLE_LABEL[currentValue]||currentValue)+'</option></optgroup>'+opts;
   }
+  opts='<option value="" disabled selected>— انتخاب نقش —</option>'+opts;
   sel.innerHTML=opts;
 }
 // نمایش/مخفی کردن فیلد پایگاه بر اساس دسته + به‌روزرسانی پیش‌نمایش
@@ -2448,12 +2489,15 @@ function updateRoleChartPreview(){
     el.innerHTML='🏥 مرکز بهداشت شماره یک کوت‌عبدالله ← 🏘️ پایگاه‌های تابعه ← '+stDisplay+' ← '+roleDisplay;
   }
 }
-// اتصال رویدادها برای به‌روزرسانی زنده پیش‌نمایش
+// اتصال رویدادها برای به‌روزرسانی زنده پیش‌نمایش (با جلوگیری از listener تکراری)
 function initRoleFormPreview(){
   var fields=['role_label','role_category','role_station'];
   fields.forEach(function(id){
     var el=$(id);
     if(el){
+      // جلوگیری از listener تکراری با data flag
+      if(el.dataset.previewInit==='1')return;
+      el.dataset.previewInit='1';
       el.addEventListener('input',updateRoleChartPreview);
       el.addEventListener('change',updateRoleChartPreview);
     }
@@ -2461,6 +2505,8 @@ function initRoleFormPreview(){
 }
 // ذخیره/به‌روزرسانی یک نقش
 async function saveRole(){
+  // ─── بررسی دسترسی: فقط مدیر/سوپرادمین می‌تواند نقش ایجاد/ویرایش کند ───
+  if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز: فقط مدیر می‌تواند نقش ایجاد یا ویرایش کند.','error');return;}
   var key=$('role_key').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   var label=$('role_label').value.trim();
   var color=$('role_color').value;
@@ -2670,6 +2716,8 @@ function cancelEditRole(){
 }
 // حذف یک نقش
 async function deleteRole(roleKey){
+  // ─── بررسی دسترسی: فقط مدیر/سوپرادمین می‌تواند نقش حذف کند ───
+  if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز: فقط مدیر می‌تواند نقش حذف کند.','error');return;}
   var r=cachedRoles.filter(function(x){return x.role_key===roleKey;})[0];
   if(!r){showAlert('نقش یافت نشد.','error');return;}
   if(r.is_protected){showAlert('این نقش محفوظ است و قابل حذف نیست.','error');return;}
@@ -2751,8 +2799,11 @@ function renderRolesTree(){
   var units=cachedRoles.filter(function(r){return r.category==='units';});
   var stations=cachedRoles.filter(function(r){return r.category==='stations';});
   // نقش محفوظ «مدیر» در شاخه مدیریت مرکز نمایش داده می‌شود
+  // فقط اگر admin در management نیست (یعنی category ندارد)، آن را اضافه کن — جلوگیری از تکرار
   var protectedAdmin=cachedRoles.filter(function(r){return r.is_protected&&r.role_key==='admin';});
-  management=protectedAdmin.concat(management);
+  if(protectedAdmin.length&&!management.some(function(r){return r.role_key==='admin';})){
+    management=protectedAdmin.concat(management);
+  }
   // پایگاه‌ها را بر اساس station گروه‌بندی — پویا (هر station که در داده‌ها باشد)
   var stationsByLoc={};
   var stationOrder=[]; // ترتیب نمایش پایگاه‌ها بر اساس sort_order اولین نقش هر پایگاه
@@ -2899,23 +2950,39 @@ function describeLog(l){
 }
 function statusBadge(st){return'<span class="badge badge-'+esc(st)+'">'+esc(LEAVE_STATUS[st]||STATUS_LABEL[st]||st)+'</span>';}
 function getPersonName(id){var p=cachedPersons.filter(function(x){return x.id===id;})[0];return p?p.first_name+' '+p.last_name:'نامشخص';}
-function calcDuration(s,e){var a=timeToMinutes(s),b=timeToMinutes(e);if(a<0||b<0)return 0;if(b<a)b+=1440;return b-a;}
-function timeToMinutes(t){if(!t)return -1;var p=t.split(':');return parseInt(p[0],10)*60+parseInt(p[1],10);}
-function formatMins(m){return Math.floor(m/60)+' ساعت و '+(m%60)+' دقیقه';}
+function calcDuration(s,e){
+  var a=timeToMinutes(s),b=timeToMinutes(e);
+  if(!isFinite(a)||!isFinite(b)||a<0||b<0)return 0;
+  if(b<a)b+=1440;
+  return b-a;
+}
+function timeToMinutes(t){
+  if(t==null||t==='')return -1;
+  if(typeof t!=='string')t=String(t);
+  var p=t.split(':');
+  if(p.length!==2)return -1;
+  var h=parseInt(p[0],10),m=parseInt(p[1],10);
+  if(isNaN(h)||isNaN(m))return -1;
+  if(h<0||h>23||m<0||m>59)return -1;
+  return h*60+m;
+}
+function formatMins(m){
+  if(!isFinite(m)||m<0)return '—';
+  return Math.floor(m/60)+' ساعت و '+Math.round(m%60)+' دقیقه';
+}
 
 /* ═════ Supabase Data Layer ═════ */
 async function loadAllPersons(){
   try{const{data,error}=await sb.from('profiles').select('*').order('last_name').order('first_name');if(error)throw error;cachedPersons=data||[];
+    // قبل از حذف فیلدهای حساس، پروفایل کامل کاربر فعلی را از دیتابیس بگیر
+    if(currentUser&&currentUser.id){
+      try{
+        const{data:fullProfile,error:fpErr}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+        if(!fpErr&&fullProfile){currentUser.profile=fullProfile;currentRole=fullProfile.role||'user';}
+      }catch(e){}
+    }
     // حذف فیلدهای حساس از حافظه مرورگر
     cachedPersons.forEach(function(p){delete p.password_hash;delete p.password_salt;delete p.recovery_salt;});
-    // به‌روزرسانی پروفایل کاربر فعلی از دیتابیس (برای دسترسی‌های جدید)
-    if(currentUser&&currentUser.id){
-      var me=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
-      if(me){
-        currentUser.profile=me;
-        currentRole=me.role||'user';
-      }
-    }
     return cachedPersons;}catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
 }
 async function loadLogs(personId,from,to){
@@ -3015,6 +3082,11 @@ async function updateUserProfileDB(userId,updates){
 async function loadTasksForDate(userId,date){
   try{const{data,error}=await sb.from('tasks').select('*').eq('assignee_id',userId).eq('task_date',date);if(error)throw error;return data||[];}catch(e){return[];}
 }
+async function loadTasksInRange(userId,from,to){
+  try{let q=sb.from('tasks').select('*').gte('task_date',from).lte('task_date',to);
+  if(userId)q=q.eq('assignee_id',userId);
+  const{data,error}=await q;if(error)throw error;return data||[];}catch(e){console.error('loadTasksInRange:',e);return[];}
+}
 /* ═════ Crypto — به js/crypto.js منتقل شد ═════ */
 /* توابع زیر در js/crypto.js تعریف شده‌اند و از طریق window گلوبال در دسترس‌اند:
    sha256, genSalt, genRecoveryCode, hashSecret,
@@ -3060,7 +3132,21 @@ function restoreSession(){
     applyRoleBasedUI();
     // بارگذاری داده‌ها
     setTimeout(async function(){
-      try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');checkUnreadNotifications();generateReminderAlerts();setTimeout(checkActiveAlerts,1000);}catch(e){console.warn('restoreSession load:',e);}
+      try{
+        await loadAllPersons();await loadSubordinates();
+        if(typeof loadRoles==='function')await loadRoles();
+        if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();
+        if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();
+        // پس از loadRoles، دوباره updateUserBox تا برچسب نقش نمایشی صحیح باشد
+        updateUserBox();
+        showSection('dashboard');
+        if(typeof checkDbConnection==='function')checkDbConnection();
+        if(typeof checkUnreadNotifications==='function')checkUnreadNotifications();
+        if(typeof updateBadges==='function')updateBadges();
+        if(typeof generateReminderAlerts==='function')generateReminderAlerts();
+        if(typeof checkActiveAlerts==='function')setTimeout(checkActiveAlerts,1000);
+        if(typeof updateAnnouncementsBadge==='function')updateAnnouncementsBadge();
+      }catch(e){console.warn('restoreSession load:',e);}
     },100);
     return true;
   }catch(e){console.warn('restoreSession:',e);return false;}
@@ -3069,6 +3155,19 @@ function clearLocalSession(){
   localStorage.removeItem(SESSION_KEY);
   currentUser=null;currentRole='user';
   document.body.classList.remove('guest-mode');document.body.classList.remove('no-log');
+  // ─── پاک‌سازی همه cache‌ها برای جلوگیری از نشتی داده‌ها بین session‌ها ───
+  cachedPersons=[];cachedRoles=[];cachedSubordinates=[];cachedWorkHours=[];cachedDeclModeHistory=[];
+  _declModeMap=null; // ریست نقشه کش تاریخچه
+  unreadNotifications=[];activeAlerts=[];pendingDiscData=null;
+  rm_recipients=[];_splitParts=[];
+  resetPwdTargetId=null;window._editingLogOriginal=null;sectionHistory=[];
+  currentLogPerson=null;currentLogDate=null;
+  _rolesLoadedAt=0;
+  // پاک‌سازی session storage برای مغایرت‌های معوق
+  try{sessionStorage.removeItem('pending_discrepancies');}catch(e){}
+  // متغیرهای تم
+  var_c_card=var_c_text=var_c_text_muted=var_c_primary=var_c_primary_light=undefined;
+  var_c_success=var_c_success_light=var_c_danger=var_c_danger_light=var_c_warning=var_c_warning_light=var_c_info=var_c_info_light=undefined;
 }
 
 // ═══ ورود: تک RPC (هش در سرور محاسبه می‌شود — بدون mismatch) ═══
@@ -3109,7 +3208,15 @@ async function handleLogin(e){
     else{document.body.classList.remove('guest-mode');document.body.classList.remove('no-log');}
     $('auth_screen').classList.add('hidden');
     $('main_app').classList.remove('hidden');
-    try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');setTimeout(checkUnreadNotifications,500);generateReminderAlerts();setTimeout(checkActiveAlerts,1500);setTimeout(function(){showAlert('👋 خوش آمدید '+esc(currentUser.profile.first_name)+' '+esc(currentUser.profile.last_name)+'!\n\nشما با موفقیت وارد سامانه شدید.','success');},800);}catch(e){console.warn('post-login:',e);}
+    try{await loadAllPersons();await loadSubordinates();if(typeof loadRoles==='function')await loadRoles();if(typeof loadWorkHoursSettings==='function')await loadWorkHoursSettings();if(typeof loadDeclarationModeHistory==='function')await loadDeclarationModeHistory();showSection('dashboard');
+      // بارگذاری‌های جانبی که در handleLogin فراموش شده بود
+      if(typeof checkDbConnection==='function')checkDbConnection();
+      if(typeof checkUnreadNotifications==='function')checkUnreadNotifications();
+      if(typeof updateBadges==='function')updateBadges();
+      if(typeof generateReminderAlerts==='function')generateReminderAlerts();
+      if(typeof checkActiveAlerts==='function'){setTimeout(checkActiveAlerts,1500);}
+      if(typeof updateAnnouncementsBadge==='function')updateAnnouncementsBadge();
+    }catch(e){console.warn('post-login:',e);}
     updateUserBox();
     applyRoleBasedUI();
   }catch(err){
@@ -3198,7 +3305,7 @@ function hideRecoveryScreen(){
   var p=$('rec_new_password');if(p)p.value='';
   var p2=$('rec_new_password2');if(p2)p2.value='';
 }
-async function logout(){clearLocalSession();$('main_app').classList.add('hidden');$('auth_screen').classList.remove('hidden');$('recovery_screen').classList.add('hidden');showAuthError('');var btn=$('login_btn');if(btn){btn.disabled=false;btn.textContent='ورود به سیستم';}$('login_form').reset();}
+async function logout(){clearLocalSession();cachedPersons=[];cachedRoles=[];cachedSubordinates=[];cachedWorkHours=[];cachedDeclModeHistory=[];unreadNotifications=[];activeAlerts=[];$('main_app').classList.add('hidden');$('auth_screen').classList.remove('hidden');$('recovery_screen').classList.add('hidden');showAuthError('');var btn=$('login_btn');if(btn){btn.disabled=false;btn.textContent='ورود به سیستم';}$('login_form').reset();}
 // handleAuthState حذف شد — از onAuthStateChange استفاده نمی‌شد (غیرفعال بود)
 
 function updateUserBox(){
@@ -3227,9 +3334,11 @@ function applyRoleBasedUI(){
       // سایر بخش‌ها فقط اگر در مجوزها باشد
       b.classList.toggle('hidden',perms.indexOf(target)===-1);
     });
-    return;
+    // پاک‌سازی گروه‌های خالی برای مهمان هم اجرا شود — در انتهای تابع
+    // (نه return زودرس)
+  }else{
+    document.querySelectorAll('#main_nav button').forEach(function(b){b.classList.remove('hidden');});
   }
-  document.querySelectorAll('#main_nav button').forEach(function(b){b.classList.remove('hidden');});
   // ─── سوپرادمین: خوداظهاری و مرخصی ندارد ───
   // سوپرادمین فقط مدیریت سامانه را بر عهده دارد و خوداظهاری روزانه ثبت نمی‌کند
   // مدیر و سوپرادمین کارکرد (خوداظهاری) ندارند — فقط پرسنل ثبت می‌کنند
@@ -3552,11 +3661,11 @@ function renderReminderRecipients(){
   box.innerHTML=h;
 }
 function searchReminderUsers(){
-  var q=val('rm_user_search').toLowerCase();
+  var q=toEnglishDigits(val('rm_user_search')).toLowerCase().trim();
   var sel=$('rm_user_search');
   if(!q){
-    // نمایش suggestions
-    var results=cachedPersons.filter(function(p){return rm_recipients.indexOf(function(r){return r.id===p.id;})===-1;}).slice(0,5);
+    // نمایش suggestions — استفاده از .some به‌جای indexOf با تابع (که همیشه -1 برمی‌گرداند)
+    var results=cachedPersons.filter(function(p){return !rm_recipients.some(function(r){return r.id===p.id;});}).slice(0,5);
     showSearchResults(results.slice(0,10));
     return;
   }
@@ -3593,7 +3702,7 @@ function showSearchResults(results){
 }
 function addReminderRecipient(){
   // اگر متن جستجو دقیقاً با یک کاربر مچ شود
-  var q=val('rm_user_search').toLowerCase().trim();
+  var q=toEnglishDigits(val('rm_user_search')).toLowerCase().trim();
   if(!q)return;
   var match=cachedPersons.find(function(p){
     var name=(p.first_name+' '+p.last_name+' - '+p.personnel_id).toLowerCase();
@@ -3620,8 +3729,18 @@ function toggleReminderPattern(){
 /* ═════ Notifications Modal ═════ */
 var unreadNotifications=[];
 async function checkUnreadNotifications(){
-  try{unreadNotifications=await loadUnreadNotifications();if(unreadNotifications.length>0)showNotificationsModal();updateBadges();}
-  catch(e){console.error('checkUnreadNotifications:',e);showAlert('بارگذاری اعلان‌ها با خطا روبه‌رو شد: '+e.message,'error');}
+  try{unreadNotifications=await loadUnreadNotifications();updateNotifBadge();}
+  catch(e){console.error('checkUnreadNotifications:',e);}
+}
+function updateNotifBadge(){
+  var badge=$('notif_badge');
+  if(!badge)return;
+  if(unreadNotifications.length>0){
+    badge.textContent=toPersianDigits(String(unreadNotifications.length));
+    badge.classList.remove('hidden');
+  }else{
+    badge.classList.add('hidden');
+  }
 }
 function showNotificationsModal(){
   var body=$('notif_modal_body');
@@ -3782,10 +3901,12 @@ async function dismissNotification(id){
   unreadNotifications=unreadNotifications.filter(function(n){return n.id!==id;});
   if(unreadNotifications.length===0)$('notif_modal').classList.add('hidden');
   else showNotificationsModal();
-  updateBadges();
+  updateNotifBadge();
 }
 
 async function updateBadges(){
+  // Skip if elements don't exist
+  if(!$('tasks_badge')&&!$('notif_badge'))return;
   // وظایف من
   var myTasks=await loadMyTasks('pending');
   // وظایف + فعالیت‌ها در یک badge واحد (چون ادغام شده‌اند)
@@ -3831,8 +3952,13 @@ async function showSection(id,skipHistory){
   if(id==='reports')id='records';
   // ─── سوپرادمین: خوداظهاری و مرخصی ندارد ───
   // مدیر و سوپرادمین کارکرد ثبت نمی‌کنند
+  // استثنا: اگر در حال ویرایش یک لاگ است (window._editingLogOriginal)، مدیر مجاز به daily_log است
   if((currentRole==='super_admin'||currentRole==='admin')&&(id==='daily_log'||id==='leave_req')){
-    id='dashboard';
+    if(id==='daily_log'&&window._editingLogOriginal){
+      // در حال ویرایش — مدیر مجاز به daily_log است
+    }else{
+      id='dashboard';
+    }
   }
   document.querySelectorAll('.container > div.card').forEach(function(c){c.classList.add('hidden');});
   var sec=$('section-'+id);
@@ -3853,7 +3979,7 @@ async function showSection(id,skipHistory){
   }
   // بستن سایدبار در موبایل
   if(window.innerWidth<=768){var sb=$('sidebar');if(sb&&sb.classList.contains('show'))toggleSidebarMobile();}
-  if(id==='dashboard')renderDashboard();
+  if(id==='dashboard'){renderDashboard().then(function(){if(typeof renderDashboardCalendar==='function')renderDashboardCalendar();});}
   if(id==='announcements')renderAnnouncements();
   if(id==='settings'){if(typeof loadWorkHoursSettings==='function')loadWorkHoursSettings().then(function(){if(typeof renderWorkHoursHistory==='function')renderWorkHoursHistory();});}
   if(id==='hierarchy'){renderHierarchyTree();populateHierarchyDropdowns();}
@@ -3891,7 +4017,11 @@ async function showSection(id,skipHistory){
     $('shift_cal_year').value=parseInt(t[0],10);
     renderShiftCalendar();
   }
-  if(id==='programs')renderPrograms();
+  if(id==='programs'){
+    // ─── ریست prog_id هنگام ورود به بخش برنامه‌ها برای جلوگیری از نشتی (P6) ───
+    if(typeof resetProgramForm==='function')resetProgramForm();
+    renderPrograms();
+  }
   if(id==='records'){if(!cachedPersons||!cachedPersons.length)await loadAllPersons();populatePersonDropdown('rep_person');toggleReportDates();onRepModeChange();}
   // reports قدیمی حذف شد — در records ادغام شد. آدرس‌دهی به reports به records هدایت شود
   if(id==='reports'){showSection('records');return;}
@@ -3950,7 +4080,19 @@ function populateAssigneeDropdown(dropdownId){
       return p.id!==currentUser.id&&(p.can_approve_leaves||p.can_schedule_tasks||(cachedPersons.some(function(s){return s.parent_id===p.id;})));
     });
     if(coordinators.length===0){
-      o='<option value="">⚠️ هیچ هماهنگ‌کننده‌ای تعریف نشده — ابتدا در مدیریت کاربران هماهنگ‌کننده تعیین کنید</option>';
+      // ─── سیستم جدید: اگر هماهنگ‌کننده‌ای تعریف نشده، مدیر مجاز است هر کاربر عادی را انتخاب کند ───
+      coordinators=cachedPersons.filter(function(p){
+        return p.id!==currentUser.id&&p.role!=='super_admin'&&p.role!=='guest';
+      });
+      if(coordinators.length===0){
+        o='<option value="">⚠️ هیچ کاربر دیگری تعریف نشده — ابتدا در مدیریت کاربران کاربر جدید ایجاد کنید</option>';
+      }else{
+        o+='<optgroup label="——— سایر کاربران ———">';
+        coordinators.forEach(function(p){
+          o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+        });
+        o+='</optgroup>';
+      }
     }else{
       o+='<optgroup label="——— هماهنگ‌کننده‌ها ———">';
       coordinators.forEach(function(p){
@@ -4002,7 +4144,7 @@ function populatePersonDropdown(dropdownId,autoFirst){
   }else{
     persons=cachedPersons.filter(function(p){return p.id===currentUser.id;});
   }
-  // برای تقویم: کاربر فعلی همیشه اول + تفویض‌شده‌ها
+  // برای تقویم: کاربر فعلی همیشه اول + سایر پرسنل
   if(dropdownId==='cal_person'){
     // کاربر فعلی اول
     var me=persons.filter(function(p){return p.id===currentUser.id;});
@@ -4012,9 +4154,10 @@ function populatePersonDropdown(dropdownId,autoFirst){
       o+='<option value="'+esc(me[0].id)+'">'+esc(me[0].first_name+' '+me[0].last_name+' - '+me[0].personnel_id)+' 👤</option>';
     }
     if(others.length){
-      o+='<optgroup label="——— تفویض‌شده‌ها ———">';
+      // ─── اصلاح N12: «تفویض‌شده‌ها» یادگار حذف‌شده است، برچسب صحیح «سایر پرسنل» ───
+      o+='<optgroup label="——— سایر پرسنل ———">';
       others.forEach(function(p){
-        o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+' 🔄</option>';
+        o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
       });
       o+='</optgroup>';
     }
@@ -4022,9 +4165,9 @@ function populatePersonDropdown(dropdownId,autoFirst){
       o='<option value="">انتخاب...</option>';
     }
     select.innerHTML=o;
-    // پیش‌فرض: کاربر فعلی
-    if(me.length)select.value=me[0].id;
-    else if(cur&&persons.some(function(p){return p.id===cur;}))select.value=cur;
+    // ─── اصلاح N12: حفظ انتخاب قبلی کاربر اگر هنوز معتبر است ───
+    if(cur&&persons.some(function(p){return p.id===cur;}))select.value=cur;
+    else if(me.length)select.value=me[0].id;
     else if(persons.length)select.value=persons[0].id;
   }else{
     // برای rec_person / rep_person کاربر عادی: «همه» یعنی همه قابل‌دسترسی‌ها (من + تفویض‌شوندگان)
@@ -4223,7 +4366,8 @@ async function renderDashboard(){
     // بنر هماهنگ‌کننده حذف شد — سیستم هماهنگ‌کننده فعال نیست
 
     // نوار شمارش معکوس و اعلان‌ها
-    var countdown=await renderCountdownBanner();
+    // ─── استفاده از myActs قبلاً بارگذاری‌شده به‌جای بارگذاری مجدد در renderCountdownBanner (P20/N20) ───
+    var countdown=await renderCountdownBanner(myActs);
     var annBanner=await renderAnnouncementsMiniBanner();
     html+=annBanner+countdown;
 
@@ -4292,7 +4436,7 @@ async function renderDashboard(){
     // ─── نمای مدیریتی (فقط مدیر/سوپرادمین) ───
     if(currentRole==='admin'||currentRole==='super_admin'){
       var allLeaves=await loadLeaves();
-      var allPending=allLeaves.filter(function(l){return l.status==='pending'||l.status==='manager_pending';});
+      var pendingCount=allLeaves.filter(function(l){return l.status==='pending'||l.status==='manager_pending';}).length;
       var activeUsers=cachedPersons.filter(function(p){return p.status==='active';}).length;
       var allMonthLogs=await loadLogs(null,monthStart,todayStr);
       html+='<h3 style="margin:20px 0 10px">📊 نمای مدیریتی</h3>'+
@@ -4304,6 +4448,10 @@ async function renderDashboard(){
         '<div class="dash-stat" onclick="showSection(\'records\')" style="cursor:pointer">'+
           '<div class="stat-icon green">📝</div>'+
           '<div class="stat-info"><div class="num">'+allMonthLogs.length+'</div><div class="lbl">اظهارات این ماه (کل)</div></div>'+
+        '</div>'+
+        '<div class="dash-stat" onclick="showSection(\'records\')" style="cursor:pointer">'+
+          '<div class="stat-icon orange">✈️</div>'+
+          '<div class="stat-info"><div class="num">'+pendingCount+'</div><div class="lbl">مرخصی‌های در انتظار</div></div>'+
         '</div>'+
       '</div>';
     }
@@ -4600,6 +4748,47 @@ function createDayMission(dateStr){
       var uid=selectedUsers[ci];
       try{
         var existing=await loadLogs(uid,dateStr,dateStr);
+        var nS=timeToMinutes(sTime),nE=timeToMinutes(eTime);
+        // ─── بررسی تداخل با لاگ‌های موجود (عدم حضور ساعتی، اضافه‌کاری، کارکرد رسمی) ───
+        if(existing&&existing.length){
+          for(var li=0;li<existing.length;li++){
+            var log=existing[li];
+            if(log.status==='cancelled')continue;
+            var lf=(log.data&&log.data.fields)||{};
+            // لاگ‌های ساعت‌دار: overtime (ot_start/ot_end)، absence ساعتی (start_time/end_time)، کارکرد رسمی
+            var lS=-1,lE=-1,lbl='';
+            if(log.status==='overtime'){
+              lS=timeToMinutes(lf.ot_start||'');lE=timeToMinutes(lf.ot_end||'');
+              lbl='اضافه‌کاری';
+            }else if(log.status==='absence'){
+              var lat=log.data&&log.data.absence_type;
+              if(lat==='hourly_leave'||lat==='hourly_mission'){
+                lS=timeToMinutes(lf.start_time||'');lE=timeToMinutes(lf.end_time||'');
+                lbl=ABS_LABEL[lat]||'عدم حضور ساعتی';
+              }
+            }else if(log.status==='official_record'){
+              lS=timeToMinutes(lf.official_entry_time||'');lE=timeToMinutes(lf.official_exit_time||'');
+              lbl='کارکرد رسمی';
+            }
+            if(lS>=0&&lE>=0){
+              if(lS<nE&&lE>nS){
+                var lStartTime=lf.ot_start||lf.start_time||lf.official_entry_time||'?';
+                var lEndTime=lf.ot_end||lf.end_time||lf.official_exit_time||'?';
+                conflicts.push({user:getPersonName(uid),existing:lbl,time:lStartTime+'-'+lEndTime});
+              }
+            }
+            // هشدار خاص: مرخصی روزانه یا غیبت روزانه در این روز → قابل مأموریت نیست
+            if(log.status==='absence'){
+              var lat2=log.data&&log.data.absence_type;
+              if(lat2==='daily_leave'||lat2==='sick_leave_daily'||lat2==='absence_no_leave'||lat2==='1day_mission'){
+                conflicts.push({user:getPersonName(uid),existing:ABS_LABEL[lat2]||'عدم حضور روزانه',time:'تمام‌روز'});
+              }
+            }
+            if(log.status==='official_record'&&lf.official_status&&lf.official_status!=='present'){
+              conflicts.push({user:getPersonName(uid),existing:'کارکرد رسمی ('+lf.official_status+')',time:'تمام‌روز'});
+            }
+          }
+        }
         // بررسی تداخل با مأموریت‌های موجود
         var tasks=await loadTasksForDate(uid,dateStr);
         if(tasks&&tasks.length){
@@ -4611,7 +4800,6 @@ function createDayMission(dateStr){
             var tMatch=tDesc.match(/ساعت:\s*(\d{2}:\d{2})\s*تا\s*(\d{2}:\d{2})/);
             if(tMatch){
               var tS=timeToMinutes(tMatch[1]),tE=timeToMinutes(tMatch[2]);
-              var nS=timeToMinutes(sTime),nE=timeToMinutes(eTime);
               if(tS<nE&&tE>nS){
                 conflicts.push({user:getPersonName(uid),existing:t.title,time:tMatch[1]+'-'+tMatch[2]});
               }
@@ -4622,7 +4810,7 @@ function createDayMission(dateStr){
     }
     hideLoading();
     if(conflicts.length){
-      var conflictMsg='⚠️ تداخل زمانی выявил شد:\n\n';
+      var conflictMsg='⚠️ تداخل زمانی شناسایی شد:\n\n';
       conflicts.forEach(function(c){
         conflictMsg+='👤 '+c.user+' — مأموریت موجود: «'+c.existing+'» ('+c.time+')\n';
       });
@@ -4907,7 +5095,7 @@ async function renderCalendar(){
     var logs=await loadLogs(personId,fromStr,toStr);
     var leaves=await loadLeaves(personId);
     var tasks=[];
-    try{tasks=await loadTasksForDate(personId,fromStr);}catch(e){}
+    try{tasks=await loadTasksInRange(personId,fromStr,toStr);}catch(e){}
     // بارگذاری فعالیت‌های برنامه
     var monthProgActs=[];
     try{
@@ -4918,12 +5106,6 @@ async function renderCalendar(){
       var dEnd=new Date(gEnd[0],gEnd[1]-1,gEnd[2],23,59,59);
       const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',personId).gte('deadline',dStart.toISOString()).lte('deadline',dEnd.toISOString());
       if(!error)monthProgActs=data||[];
-    }catch(e){}
-    // بارگذاری اعلانات فعال برای این ماه
-    var monthAnns=[];
-    try{
-      const{data,error}=await sb.from('announcements').select('*').or('expires_at.is.null,expires_at.gte.'+dStart.toISOString()).order('created_at',{ascending:false});
-      if(!error)monthAnns=data||[];
     }catch(e){}
     // بارگذاری رویدادها و تعطیلات این ماه
     var monthEvents=[];
@@ -5094,7 +5276,20 @@ function summaryHtml(s){
 }
 
 /* ═════ Daily Log ═════ */
-async function syncLog(){currentLogPerson=$('log_person_id').value;currentLogDate=$('log_date').value;updateDeclarationModeBanner();updateStandardHoursDisplay();if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();await renderDailyLogsList();if(currentLogPerson===currentUser.id)await renderVerificationPending();showPendingDiscrepancyWarnings();}
+async function syncLog(){
+  currentLogPerson=$('log_person_id').value;
+  currentLogDate=$('log_date').value;
+  updateDeclarationModeBanner();
+  updateStandardHoursDisplay();
+  // ─── prefillDefaultTimes بعد از تغییر تاریخ/persont باز هم اجرا شود (N17) ───
+  if(typeof prefillDefaultTimes==='function')setTimeout(prefillDefaultTimes,50);
+  if(typeof updateLeaveBalanceDisplay==='function')updateLeaveBalanceDisplay();
+  await renderDailyLogsList();
+  if(currentLogPerson===currentUser.id)await renderVerificationPending();
+  showPendingDiscrepancyWarnings();
+  // ─── updateDiscrepancyVisibility برای جلوگیری از نشتی بین پرسنل (P46) ───
+  if(typeof updateDiscrepancyVisibility==='function')updateDiscrepancyVisibility();
+}
 // پر کردن پیش‌فرض ساعت ورود/خروج با ساعات استاندارد (فقط فرم جدید)
 function prefillDefaultTimes(){
   if($('log_id')&&$('log_id').value)return; // اگر ویرایش است، پر نکن
@@ -5151,6 +5346,24 @@ async function editLog(id){
     if(log.status==='absence'){
       var t=log.data.absence_type;
       $('absence_type').value=t;
+      // اگر نوع ساعتی است، به حالت absence_hourly برو
+      if(HOURLY.indexOf(t)!==-1){
+        $('log_status').value='absence_hourly';
+        toggleLogFields();
+        if($('absence_type_hourly'))$('absence_type_hourly').value=t;
+        toggleAbsenceHourlyFields();
+        // پر کردن فیلدهای ساعتی
+        if(t==='hourly_leave'){
+          setTimepickerValue('hl_start_time',f.start_time||'');
+          setTimepickerValue('hl_end_time',f.end_time||'');
+          if($('hl_reason'))$('hl_reason').value=f.reason||'';
+        }else if(t==='hourly_mission'){
+          setTimepickerValue('hm_start_time',f.start_time||'');
+          setTimepickerValue('hm_end_time',f.end_time||'');
+          if($('hm_location'))$('hm_location').value=f.location||'';
+          if($('hm_activity'))$('hm_activity').value=f.activity||'';
+        }
+      }
       var map={
         hourly_leave:{abs_reason:f.reason,abs_start_time:f.start_time,abs_end_time:f.end_time},
         daily_leave:{},
@@ -5212,13 +5425,26 @@ async function deleteLog(id){
     // ─── حذف رکورد ───
     await deleteLogFromDB(id);
     await recordAudit('delete','daily_logs',id,{status:logStatus,date:logDate});
-    // ─── اگر حضور (normal) حذف شد، همه مغایرت‌های آن روز هم حذف شوند ───
+    // ─── اگر حضور (normal) حذف شد، مغایرت‌های مرتبط آن روز هم حذف شوند ───
+    // (فقط رکوردهای absence و overtime — نه official_record یا normal دیگر)
     if(logStatus==='normal'){
       var dayLogs=await loadLogs(logUserId,logDate,logDate);
-      var otherLogs=dayLogs.filter(function(l){return l.id!==id;});
+      var relatedLogs=dayLogs.filter(function(l){
+        return l.id!==id&&(l.status==='absence'||l.status==='overtime');
+      });
+      if(relatedLogs.length>0){
+        // هشدار تأیید قبل از حذف موارد جانبی
+        var confirmMsg='⚠️ حذف حضور این روز\n\nبا حذف این حضور، '+relatedLogs.length+' مغایرت مرتبط (عدم حضور/اضافه‌کاری) نیز حذف خواهد شد:\n';
+        relatedLogs.slice(0,5).forEach(function(l){
+          confirmMsg+='• '+describeLog(l)+'\n';
+        });
+        if(relatedLogs.length>5)confirmMsg+='... و '+(relatedLogs.length-5)+' مورد دیگر\n';
+        confirmMsg+='\nادامه می‌دهید؟';
+        if(!confirm(confirmMsg)){hideLoading();return;}
+      }
       var deletedCount=0;
-      for(var i=0;i<otherLogs.length;i++){
-        try{await deleteLogFromDB(otherLogs[i].id);await recordAudit('delete','daily_logs',otherLogs[i].id,{reason:'cascade_delete_with_presence',date:logDate});deletedCount++;}catch(e){}
+      for(var i=0;i<relatedLogs.length;i++){
+        try{await deleteLogFromDB(relatedLogs[i].id);await recordAudit('delete','daily_logs',relatedLogs[i].id,{reason:'cascade_delete_with_presence',date:logDate});deletedCount++;}catch(e){}
       }
       if(deletedCount>0){
         showAlert('✅ حضور و '+deletedCount+' مغایرت مرتبط آن روز حذف شد.','success');
@@ -5310,24 +5536,26 @@ function showPendingDiscrepancyWarnings(){
   var banner=$('pending_discrepancy_banner');
   var detail=$('pending_disc_detail');
   if(!banner||!detail)return;
-  try{
-    var pending=JSON.parse(sessionStorage.getItem('pending_discrepancies')||'[]');
-    if(!pending.length){banner.classList.add('hidden');return;}
-    var personId=$('log_person_id')?$('log_person_id').value:currentUser.id;
-    var dateStr=$('log_date')?$('log_date').value:'';
-    // پیدا کردن مغایرت معوق برای این کاربر و این تاریخ
-    var match=pending.filter(function(p){return p.userId===personId&&p.dateStr===dateStr;});
-    if(match.length===0){banner.classList.add('hidden');return;}
-    // بررسی واقعی مغایرت‌های ثبت‌نشده
-    checkAndShowPendingBanner(personId,dateStr);
-  }catch(e){}
+  var personId=$('log_person_id')?$('log_person_id').value:currentUser.id;
+  var dateStr=$('log_date')?$('log_date').value:'';
+  // session flag دیگر لازم نیست — همیشه بررسی واقعی انجام می‌شود (P15)
+  checkAndShowPendingBanner(personId,dateStr);
 }
 // بررسی واقعی و نمایش بنر
 async function checkAndShowPendingBanner(personId,dateStr){
   var banner=$('pending_discrepancy_banner');
   var detail=$('pending_disc_detail');
   if(!banner||!detail)return;
+  // ─── ریست pendingDiscData در ابتدا برای جلوگیری از نشتی بین پرسنل (P16/N9) ───
+  pendingDiscData=null;
   try{
+    // ─── P45: اگر کاربر قبلاً بنر این روز را بسته، دوباره نشان نده ───
+    var dismissed=JSON.parse(sessionStorage.getItem('dismissed_discrepancies')||'[]');
+    var key=personId+'|'+dateStr;
+    if(dismissed.indexOf(key)!==-1){
+      banner.classList.add('hidden');
+      return;
+    }
     var dayLogs=await loadLogs(personId,dateStr,dateStr);
     var presenceLog=dayLogs.filter(function(l){return l.status==='normal'||l.status==='official_record';})[0];
     if(!presenceLog){banner.classList.add('hidden');return;}
@@ -5405,16 +5633,28 @@ async function registerPendingDiscrepancy(){
 function dismissPendingBanner(){
   var banner=$('pending_discrepancy_banner');
   if(banner)banner.classList.add('hidden');
+  // ─── P45: ذخیره وضعیت «بستن توسط کاربر» برای این روز تا در syncLog بعدی دوباره ظاهر نشود ───
+  try{
+    if(pendingDiscData){
+      var dismissed=JSON.parse(sessionStorage.getItem('dismissed_discrepancies')||'[]');
+      var key=pendingDiscData.personId+'|'+pendingDiscData.dateStr;
+      if(dismissed.indexOf(key)===-1){
+        dismissed.push(key);
+        sessionStorage.setItem('dismissed_discrepancies',JSON.stringify(dismissed));
+      }
+    }
+    pendingDiscData=null;
+  }catch(e){}
 }
 function toggleLogFields(){
   var st=$('log_status').value;
-  ['normal','absence','absence_hourly','overtime','official'].forEach(function(k){
+  ['normal','absence','absence_hourly','overtime','official_record'].forEach(function(k){
     var el=$('fields_'+k);
     if(el)el.classList.toggle('hidden',k!==st);
   });
   if(st==='absence')toggleAbsenceFields();
   if(st==='absence_hourly')toggleAbsenceHourlyFields();
-  if(st==='official')toggleOfficialFields();
+  if(st==='official_record')toggleOfficialFields();
   updateDeclarationModeBanner();
   if(st==='normal')checkTimeDiscrepancy();
 }
@@ -5490,6 +5730,7 @@ async function savePresenceAndShowDiscrepancies(){
   var personId=$('log_person_id')?$('log_person_id').value:'';
   if(!entryT||!exitT||!dateStr||!personId){showAlert('ساعت ورود، خروج، تاریخ و پرسنل الزامی است.','error');return;}
   if(entryT==='--:--'||exitT==='--:--'){showAlert('ساعت ورود و خروج را انتخاب کنید.','error');return;}
+  if(!validateTimeOrder(entryT,exitT,'ساعات ورود/خروج'))return;
   // ─── هشدار روز غیر کاری (پنجشنبه، جمعه، یا تعطیل رسمی) ───
   var dateP=parseJalali(dateStr);
   var dow=getJalaliDayOfWeek(dateP.jy,dateP.jm,dateP.jd);
@@ -5523,17 +5764,21 @@ async function savePresenceAndShowDiscrepancies(){
     // بررسی: آیا رکورد حضور برای این تاریخ وجود دارد؟
     var existing=await loadLogs(personId,normJ(dateStr),normJ(dateStr));
     var existingNormal=null;
+    var existingOfficial=null;
     if(existing){
       existingNormal=existing.filter(function(l){return l.status==='normal';})[0];
+      existingOfficial=existing.filter(function(l){return l.status==='official_record';})[0];
     }
+    // ─── اگر رکورد official_record موجود است، آپدیت کن (نه اضافه‌کردن رکورد normal جدا) ───
+    var useRecord=existingNormal||existingOfficial;
     var presenceLog;
-    if(existingNormal){
+    if(useRecord){
       // رکورد موجود → آپدیت
       presenceLog={
-        id:existingNormal.id,  // آی‌دی موجود → saveLogToDB آن را به‌عنوان آپدیت شناسایی می‌کند
+        id:useRecord.id,  // آی‌دی موجود → saveLogToDB آن را به‌عنوان آپدیت شناسایی می‌کند
         user_id:personId,
         date:normJ(dateStr),
-        status:'normal',
+        status:useRecord.status, // حفظ وضعیت قبلی (normal یا official_record)
         data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
       };
     }else{
@@ -5550,8 +5795,8 @@ async function savePresenceAndShowDiscrepancies(){
       presenceLog.submitted_by=currentUser.id;
       presenceLog.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
     }
+    // saveLogToDB داخلاً recordAudit با شناسه واقعی انجام می‌دهد — نیازی به recordAudit خارجی نیست
     await saveLogToDB(presenceLog);
-    await recordAudit(existingNormal?'update':'create','daily_logs',presenceLog.id,{status:'normal',date:dateStr,entry:entryT,exit:exitT});
   }catch(e){
     showAlert('خطا در ثبت حضور: '+e.message,'error');
     hideLoading();
@@ -5643,24 +5888,37 @@ function showDiscrepancyModal(discrepancies,dateStr,personId,entryT,exitT){
         var reason=$('disc_reason_'+i)?$('disc_reason_'+i).value:'';
         var desc=$('disc_desc_'+i)?$('disc_desc_'+i).value:'';
         var status=(reason==='overtime')?'overtime':'absence';
-        var logObj={
-          id:'tmp-'+genUUID(),  // پیشوند tmp- برای رکورد جدید
-          user_id:personId,
-          date:normJ(dateStr),
-          status:status,
-          data:{discrepancy:'',fields:{
-            start_time:d.start,end_time:d.end,
-            reason:desc||d.label,
-            absence_type:reason
-          }}
-        };
+        var logObj;
+        if(status==='overtime'){
+          logObj={
+            id:'tmp-'+genUUID(),
+            user_id:personId,
+            date:normJ(dateStr),
+            status:'overtime',
+            data:{discrepancy:'',fields:{
+              ot_start:d.start,ot_end:d.end,
+              ot_reason:desc||d.label,ot_location:'',ot_topic:'',ot_description:''
+            }}
+          };
+        }else{
+          logObj={
+            id:'tmp-'+genUUID(),
+            user_id:personId,
+            date:normJ(dateStr),
+            status:'absence',
+            data:{discrepancy:'',fields:{
+              start_time:d.start,end_time:d.end,
+              reason:desc||d.label,
+              absence_type:reason
+            },absence_type:reason}
+          };
+        }
         if(personId!==currentUser.id){
           logObj.submitted_by=currentUser.id;
           logObj.submitted_by_name=(currentUser.profile.first_name||'')+' '+(currentUser.profile.last_name||'');
         }
-        if(status==='absence')logObj.data.absence_type=reason;
         await saveLogToDB(logObj);
-        await recordAudit('create','daily_logs',logObj.id,{status:status,type:reason,date:dateStr,start:d.start,end:d.end});
+        // saveLogToDB داخلاً recordAudit با شناسه واقعی انجام می‌دهد — نیازی به recordAudit خارجی با شناسه موقت نیست
       }
       showAlert('✅ '+discrepancies.length+' مغایرت ثبت شد.','success');
       overlay.remove();
@@ -6015,34 +6273,53 @@ async function saveDailyLog(){
 }
 // checkDelegateWarning / updateDelegateBox حذف شدند — باکس تفویض از UI حذف شده
 function resetDailyLogForm(){
-  $('log_id').value='';$('log_status').value='normal';$('absence_type').value='hourly_leave';
-  ['log_discrepancy','abs_reason','m1_location','mh_location','mh_activity','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
+  $('log_id').value='';$('log_status').value='normal';$('absence_type').value='daily_leave';
+  if($('absence_type_hourly'))$('absence_type_hourly').value='hourly_leave';
+  ['log_discrepancy','abs_reason','hl_reason','hl_general_desc','hm_location','hm_activity','m1_location','mh_location','mh_activity','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
   // break_minutes حذف شد — فیلد استراحت از فرم حذف شده است
   if($('official_status'))$('official_status').value='present';
   if($('official_mission_type'))$('official_mission_type').value='home_visit';
   if($('sick_doctor_order'))$('sick_doctor_order').value='unknown';
   if($('sick_pharmacy_prescription'))$('sick_pharmacy_prescription').value='unknown';
-  ['abs_start_time','abs_end_time','mh_start_time','mh_end_time','ot_start','ot_end','entry_time','exit_time','official_entry_time','official_exit_time'].forEach(function(k){setTimepickerValue(k,'');});
+  ['abs_start_time','abs_end_time','hl_start_time','hl_end_time','hm_start_time','hm_end_time','mh_start_time','mh_end_time','ot_start','ot_end','entry_time','exit_time','official_entry_time','official_exit_time'].forEach(function(k){setTimepickerValue(k,'');});
   window._editingLogOriginal=null;
   toggleLogFields();
   updateDiscrepancyVisibility();
+  // ─── پیش‌پر کردن ساعت‌های پیش‌فرض بعد از ریست (N17) ───
+  setTimeout(prefillDefaultTimes,50);
 }
 // ═════ توابع حالت دو‌گانه خوداظهاری ═════
 // کش تاریخچه نحوه تأیید کارکرد
 var cachedDeclModeHistory=[];
+// ─── نقشه کش برای جست‌جوی O(1) تاریخچه هر کاربر (P35/N14) ───
+var _declModeMap=null;
+function buildDeclModeMap(){
+  _declModeMap={};
+  cachedDeclModeHistory.forEach(function(h){
+    if(!_declModeMap[h.user_id])_declModeMap[h.user_id]=[];
+    _declModeMap[h.user_id].push(h);
+  });
+  // مرتب‌سازی هر لیست بر اساس effective_from نزولی
+  Object.keys(_declModeMap).forEach(function(uid){
+    _declModeMap[uid].sort(function(a,b){return jalaliToTimestamp(b.effective_from)-jalaliToTimestamp(a.effective_from);});
+  });
+}
 // دریافت نوع خوداظهاری کاربر (time_based یا verification) — آگاه به تاریخ
 function getPersonDeclarationMode(personId,dateStr){
   var p=cachedPersons.filter(function(x){return x.id===personId;})[0];
   if(!p)return 'time_based';
   // اگر تاریخ داده شده، از تاریخچه استفاده کن
   if(dateStr&&cachedDeclModeHistory.length){
-    var targetTs=jalaliToTimestamp(dateStr);
-    var userHistory=cachedDeclModeHistory.filter(function(h){
-      return h.user_id===personId&&jalaliToTimestamp(h.effective_from)<=targetTs;
-    });
-    if(userHistory.length){
-      userHistory.sort(function(a,b){return jalaliToTimestamp(b.effective_from)-jalaliToTimestamp(a.effective_from);});
-      return userHistory[0].declaration_mode;
+    if(!_declModeMap)buildDeclModeMap();
+    var userHistory=_declModeMap[personId];
+    if(userHistory&&userHistory.length){
+      var targetTs=jalaliToTimestamp(dateStr);
+      // اولین رکوردی که effective_from ≤ targetTs (مرتب نزولی)
+      for(var i=0;i<userHistory.length;i++){
+        if(jalaliToTimestamp(userHistory[i].effective_from)<=targetTs){
+          return userHistory[i].declaration_mode;
+        }
+      }
     }
   }
   // fallback به فیلد پروفایل
@@ -6054,8 +6331,10 @@ async function loadDeclarationModeHistory(){
     const{data,error}=await sb.from('declaration_mode_history').select('*').order('effective_from',{ascending:false});
     if(error)throw error;
     cachedDeclModeHistory=data||[];
+    // ریست نقشه کش تا دوباره ساخته شود
+    _declModeMap=null;
     return cachedDeclModeHistory;
-  }catch(e){console.warn('loadDeclarationModeHistory:',e);cachedDeclModeHistory=[];return[];}
+  }catch(e){console.warn('loadDeclarationModeHistory:',e);cachedDeclModeHistory=[];_declModeMap=null;return[];}
 }
 // تغییر نحوه تأیید کارکرد یک کاربر (با تاریخ اعمال)
 async function changeDeclarationMode(userId,newMode,effectiveFrom,note){
@@ -6226,11 +6505,18 @@ function updateDeclarationModeBanner(){
         opt.style.display='';
       });
     }
+    var optOfficial=$('opt_official');
+    if(optOfficial){optOfficial.style.display=(_isAdmin)?'block':'none';}
   }
   // اگر مدیر است و کاربر انتخاب‌شده verification است، به حالت official_record برو
+  // ─── اصلاح N1: اگر option official_record در dropdown پنهان است (بدون opt_official)، ابتدا مطمئن شو موجود است ───
   if(_isAdmin&&mode==='verification'){
     var curStatus=$('log_status').value;
-    if(curStatus==='normal'||curStatus==='overtime'){
+    var hasOfficialOption=false;
+    Array.prototype.forEach.call(logStatusSel.options,function(opt){
+      if(opt.value==='official_record')hasOfficialOption=true;
+    });
+    if(hasOfficialOption&&(curStatus==='normal'||curStatus==='overtime')){
       $('log_status').value='official_record';
       toggleLogFields();
     }
@@ -6293,6 +6579,13 @@ async function saveWorkHoursSetting(){
   var startTime=val('wh_start_time'),endTime=val('wh_end_time'),effectiveFrom=val('wh_effective_from'),note=val('wh_note');
   if(!startTime||!endTime||!effectiveFrom){showAlert('ساعت ورود، خروج و تاریخ اعمال الزامی است.','error');return;}
   if(!isValidJalaliDate(effectiveFrom)){showAlert('تاریخ اعمال نامعتبر است.','error');return;}
+  // ─── چک ترتیب زمانی: شروع باید قبل از پایان باشد (P9) ───
+  var sMin=timeToMinutes(startTime),eMin=timeToMinutes(endTime);
+  if(!isFinite(sMin)||!isFinite(eMin)){showAlert('ساعت ورود یا خروج نامعتبر است.','error');return;}
+  if(sMin>=eMin){
+    showAlert('⚠️ ساعت شروع ('+startTime+') باید قبل از ساعت پایان ('+endTime+') باشد.','error');
+    return;
+  }
   showLoading('ذخیره...');
   try{
     var row={start_time:startTime,end_time:endTime,effective_from:normJ(effectiveFrom),note:note,created_by:currentUser.id};
@@ -6301,8 +6594,8 @@ async function saveWorkHoursSetting(){
     await recordAudit('create','work_hours_settings',data[0].id,{start_time:startTime,end_time:endTime,effective_from:normJ(effectiveFrom)});
     showAlert('✅ تنظیمات ساعات کاری ذخیره شد. از تاریخ '+normJ(effectiveFrom)+' اعمال می‌شود.','success');
     $('wh_start_time').value='';$('wh_end_time').value='';$('wh_effective_from').value='';$('wh_note').value='';
-    if($('wh_start_tp'))setTimepickerValue('wh_start_tp','');
-    if($('wh_end_tp'))setTimepickerValue('wh_end_tp','');
+    if($('wh_start_time'))setTimepickerValue('wh_start_time','');
+    if($('wh_end_time'))setTimepickerValue('wh_end_time','');
     await loadWorkHoursSettings();
     renderWorkHoursHistory();
   }catch(e){showAlert('خطا: '+e.message,'error');}
@@ -6343,8 +6636,11 @@ async function getLeaveBalance(personId,dateStr){
   if(!dateStr)dateStr=getTodayJalali();
   var p=parseJalali(dateStr);
   // ─── مدل تعلق تدریجی ماهیانه ───
+  // اصلاح: تعلق به تعداد ماه‌های «کامل» سپری‌شده از ابتدای سال (نه ماه فعلی)
+  // مثلاً در فروردین (jm=1)، ۰ ماه کامل سپری شده → ۰ روز تعلق
+  // در اردیبهشت (jm=2)، ۱ ماه کامل سپری شده → ۲.۵ روز تعلق (با سهمیه ۳۰ روز)
   var monthlyRate=annualTotal/12;
-  var monthsElapsed=p.jm;
+  var monthsElapsed=Math.max(0,p.jm-1);
   // تعلق‌گرفته = monthsElapsed × monthlyRate + انتقال (انتقال فقط برای رسمی، علاوه بر سهمیه ماهیانه)
   var accrued=Math.min(monthsElapsed*monthlyRate,annualTotal)+carryOver;
   // ─── محاسبه استفاده‌شده از لاگ‌ها ───
@@ -6768,14 +7064,18 @@ async function renderMyTasks(){
     if(type==='all'||type==='tasks'){
       var tasks;
       if(supervisorMode&&subIds.length>0){
-        // مدیر/هماهنگ‌کننده: وظایف زیرمجموعه‌ها + وظایف خودش
+        // ─── اصلاح N+1: یک کوئری in() به‌جای حلقه (P15/N15) ───
         tasks=await loadMyTasks('all'); // وظایف خودش
-        for(var si=0;si<subIds.length;si++){
-          try{
-            const{data,error}=await sb.from('tasks').select('*').eq('assignee_id',subIds[si]);
-            if(!error&&data)tasks=tasks.concat(data);
-          }catch(e){}
-        }
+        try{
+          var allIds=[currentUser.id].concat(subIds);
+          const{data,error}=await sb.from('tasks').select('*').in('assignee_id',allIds);
+          if(!error&&data){
+            // حذف تکراری‌ها (وظایف خودش قبلاً بارگذاری شده)
+            var existingIds={};
+            tasks.forEach(function(t){existingIds[t.id]=true;});
+            data.forEach(function(t){if(!existingIds[t.id])tasks.push(t);});
+          }
+        }catch(e){console.warn('load tasks for subordinates:',e);}
       }else{
         tasks=await loadMyTasks('all');
       }
@@ -6788,7 +7088,8 @@ async function renderMyTasks(){
           status:t.status||'pending',
           priority:t.priority||'normal',
           deadline:t.task_date,
-          deadlineTs:jalaliToTimestamp(t.task_date),
+          // ─── اصلاح P4: پایان روز برای overdue (نه نیمه‌شب) ───
+          deadlineTs:jalaliToTimestamp(t.task_date)+86400000-1,
           source:supervisorMode?getPersonName(t.assignee_id):(t.creator_id===currentUser.id?'شما':getPersonName(t.creator_id)),
           sourceLabel:supervisorMode?'مسئول':'از',
           assigneeId:t.assignee_id,
@@ -6797,19 +7098,18 @@ async function renderMyTasks(){
         });
       });
     }
-    
+
     // فعالیت‌های برنامه‌ها
     if(type==='all'||type==='activities'){
       var acts;
       if(supervisorMode&&subIds.length>0){
-        // مدیر/هماهنگ‌کننده: فعالیت‌های زیرمجموعه‌ها
+        // ─── اصلاح N+1: یک کوئری in() به‌جای حلقه ───
         acts=[];
-        for(var ai=0;ai<subIds.length;ai++){
-          try{
-            const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',subIds[ai]);
-            if(!error&&data)acts=acts.concat(data);
-          }catch(e){}
-        }
+        try{
+          var allActIds=[currentUser.id].concat(subIds);
+          const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').in('assignee_id',allActIds);
+          if(!error&&data)acts=data;
+        }catch(e){console.warn('load activities for subordinates:',e);}
       }else{
         acts=await loadMyActivities();
       }
@@ -7083,7 +7383,14 @@ async function renderMsgArchive(){
     });
     c.innerHTML=html;
     var filterSel=$('msg_archive_filter');
-    if(filterSel){var fo='<option value="">همه</option><option value="broadcast">عمومی</option>';cachedPersons.forEach(function(p){fo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+'</option>';});filterSel.innerHTML=fo;}
+    if(filterSel){
+      // ─── حفظ فیلتر قبلی هنگام رندر مجدد (N13) ───
+      var prevFilter=filterSel.value;
+      var fo='<option value="">همه</option><option value="broadcast">عمومی</option>';
+      cachedPersons.forEach(function(p){fo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+'</option>';});
+      filterSel.innerHTML=fo;
+      if(prevFilter)filterSel.value=prevFilter;
+    }
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
 function getWeekNumber(d){
@@ -7530,6 +7837,13 @@ function editUserDetails(userId){
     }
     showLoading('ذخیره...');
     var updates={first_name:firstName,last_name:lastName,personnel_id:pid};
+    // ─── بررسی امنیتی: هماهنگ‌کننده نمی‌تواند زیرمجموعه را به admin/super_admin ارتقا دهد ───
+    if(roleChanged&&isCoord&&!isAdmin){
+      if(newRole==='admin'||newRole==='super_admin'){
+        showAlert('⚠️ دسترسی غیرمجاز: هماهنگ‌کننده نمی‌تواند کاربر را به مدیر ارتقا دهد.','error');
+        hideLoading();return;
+      }
+    }
     if(roleChanged){
       if(newRole==='coordinator'){
         updates.role='user';
@@ -7548,11 +7862,22 @@ function editUserDetails(userId){
       }
     }
     // دسترسی‌های ساده‌شده — فقط لوح شیفت و گزارش
-    updates.can_manage_shifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
+    var newCanShifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
+    var oldCanShifts=p.can_manage_shifts||false;
+    if(newCanShifts!==oldCanShifts){
+      updates.can_manage_shifts=newCanShifts;
+    }
     // can_view_reports — همیشه ارسال می‌کنیم (اگر ستون وجود ندارد، Supabase خطا می‌دهد که handled می‌شود)
-    updates.can_view_reports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
+    var newCanViewReports=$('ed_can_view_reports')?$('ed_can_view_reports').checked:false;
+    var oldCanViewReports=p.can_view_reports||false;
+    if(newCanViewReports!==oldCanViewReports){
+      updates.can_view_reports=newCanViewReports;
+    }
     if($('ed_can_log')&&p.can_log!==undefined){
-      updates.can_log=$('ed_can_log').checked;
+      var newCanLog=$('ed_can_log').checked;
+      if(newCanLog!==(p.can_log||false)){
+        updates.can_log=newCanLog;
+      }
     }
     var newStatus=$('ed_status')?$('ed_status').value:'active';
     if(newStatus!==(p.status||'active')){
@@ -7632,14 +7957,15 @@ function editUserDetails(userId){
       applyRoleBasedUI();
       showAlert('✅ اطلاعات شما به‌روزرسانی شد. دسترسی‌های جدید اعمال شد.','success');
     }else{
-      // ─── اگر کاربر دیگری است، نوتیفیکیشن بفرست ───
-      if(updates.can_manage_shifts!==undefined){
+      // ─── اگر کاربر دیگری است، نوتیفیکیشن فقط در صورت تغییر واقعی دسترسی بفرست ───
+      var permChanged=(updates.can_manage_shifts!==undefined)||(updates.can_view_reports!==undefined)||(updates.can_log!==undefined)||roleChanged;
+      if(permChanged){
         try{
           await sendNotificationDB({
             sender_id:currentUser.id,
             recipient_id:userId,
             title:'🔑 دسترسی جدید اعطا شد',
-            body:'مدیر سامانه دسترسی جدیدی به شما اعطا کرده است.\nبرای فعال‌سازی، صفحه را رفرش کنید (F5) یا خارج/وارد شوید.',
+            body:'مدیر سامانه دسترسی‌های شما را به‌روزرسانی کرده است.\nبرای فعال‌سازی، صفحه را رفرش کنید (F5) یا خارج/وارد شوید.',
             priority:'high',
             related_type:'permission_update'
           });
@@ -8077,7 +8403,7 @@ function openMissingDayDiscrepancy(){
         await recordAudit('update','daily_logs',log.id,{discrepancy:text,reason:'missing_day_discrepancy'});
       }else{
         // رکورد وجود ندارد → رکورد جدید با وضعیت normal و مغایرت بساز
-        var newLog={id:genUUID(),user_id:userId,date:normJ(dateStr),status:'normal',data:{discrepancy:text,fields:{}},submitted_by:currentUser.id,submitted_by_name:currentUser.profile.first_name+' '+currentUser.profile.last_name};
+        var newLog={id:'tmp-'+genUUID(),user_id:userId,date:normJ(dateStr),status:'normal',data:{discrepancy:text,fields:{}},submitted_by:currentUser.id,submitted_by_name:currentUser.profile.first_name+' '+currentUser.profile.last_name};
         var saved=await saveLogToDB(newLog);
         await recordAudit('create','daily_logs',saved?saved.id:'unknown',{user_id:userId,date:dateStr,discrepancy:text,reason:'missing_day_discrepancy'});
       }
@@ -8814,13 +9140,42 @@ async function saveActivity(programId){
     if(actId){
       const{error}=await sb.from('program_activities').update({title:title,description:desc,assignee_id:assignee,deadline:deadline,priority:priority}).eq('id',actId);
       if(error)throw error;
-      await recordAudit('update','program_activities',actId,{title:title,assignee_id:assignee,deadline:deadline,priority:priority});
+      // ─── افزودن program_id به recordAudit برای showProgramHistory (P25/N25) ───
+      await recordAudit('update','program_activities',actId,{title:title,program_id:programId,assignee_id:assignee,deadline:deadline,priority:priority});
+      // ارسال پیام به مسئول پیگیری در صورت تغییر
+      if(assignee&&assignee!==currentUser.id){
+        try{
+          await sendNotificationDB({
+            sender_id:currentUser.id,
+            recipient_id:assignee,
+            title:'🎯 فعالیت به‌روزرسانی شد',
+            body:'فعالیت «'+title+'» به‌روزرسانی شد.\nمهلت: '+new Date(deadline).toLocaleString('fa-IR'),
+            priority:'normal',
+            related_type:'program_activity',
+            related_id:actId
+          });
+        }catch(e){}
+      }
       showAlert('فعالیت به‌روزرسانی شد.','success');
     }else{
       const{data,error}=await sb.from('program_activities').insert({program_id:programId,title:title,description:desc,assignee_id:assignee,deadline:deadline,priority:priority}).select();
       if(error)throw error;
       if(data&&data[0])await recordAudit('create','program_activities',data[0].id,{title:title,program_id:programId,assignee_id:assignee,deadline:deadline,priority:priority});
-      showAlert('فعالیت اضافه شد. پیام به مسئول پیگیری ارسال شد.','success');
+      // ─── ارسال واقعی پیام به مسئول پیگیری (P7/N41) ───
+      if(assignee&&assignee!==currentUser.id){
+        try{
+          await sendNotificationDB({
+            sender_id:currentUser.id,
+            recipient_id:assignee,
+            title:'🎯 فعالیت جدید: '+title,
+            body:'یک فعالیت جدید به شما محول شده است.\n\nعنوان: '+title+'\nمهلت: '+new Date(deadline).toLocaleString('fa-IR')+(desc?'\nتوضیح: '+desc:''),
+            priority:priority==='force'?'high':'normal',
+            related_type:'program_activity',
+            related_id:data&&data[0]?data[0].id:null
+          });
+        }catch(e){console.warn('activity notif:',e);}
+      }
+      showAlert('فعالیت اضافه شد و پیام به مسئول پیگیری ارسال شد.','success');
     }
     closeActivityForm(programId);
     await renderPrograms();
@@ -8968,6 +9323,8 @@ async function delegateActionToSubordinate(kind,actionId){
   if(!isCoordinatorRole()||cachedSubordinates.length===0){
     showAlert('شما هماهنگ‌کننده نیستید یا زیرمجموعه‌ای ندارید.','error');return;
   }
+  // ─── ریست _splitParts در ابتدا برای جلوگیری از نشتی بین دیالوگ‌های لغو‌شده (P5) ───
+  _splitParts=[];
   // دریافت اطلاعات مأموریت اصلی
   var originalAction=null;
   showLoading('بارگذاری اطلاعات مأموریت...');
@@ -9068,8 +9425,7 @@ async function confirmDelegateAction(kind,actionId){
   }catch(e){showAlert('خطا: '+e.message,'error');}
   hideLoading();
 }
-// عنوان مأموریت اصلی (از روی DOM ذخیره نمی‌شود — نیاز به متغیر سراسری)
-var _delegateOriginalTitle='';
+// عنوان مأموریت اصلی از روی DOM خوانده می‌شود — متغیر سراسری _delegateOriginalTitle حذف شد (P27)
 function originalAction_title(kind,actionId){
   // پیدا کردن عنوان از روی پنجره باز
   var overlayTitle=document.querySelector('div[style*="z-index:9999"] p b');
@@ -9123,7 +9479,7 @@ async function createDelegatedAction(originalKind,originalId,title,assigneeId,no
 
 async function startActivity(id){
   showLoading('...');
-  try{const{error}=await sb.from('program_activities').update({status:'in_progress'}).eq('id',id);if(error)throw error;await recordAudit('start','program_activities',id,{status:'in_progress'});await renderMyActivities();showAlert('وضعیت به «در حال انجام» تغییر کرد.','success');}catch(e){showAlert('خطا: '+e.message);}
+  try{const{error}=await sb.from('program_activities').update({status:'in_progress'}).eq('id',id);if(error)throw error;await recordAudit('start','program_activities',id,{status:'in_progress'});await renderMyActivities();renderMyTasks();showAlert('وضعیت به «در حال انجام» تغییر کرد.','success');}catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
 }
 async function reportActivityDone(id){
@@ -9135,7 +9491,7 @@ async function reportActivityDone(id){
     const{error}=await sb.from('program_activities').update({status:'done',report_note:note,reported_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     await recordAudit('complete','program_activities',id,{status:'done',report_note:note});
-    await renderMyActivities();
+    await renderMyActivities();renderMyTasks();
     await updateBadges();
     showAlert('گزارش انجام ثبت شد.','success');
   }catch(e){showAlert('خطا: '+e.message);}
@@ -9150,7 +9506,7 @@ async function reportActivityNotDone(id){
     const{error}=await sb.from('program_activities').update({status:'not_done',report_note:note,reported_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     await recordAudit('not_done','program_activities',id,{status:'not_done',report_note:note});
-    await renderMyActivities();
+    await renderMyActivities();renderMyTasks();
     showAlert('گزارش ثبت شد.','success');
   }catch(e){showAlert('خطا: '+e.message);}
   hideLoading();
@@ -9534,15 +9890,15 @@ async function renderShiftCalendar(){
     var allTasks=[];
     if(filterPerson){
       // فقط مأموریت‌های یک نفر
-      var tasks=await loadTasksForDate(filterPerson,fromStr);
-      if(tasks)allTasks=tasks.filter(function(t){return t.task_date>=fromStr&&t.task_date<=toStr;});
+      allTasks=await loadTasksInRange(filterPerson,fromStr,toStr);
     }else{
-      // همه پرسنل
+      // همه پرسنل — یک کوئری بازه‌ای به جای حلقه per-person
+      var rangeTasks=await loadTasksInRange(null,fromStr,toStr);
+      var validIds={};
       for(var pi=0;pi<cachedPersons.length;pi++){
-        if(cachedPersons[pi].role==='super_admin')continue;
-        var ptasks=await loadTasksForDate(cachedPersons[pi].id,fromStr);
-        if(ptasks)allTasks=allTasks.concat(ptasks.filter(function(t){return t.task_date>=fromStr&&t.task_date<=toStr;}));
+        if(cachedPersons[pi].role!=='super_admin')validIds[cachedPersons[pi].id]=true;
       }
+      allTasks=(rangeTasks||[]).filter(function(t){return validIds[t.assignee_id];});
     }
     // رویدادهای ماه (برای نمایش تعطیلات)
     var monthEvents=[];
@@ -9663,7 +10019,7 @@ async function renderDashboardCalendar(){
     var logs=await loadLogs(personId,fromStr,toStr);
     var leaves=await loadLeaves(personId);
     var tasks=[];
-    try{tasks=await loadTasksForDate(personId,fromStr);}catch(e){}
+    try{tasks=await loadTasksInRange(personId,fromStr,toStr);}catch(e){}
     var monthProgActs=[];
     try{
       var pStart=parseJalali(fromStr),pEnd=parseJalali(toStr);
@@ -9770,10 +10126,11 @@ function scheduleDashboardCalendar(){
 }
 
 // نوار شمارش معکوس در داشبورد
-async function renderCountdownBanner(){
+async function renderCountdownBanner(preloadedActs){
   try{
-    var acts=await loadActiveActivitiesForCountdown();
-    if(!acts.length)return '';
+    // ─── P20: اگر acts قبلاً بارگذاری شده، از آن استفاده کن تا کوئری اضافه نشود ───
+    var acts=preloadedActs||(await loadActiveActivitiesForCountdown());
+    if(!acts||!acts.length)return '';
     var html='<div class="countdown-banner">'+
       '<h3>⏰ فعالیت‌های در جریان شما ('+acts.length+')</h3>';
     // فیلتر: تأخیرها اول
@@ -10017,13 +10374,29 @@ async function renderAnnouncements(){
         '</div></div>';
     });
     c.innerHTML=html;
-    for(var i=0;i<list.length;i++){if(!views.has(list[i].id))await markAnnouncementSeen(list[i].id);}
-    await updateAnnouncementsBadge();
+    // ─── batch upsert اعلانات دیده‌شده به‌جای INSERT تکی (P26/N21) ───
+    var newIds=list.filter(function(a){return !views.has(a.id);}).map(function(a){return a.id;});
+    if(newIds.length){
+      try{
+        await sb.from('announcement_views').upsert(
+          newIds.map(function(id){return {announcement_id:id,user_id:currentUser.id};}),
+          {onConflict:'announcement_id,user_id'}
+        );
+      }catch(e){console.warn('batch mark seen:',e);}
+    }
+    // ─── badge را از داده محلی حساب کن، نه از DB (P32) ───
+    var badgeCount=allList.filter(function(a){return !views.has(a.id);}).length;
+    var bEl=$('announcements_badge');
+    if(bEl){
+      if(badgeCount>0){bEl.textContent=badgeCount;bEl.classList.remove('hidden');}
+      else bEl.classList.add('hidden');
+    }
   }catch(e){c.innerHTML='<p style="color:var(--danger)">خطا: '+esc(e.message)+'</p>';}
 }
 
 async function saveAnnouncement(){
-  var canManage=(currentRole==='admin'||currentRole==='super_admin')||(currentUser.profile&&currentUser.profile.can_create_programs);
+  // ─── شرط دسترسی یکسان با renderAnnouncements (P14/N8) ───
+  var canManage=(currentRole==='admin'||currentRole==='super_admin')||(currentUser.profile&&(currentUser.profile.can_create_programs||currentUser.profile.can_approve_leaves));
   if(!canManage){showAlert('دسترسی غیرمجاز.','error');return;}
   var title=val('ann_title'),body=val('ann_body'),id=$('ann_id').value;
   if(!title||!body){showAlert('عنوان و متن الزامی است.');return;}
@@ -10180,7 +10553,8 @@ async function uploadEventsExcel(){
         var type='event';
         if(typeCol!==-1&&row[typeCol]){
           var typeStr=String(row[typeCol]).trim().toLowerCase();
-          if(typeStr.indexOf('تعطیل')!==-1||typeStr.indexOf('holiday')!==-1)type='holiday';
+          // ─── اصلاح: «غیرتعطیل» نباید به‌عنوان «تعطیل» تشخیص داده شود (P21) ───
+          if(/^تعطیل(ی)?$/.test(typeStr)||typeStr==='holiday')type='holiday';
           else if(typeStr.indexOf('جلسه')!==-1||typeStr.indexOf('meeting')!==-1)type='meeting';
           else if(typeStr.indexOf('مهلت')!==-1||typeStr.indexOf('deadline')!==-1)type='deadline';
           else if(typeStr.indexOf('سایر')!==-1||typeStr.indexOf('other')!==-1)type='other';
@@ -10665,7 +11039,7 @@ function init(){
   ['rec_type_filter'].forEach(function(k){on(k,'change',function(){if($('rep_mode').value==='table')renderRecords();});});
   on('rec_search','input',function(){if($('rep_mode').value==='table')renderRecords();});
   on('btn_clear_rec_dates','click',function(){$('rep_start_date').value='';$('rep_end_date').value='';if($('rep_mode').value==='table')renderRecords();});
-  on('btn_print_records','click',function(){var c=$('report_area');if(!c.querySelector('table')){showAlert('موردی برای چاپ نیست.');return;}var today=getTodayJalali();var td=toPersianDigits(today)+' ('+dayName(today)+')';$('print_area').innerHTML='<div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px"><h2 style="margin:0">📋 فهرست کارکرد</h2><p style="margin:4px 0 0;font-size:12px;color:#666">تاریخ تولید: '+td+'</p></div><div>'+c.innerHTML+'</div>';window.print();});
+  // DEAD BINDING REMOVED: on('btn_print_records','click',...) — dead binding
   on('rep_type','change',toggleReportDates);
   on('btn_gen_report','click',function(){
     var mode=$('rep_mode')?$('rep_mode').value:'perperson';
@@ -10674,13 +11048,13 @@ function init(){
   });
   on('btn_print_report','click',printReport);
   on('btn_export_report_csv','click',exportReportCSV);
-  on('approval_filter','change',renderApprovals);
+  // DEAD BINDING REMOVED: on('approval_filter','change',renderApprovals) — element removed
   on('btn_send_notification','click',sendNotification);
-  // گزارش داینامیک برنامه‌ها
-  on('btn_gen_prog_report','click',generateProgramReport);
-  on('btn_print_prog_report','click',printProgramReport);
-  on('btn_export_prog_report','click',exportProgramReportCSV);
-  on('btn_clear_prog_filters','click',function(){clearProgramReportFilters();generateProgramReport();});
+  // گزارش داینامیک برنامه‌ها — dead bindings removed (functions no longer exist)
+  // on('btn_gen_prog_report','click',generateProgramReport);
+  // on('btn_print_prog_report','click',printProgramReport);
+  // on('btn_export_prog_report','click',exportProgramReportCSV);
+  // on('btn_clear_prog_filters','click',function(){clearProgramReportFilters();generateProgramReport();});
   on('btn_create_invitation','click',createInvitation);
   on('btn_change_password','click',changePassword);
   on('btn_save_reminder','click',saveReminder);
