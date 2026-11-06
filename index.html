@@ -7938,9 +7938,11 @@ function editUserDetails(userId){
       '<div style="display:flex;flex-wrap:wrap;gap:6px 16px">'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_shifts" '+(p.can_manage_shifts?'checked':'')+'> 📅 تقویم ماموریت (تعریف مأموریت)</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_view_reports" '+(p.can_view_reports?'checked':'')+'> 📊 گزارش کارکرد همه پرسنل</label>'+
+        (isAdmin?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_users" '+(p.can_manage_users?'checked':'')+'> 🎫 دسترسی مدیریت کاربران (ایجاد، ویرایش، حذف)</label>':'')+
         (currentDisplayRole==='guest'?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_log" '+(p.can_log?'checked':'')+'> 📝 ثبت کارکرد</label>':'')+
       '</div>'+
       '<small style="display:block;margin-top:6px;color:var(--c-text-muted);font-size:10px">📊 با فعال‌سازی «گزارش کارکرد»، این کاربر می‌تواند گزارش کارکرد همه پرسنل را تولید و مشاهده کند (در هر سطحی).</small>'+
+      (isAdmin?'<small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:10px">🎫 با فعال‌سازی «دسترسی مدیریت کاربران»، این کاربر می‌تواند کاربران را ایجاد، ویرایش و حذف کند (مانند مدیر).</small>':'')+
     '</div>'+
     // ─── نوع استخدام + نوع کارکرد + وضعیت ───
     '<div class="form-row">'+
@@ -8030,7 +8032,7 @@ function editUserDetails(userId){
         updates.can_schedule_tasks=false;
       }
     }
-    // دسترسی‌های ساده‌شده — فقط تقویم ماموریت و گزارش
+    // دسترسی‌های ساده‌شده — تقویم ماموریت، گزارش، و مدیریت کاربران
     var newCanShifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
     var oldCanShifts=p.can_manage_shifts||false;
     if(newCanShifts!==oldCanShifts){
@@ -8041,6 +8043,14 @@ function editUserDetails(userId){
     var oldCanViewReports=p.can_view_reports||false;
     if(newCanViewReports!==oldCanViewReports){
       updates.can_view_reports=newCanViewReports;
+    }
+    // ─── can_manage_users: دسترسی مدیریت کاربران (فقط مدیر/سوپرادمین می‌تواند تغییر دهد) ───
+    if(isAdmin&&$('ed_can_manage_users')){
+      var newCanManageUsers=$('ed_can_manage_users').checked;
+      var oldCanManageUsers=p.can_manage_users||false;
+      if(newCanManageUsers!==oldCanManageUsers){
+        updates.can_manage_users=newCanManageUsers;
+      }
     }
     if($('ed_can_log')&&p.can_log!==undefined){
       var newCanLog=$('ed_can_log').checked;
@@ -8127,7 +8137,7 @@ function editUserDetails(userId){
       showAlert('✅ اطلاعات شما به‌روزرسانی شد. دسترسی‌های جدید اعمال شد.','success');
     }else{
       // ─── اگر کاربر دیگری است، نوتیفیکیشن فقط در صورت تغییر واقعی دسترسی بفرست ───
-      var permChanged=(updates.can_manage_shifts!==undefined)||(updates.can_view_reports!==undefined)||(updates.can_log!==undefined)||roleChanged;
+      var permChanged=(updates.can_manage_shifts!==undefined)||(updates.can_view_reports!==undefined)||(updates.can_manage_users!==undefined)||(updates.can_log!==undefined)||roleChanged;
       if(permChanged){
         try{
           await sendNotificationDB({
