@@ -385,6 +385,23 @@ tr:nth-child(even){background:var(--c-bg-alt,#fafafa)}
 .badge-partial{background:var(--purple)}
 .badge-canceled{background:#7f8c8d}
 .badge-high{background:var(--danger)}.badge-normal-priority{background:var(--info)}.badge-low{background:#95a5a6}
+/* ─── اصلاح کنتراست Badgeها در تم شب (رنگ‌های روشن → متن تیره) ─── */
+[data-theme="night"] .badge-normal,
+[data-theme="night"] .badge-approved,
+[data-theme="night"] .badge-overtime,
+[data-theme="night"] .badge-pending,
+[data-theme="night"] .badge-coordinator_pending,
+[data-theme="night"] .badge-official_record,
+[data-theme="night"] .badge-manager_pending,
+[data-theme="night"] .badge-normal-priority,
+[data-theme="night"] .badge-high,
+[data-theme="night"] .badge-absence,
+[data-theme="night"] .badge-rejected{color:#0B1220}
+/* badge-canceled و badge-low متن روشن نگه می‌داریم (پس‌زمینه خاکستری تیره‌تر می‌ماند) */
+[data-theme="night"] .badge-canceled{background:#475569;color:#fff}
+[data-theme="night"] .badge-low{background:#475569;color:#fff}
+[data-theme="night"] .priority-tag{color:#0B1220}
+[data-theme="night"] .priority-tag.force{color:#fff}
 .day-cell{cursor:pointer;transition:.2s;background:var(--c-card,#fff)}
 .day-cell:hover{background:var(--c-primary-light,#eaf2f8)}
 .day-cell.holiday{background:var(--c-danger-light,#fadbd8)}
@@ -451,7 +468,7 @@ tr{page-break-inside:avoid}
 .auth-error{background:var(--c-danger-light,#fadbd8);color:var(--c-danger,#922b21);border:1px solid var(--c-danger,#f1948a);padding:10px;border-radius:6px;margin-bottom:14px;font-size:13px;display:none}
 .auth-loading{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-left:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:14px;color:var(--c-primary,var(--primary));font-weight:bold}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--c-modal-overlay);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:14px;color:var(--c-primary,var(--primary));font-weight:bold}
 .loading-overlay::after{content:'';display:block;width:30px;height:30px;border:3px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:10px}
 
 /* Notifications modal */
@@ -514,7 +531,7 @@ body.guest-mode #btn_send_notification,
 body.guest-mode #btn_upload_events,
 body.guest-mode #btn_create_invitation,
 body.guest-mode #btn_save_scoring,
-body.guest-mode .announcement_admin_box{display:none!important}
+body.guest-mode #announcement_admin_box{display:none!important}
 /* مهمان بدون can_log: دکمه ثبت اظهار هم مخفی */
 body.guest-mode.no-log #btn_save_log{display:none!important}
 
@@ -684,7 +701,8 @@ body{background:var(--c-bg);color:var(--c-text);font-size:14px;line-height:1.6;f
   border-bottom:1px solid var(--c-sidebar-border);min-height:64px;
 }
 .sidebar-brand .payvand-logo-sm{width:32px;height:32px;flex-shrink:0;filter:var(--c-logo-filter)}
-.sidebar-brand .brand-text{font-size:16px;font-weight:700;color:#fff;white-space:nowrap}
+.sidebar-brand .brand-text{font-size:16px;font-weight:700;color:var(--c-sidebar-active-text);white-space:nowrap}
+[data-theme="night"] .sidebar-brand .brand-text{color:#fff}
 .sidebar.collapsed .brand-text{display:none}
 
 .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
@@ -755,7 +773,7 @@ body{background:var(--c-bg);color:var(--c-text);font-size:14px;line-height:1.6;f
   color:var(--c-text)!important;font-size:18px;transition:var(--c-transition,.2s);flex-shrink:0;
 }
 .topbar-toggle:hover{background:var(--c-primary-light)}
-.topbar-title{font-size:14px;font-weight:600;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title{font-size:14px;font-weight:600;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0;flex:1}
 .topbar-right{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap}
 /* تم سوییچر */
 .theme-toggle-icon{
@@ -818,6 +836,11 @@ body{background:var(--c-bg);color:var(--c-text);font-size:14px;line-height:1.6;f
 .btn-secondary:hover{background:var(--c-primary-light)}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* ─── اصلاح کنتراست دکمه‌ها در تم شب (success/info/danger/warning) ─── */
+[data-theme="night"] .btn-success,
+[data-theme="night"] .btn-info,
+[data-theme="night"] .btn-danger{color:#0B1220}
+[data-theme="night"] .btn-warning{color:#1F2937}
 
 /* ─── فرم‌ها ─── */
 .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -986,7 +1009,7 @@ body.guest-mode .admin-only,body.guest-mode .coordinator-only{display:none!impor
   .notif-modal-body{padding:14px}
 
   /* انتخابگر تاریخ/ساعت */
-  .datepicker-popup{width:min(340px,calc(100vw - 24px))!important;max-height:88vh;-webkit-overflow-scrolling:touch}
+  .datepicker-popup{width:min(340px,calc(100vw - 24px))!important;max-height:88vh;-webkit-overflow-scrolling:touch;right:auto!important;left:0!important}
   .time-picker-popup{width:min(280px,calc(100vw - 24px))!important}
 }
 
@@ -1025,9 +1048,9 @@ button,.btn{-webkit-touch-callout:none}
 
 :root{--payvand-logo:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20100%22%3E%3Crect%20x%3D%2210%22%20y%3D%2220%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22%231769AA%22%2F%3E%3Cpath%20d%3D%22M20%2050%20L30%2050%20L35%2040%20L40%2060%20L45%2045%20L50%2050%20L60%2050%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ctext%20x%3D%2285%22%20y%3D%2245%22%20font-family%3D%22Vazirmatn%2CTahoma%2Csans-serif%22%20font-size%3D%2216%22%20font-weight%3D%22bold%22%20fill%3D%22%231769AA%22%3E%D8%B3%D8%A7%D9%85%D8%A7%D9%86%D9%87%20%D9%85%D8%AF%DB%8C%D8%B1%DB%8C%D8%AA%20%DA%A9%D8%A7%D8%B1%DA%A9%D8%B1%D8%AF%3C%2Ftext%3E%3Ctext%20x%3D%2285%22%20y%3D%2265%22%20font-family%3D%22Vazirmatn%2CTahoma%2Csans-serif%22%20font-size%3D%2211%22%20fill%3D%22%23687789%22%3E%D9%85%D8%B1%DA%A9%D8%B2%20%D8%A8%D9%87%D8%AF%D8%A7%D8%B4%D8%AA%20%D8%B4%D9%85%D8%A7%D8%B1%D9%87%20%DB%8C%DA%A9%20%DA%A9%D9%88%D8%AA%E2%80%8C%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D9%84%D9%87%3C%2Ftext%3E%3C%2Fsvg%3E")}
 :root{--payvand-logo-night:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20100%22%3E%3Crect%20x%3D%2210%22%20y%3D%2220%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22%2360A5FA%22%2F%3E%3Cpath%20d%3D%22M20%2050%20L30%2050%20L35%2040%20L40%2060%20L45%2045%20L50%2050%20L60%2050%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ctext%20x%3D%2285%22%20y%3D%2245%22%20font-family%3D%22Vazirmatn%2CTahoma%2Csans-serif%22%20font-size%3D%2216%22%20font-weight%3D%22bold%22%20fill%3D%22%23F1F5F9%22%3E%D8%B3%D8%A7%D9%85%D8%A7%D9%86%D9%87%20%D9%85%D8%AF%DB%8C%D8%B1%DB%8C%D8%AA%20%DA%A9%D8%A7%D8%B1%DA%A9%D8%B1%D8%AF%3C%2Ftext%3E%3Ctext%20x%3D%2285%22%20y%3D%2265%22%20font-family%3D%22Vazirmatn%2CTahoma%2Csans-serif%22%20font-size%3D%2211%22%20fill%3D%22%23A6B4C5%22%3E%D9%85%D8%B1%DA%A9%D8%B2%20%D8%A8%D9%87%D8%AF%D8%A7%D8%B4%D8%AA%20%D8%B4%D9%85%D8%A7%D8%B1%D9%87%20%DB%8C%DA%A9%20%DA%A9%D9%88%D8%AA%E2%80%8C%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D9%84%D9%87%3C%2Ftext%3E%3C%2Fsvg%3E")}
-.payvand-logo-lg{width:340px;max-width:90%;aspect-ratio:1774/887;margin:0 auto 16px;background:var(--payvand-logo) center/contain no-repeat}
+.payvand-logo-lg{width:340px;max-width:90%;aspect-ratio:400/100;margin:0 auto 16px;background:var(--payvand-logo) center/contain no-repeat}
 .payvand-logo-sm{width:120px;height:30px;background:var(--payvand-logo) center/contain no-repeat;flex-shrink:0}
-.payvand-logo-topbar{width:80px;height:22px;background:var(--payvand-logo) center/contain no-repeat;flex-shrink:0;cursor:pointer}
+.payvand-logo-topbar{width:80px;height:20px;background:var(--payvand-logo) center/contain no-repeat;flex-shrink:0;cursor:pointer}
 
 /* ═══ متغیرهای قدیمی → هماهنگ با تم جدید ═══ */
 :root{
@@ -1180,7 +1203,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="payvand-logo-sm" role="img" aria-label="سلام"></div>
     <span class="brand-text">سلام</span>
   </div>
-  <div style="text-align:center;font-size:10px;color:rgba(255,255,255,.6);padding:0 8px 8px;line-height:1.4;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px">مرکز بهداشت شماره یک<br>کوت‌عبدالله</div>
+  <div style="text-align:center;font-size:10px;color:var(--c-sidebar-text);padding:0 8px 8px;line-height:1.4;border-bottom:1px solid var(--c-sidebar-border);margin-bottom:8px">مرکز بهداشت شماره یک<br>کوت‌عبدالله</div>
   <nav class="sidebar-nav" id="main_nav">
     <!-- ۱. اصلی — همیشه باز -->
     <div class="nav-section" data-open="1">
@@ -1197,6 +1220,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-section-body">
         <button class="nav-item" data-target="daily_log"><span class="ico">📝</span><span class="lbl">خوداظهاری</span></button>
         <button class="nav-item" data-target="calendar"><span class="ico">📅</span><span class="lbl">تقویم ماهانه</span></button>
+        <button class="nav-item" data-target="account"><span class="ico">🔐</span><span class="lbl">حساب کاربری</span></button>
       </div>
     </div>
     <!-- ۲b. گزارش‌گیری -->
@@ -1377,7 +1401,6 @@ button,.btn{-webkit-touch-callout:none}
         <button class="btn" id="btn_download_template">دانلود قالب اکسل</button>
       </div>
     </div>
-    <div id="events_upload_result"></div>
     <hr style="margin:20px 0;border:0;border-top:1px solid var(--c-border)">
     <h3>📋 رویدادهای ثبت‌شده این سال</h3>
     <div id="events_list_container" class="table-wrap"></div>
@@ -2019,6 +2042,43 @@ button,.btn{-webkit-touch-callout:none}
   <div id="reminders_list_container" class="table-wrap"></div>
 </div>
 
+<!-- ═══ بخش حساب کاربری (برای همه کاربران — تغییر رمز) ═══ -->
+<div id="section-account" class="card hidden">
+  <h2>🔐 حساب کاربری</h2>
+  <p style="font-size:12px;color:var(--c-text-muted);margin-bottom:16px">مدیریت رمز عبور و اطلاعات حساب خود.</p>
+
+  <!-- ─── اطلاعات کاربر ─── -->
+  <div id="account_user_info" style="background:var(--c-bg-alt);padding:14px 18px;border-radius:10px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="avatar" style="width:48px;height:48px;font-size:18px;font-weight:700;background:var(--c-primary);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:50%" id="account_avatar">؟</div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-weight:700;font-size:15px" id="account_name">—</div>
+      <div style="font-size:12px;color:var(--c-text-muted);margin-top:2px" id="account_meta">—</div>
+    </div>
+  </div>
+
+  <!-- ─── تغییر رمز عبور ─── -->
+  <h3>🔑 تغییر رمز عبور</h3>
+  <div id="account_change_pwd_super_admin_fields" class="hidden">
+    <div style="background:var(--c-warning-light,#fef3c7);padding:10px;border-radius:6px;margin-bottom:12px;border-right:4px solid var(--warning);font-size:13px">
+      ⚠️ شما سوپرادمین هستید. برای تغییر رمز، علاوه بر رمز فعلی، <b>کد بازیابی</b> نیز الزامی است. پس از تغییر، کد بازیابی جدید تولید می‌شود.
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>رمز فعلی:</label><input type="password" id="cp_old_password" dir="ltr"></div>
+    <div class="form-group" id="cp_recovery_wrap" style="display:none"><label>کد بازیابی فعلی:</label><input type="text" id="cp_recovery_code" dir="ltr" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase" placeholder="XXXX-XXXX-XXXX"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>رمز جدید:</label>
+      <input type="password" id="new_password" dir="ltr" oninput="updateStrengthMeter('new_password','cp_strength_bar','cp_strength_label')">
+      <div style="height:6px;background:#e2e8f0;border-radius:3px;margin-top:6px;overflow:hidden"><div id="cp_strength_bar" style="height:100%;width:0%;transition:width .3s,background .3s"></div></div>
+      <div id="cp_strength_label" style="font-size:11px;margin-top:3px"></div>
+    </div>
+    <div class="form-group"><label>تکرار رمز جدید:</label><input type="password" id="new_password2" dir="ltr"></div>
+  </div>
+  <button class="btn btn-success" id="btn_change_password">تغییر رمز</button>
+</div>
+
 <!-- ═══ مودال آلارم یادآور ═══ -->
 <div id="reminder_alert_modal" class="notif-modal hidden">
   <div class="notif-modal-box" style="max-width:480px">
@@ -2074,26 +2134,8 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   
   <h3>تغییر رمز عبور</h3>
-  <div id="change_pwd_super_admin_fields" class="hidden">
-    <div style="background:var(--c-warning-light,#fef3c7);padding:10px;border-radius:6px;margin-bottom:12px;border-right:4px solid var(--warning);font-size:13px">
-      ⚠️ شما سوپرادمین هستید. برای تغییر رمز، علاوه بر رمز فعلی، <b>کد بازیابی</b> نیز الزامی است. پس از تغییر، کد بازیابی جدید تولید می‌شود.
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group"><label>رمز فعلی:</label><input type="password" id="cp_old_password" dir="ltr"></div>
-    <div class="form-group" id="cp_recovery_wrap" style="display:none"><label>کد بازیابی فعلی:</label><input type="text" id="cp_recovery_code" dir="ltr" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase" placeholder="XXXX-XXXX-XXXX"></div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>رمز جدید:</label>
-      <input type="password" id="new_password" dir="ltr" oninput="updateStrengthMeter('new_password','cp_strength_bar','cp_strength_label')">
-      <div style="height:6px;background:#e2e8f0;border-radius:3px;margin-top:6px;overflow:hidden"><div id="cp_strength_bar" style="height:100%;width:0%;transition:width .3s,background .3s"></div></div>
-      <div id="cp_strength_label" style="font-size:11px;margin-top:3px"></div>
-    </div>
-    <div class="form-group"><label>تکرار رمز جدید:</label><input type="password" id="new_password2" dir="ltr"></div>
-  </div>
-  <button class="btn btn-success" id="btn_change_password">تغییر رمز</button>
-  
+  <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:12px">برای تغییر رمز عبور، به بخش <a href="#" onclick="showSection('account');return false" style="color:var(--c-primary);font-weight:600">🔐 حساب کاربری</a> بروید.</p>
+
   <hr style="margin:20px 0;border:0;border-top:1px solid #eee">
   <div id="backup_section" class="hidden">
     <h3>🔐 پشتیبان‌گیری (فقط مدیر و سوپرادمین)</h3>
@@ -2114,6 +2156,7 @@ button,.btn{-webkit-touch-callout:none}
   <div class="notif-modal-box">
     <div class="notif-modal-header">
       <div>📢 شما پیام‌های ناخوانده دارید</div>
+      <button class="btn btn-sm" onclick="$('notif_modal').classList.add('hidden')" title="بستن">✕</button>
     </div>
     <div class="notif-modal-body" id="notif_modal_body"></div>
   </div>
@@ -3355,8 +3398,11 @@ async function logout(){clearLocalSession();cachedPersons=[];cachedRoles=[];cach
 function updateUserBox(){
   if(!currentUser||!currentUser.profile)return;
   var p=currentUser.profile;
-  $('user_name').textContent=p.first_name+' '+p.last_name+' ('+p.personnel_id+')';
-  $('user_avatar').textContent=(p.first_name[0]||'؟')+(p.last_name[0]||'');
+  // ─── اصلاح #7: محافظت در برابر first_name/last_name خالی یا null ───
+  var fn=String(p.first_name||'');
+  var ln=String(p.last_name||'');
+  $('user_name').textContent=(fn+' '+ln+' ('+(p.personnel_id||'')+')').trim();
+  $('user_avatar').textContent=(fn[0]||'؟')+(ln[0]||'');
   var badge=$('user_role_badge');
   // نمایش نقش نمایشی (شامل هماهنگ‌کننده)
   var displayRole=getDisplayRole();
@@ -3824,6 +3870,9 @@ function showNotificationsModal(){
   });
   body.innerHTML=html;
   $('notif_modal').classList.remove('hidden');
+  // ─── اصلاح #8: backdrop handler برای بستن با کلیک بیرون ───
+  var modal=$('notif_modal');
+  modal.onclick=function(e){if(e.target===modal)modal.classList.add('hidden');};
 }
 // نمایش باکس پاسخ
 function showReplyBox(notifId){
@@ -4024,6 +4073,25 @@ async function showSection(id,skipHistory){
   if(id==='dashboard'){renderDashboard().then(function(){if(typeof renderDashboardCalendar==='function')renderDashboardCalendar();});}
   if(id==='announcements')renderAnnouncements();
   if(id==='settings'){if(typeof loadWorkHoursSettings==='function')loadWorkHoursSettings().then(function(){if(typeof renderWorkHoursHistory==='function')renderWorkHoursHistory();});}
+  // ─── بخش حساب کاربری: اطلاعات کاربر + فرم تغییر رمز (برای همه) ───
+  if(id==='account'){
+    if(currentUser&&currentUser.profile){
+      var p=currentUser.profile;
+      var fn=String(p.first_name||'');
+      var ln=String(p.last_name||'');
+      $('account_avatar').textContent=(fn[0]||'؟')+(ln[0]||'');
+      $('account_name').textContent=(p.first_name||'—')+' '+(p.last_name||'—')+' ('+(p.personnel_id||'—')+')';
+      $('account_meta').textContent='نقش: '+(getDisplayRoleLabel?getDisplayRoleLabel():'—')+' | وضعیت: '+(p.status||'active');
+      // نمایش فیلد کد بازیابی فقط برای سوپرادمین
+      var isSA=currentRole==='super_admin';
+      var saFields=$('account_change_pwd_super_admin_fields');
+      if(saFields)saFields.classList.toggle('hidden',!isSA);
+      var recWrap=$('cp_recovery_wrap');
+      if(recWrap)recWrap.style.display=isSA?'block':'none';
+      var recBanner=$('recovery_code_banner');
+      if(recBanner)recBanner.classList.toggle('hidden',!isSA);
+    }
+  }
   if(id==='hierarchy'){renderHierarchyTree();populateHierarchyDropdowns();}
   if(id==='calendar'){populatePersonDropdown('cal_person',true);renderCalendar();}
   if(id==='events'){
@@ -4088,8 +4156,6 @@ async function showSection(id,skipHistory){
     // نمایش فیلد کد بازیابی فقط برای سوپرادمین
     var isSA=currentRole==='super_admin';
     var isAdmin=currentRole==='admin'||currentRole==='super_admin';
-    var saFields=$('change_pwd_super_admin_fields');if(saFields)saFields.classList.toggle('hidden',!isSA);
-    var recWrap=$('cp_recovery_wrap');if(recWrap)recWrap.style.display=isSA?'block':'none';
     var banner=$('recovery_code_banner');if(banner)banner.classList.toggle('hidden',!isSA);
     // بخش پشتیبان‌گیری فقط برای مدیر و سوپرادمین
     var backupSec=$('backup_section');if(backupSec)backupSec.classList.toggle('hidden',!isAdmin);
@@ -4694,6 +4760,10 @@ function closeDayDetail(){
   if(ov)ov.remove();
 }
 function goToDailyLog(dateStr,personId){
+  // ─── اصلاح #6: برای مدیر، window._editingLogOriginal را تنظیم کن تا showSection به dashboard redirect نکند ───
+  if(currentRole==='admin'||currentRole==='super_admin'){
+    window._editingLogOriginal={id:null,discrepancy:'',user_id:personId||''};
+  }
   showSection('daily_log');
   if(personId)$('log_person_id').value=personId;
   $('log_date').value=dateStr;
@@ -5196,7 +5266,7 @@ async function renderCalendar(){
       h+='<th style="background:var(--c-primary);color:#fff;padding:8px;border:1px solid var(--c-border);font-size:12px">'+d+'</th>';
     });
     h+='</tr></thead><tbody><tr>';
-    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:100px"></td>';
+    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:100px" class="day-cell"></td>';
     for(var day=1;day<=days;day++){
       var ds=fmtJalali(year,month,day),dow=(first+day-1)%7;
       var isHol=isHolidayDow(dow);
@@ -6997,7 +7067,19 @@ function openDatepicker(e){
     var todayBtn=ev.target.closest('.dp-today-btn');
     if(day&&!day.classList.contains('empty')){input.value=day.dataset.date;closePopups();fireChange(input);}
     else if(nav){var m=v.jm+parseInt(nav.dataset.dir,10);var y=v.jy;if(m>12){m=1;y++;}if(m<1){m=12;y--;}v={jy:y,jm:m,jd:v.jd};renderDatepickerPopup(popup,y,m,input);}
-    else if(title){/* کلیک روی عنوان = باز شدن انتخاب ماه/سال بعدی */}
+    else if(title){
+      // ─── اصلاح #10: کلیک روی عنوان = انتخاب سریع سال با prompt ───
+      var y=prompt('سال را وارد کنید (۱۳۰۰-۱۵۰۰):',v.jy);
+      if(y!==null){
+        y=parseInt(toEnglishDigits(y),10);
+        if(!isNaN(y)&&y>=1300&&y<=1500){
+          v={jy:y,jm:v.jm,jd:1};
+          renderDatepickerPopup(popup,y,v.jm,input);
+        }else if(y!==0){
+          showAlert('سال نامعتبر است. بازه مجاز: ۱۳۰۰ تا ۱۵۰۰.','error');
+        }
+      }
+    }
     else if(todayBtn){var t=getTodayJalali().split('/');v={jy:parseInt(t[0]),jm:parseInt(t[1]),jd:parseInt(t[2])};renderDatepickerPopup(popup,v.jy,v.jm,input);}
   });
   renderDatepickerPopup(popup,v.jy,v.jm,input);
@@ -10005,7 +10087,7 @@ async function renderShiftCalendar(){
       h+='<th style="background:var(--c-primary);color:#fff;padding:8px;border:1px solid var(--c-border);font-size:12px">'+d+'</th>';
     });
     h+='</tr></thead><tbody><tr>';
-    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:80px"></td>';
+    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:80px" class="day-cell"></td>';
     var todayJ=getTodayJalali();
     for(var day=1;day<=days;day++){
       var ds=fmtJalali(year,month,day),dow=(first+day-1)%7;
@@ -10144,7 +10226,7 @@ async function renderDashboardCalendar(){
       h+='<th style="background:var(--c-primary);color:#fff;padding:6px;border:1px solid var(--c-border);font-size:11px">'+d+'</th>';
     });
     h+='</tr></thead><tbody><tr>';
-    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:70px"></td>';
+    for(var i=0;i<first;i++)h+='<td style="border:1px solid var(--c-border);height:70px" class="day-cell"></td>';
     for(var day=1;day<=days;day++){
       var ds=fmtJalali(year,month,day),dow=(first+day-1)%7;
       var isHol=isHolidayDow(dow);
