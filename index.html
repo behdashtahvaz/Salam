@@ -1858,6 +1858,17 @@ button,.btn{-webkit-touch-callout:none}
     </div>
     <div class="form-group"><label>تکرار رمز:</label><input type="password" id="inv_password2" dir="ltr" autocomplete="new-password"></div>
   </div>
+  <!-- ─── دسترسی‌های کاربر (در زمان ایجاد) ─── -->
+  <div class="form-group" style="background:var(--c-info-light,#d6eaf8);border:1px solid var(--c-info,#3498db);border-radius:10px;padding:12px;margin-bottom:12px">
+    <label style="color:var(--c-info,#1a5276)">🔑 دسترسی‌های اولیه کاربر</label>
+    <small style="display:block;margin-bottom:8px;color:var(--c-text-muted);font-size:11px">دسترسی‌های قابل‌تفویض به این کاربر. بعداً از فرم ویرایش قابل تغییر است.</small>
+    <div style="display:flex;flex-wrap:wrap;gap:6px 16px">
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_manage_shifts"> 📅 تقویم ماموریت (تعریف مأموریت)</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_view_reports"> 📊 گزارش کارکرد همه پرسنل</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_manage_users"> 🎫 دسترسی مدیریت کاربران (ایجاد، ویرایش، حذف)</label>
+    </div>
+    <small style="display:block;margin-top:6px;color:var(--c-text-muted);font-size:10px">🎫 با فعال‌سازی «دسترسی مدیریت کاربران»، این کاربر می‌تواند کاربران را ایجاد، ویرایش و حذف کند (مانند مدیر).</small>
+  </div>
   <button class="btn btn-success" id="btn_create_invitation">ساخت کاربر</button>
   <p><small>✅ کاربر با کد ملی و رمزی که وارد کردید ساخته می‌شود. فقط کد ملی و رمز را به او بدهید.</small></p>
   </div><!-- user_create_form -->
@@ -7668,7 +7679,10 @@ async function createInvitation(){
       password_hash:pwdHash,
       password_salt:pwdSalt,
       parent_id:parent||null,
-      can_manage_users:false,
+      // ─── دسترسی‌های اولیه از فرم ایجاد کاربر ───
+      can_manage_users:$('inv_can_manage_users')?$('inv_can_manage_users').checked:false,
+      can_manage_shifts:$('inv_can_manage_shifts')?$('inv_can_manage_shifts').checked:false,
+      can_view_reports:$('inv_can_view_reports')?$('inv_can_view_reports').checked:false,
       can_approve_leaves:canApproveLeaves,
       can_schedule_tasks:canScheduleTasks,
       declaration_mode:val('inv_declaration_mode')||'time_based',
@@ -7699,6 +7713,10 @@ async function createInvitation(){
       showAlert('✅ کاربر ساخته شد. کد ملی: '+pid+' — رمز را به کاربر بدهید.','success');
       $('inv_first_name').value='';$('inv_last_name').value='';$('inv_personnel_id').value='';$('inv_password').value='';$('inv_password2').value='';
       $('inv_strength_bar').style.width='0%';$('inv_strength_label').textContent='';
+      // ─── ریست تیک‌باکس‌های دسترسی ───
+      if($('inv_can_manage_shifts'))$('inv_can_manage_shifts').checked=false;
+      if($('inv_can_view_reports'))$('inv_can_view_reports').checked=false;
+      if($('inv_can_manage_users'))$('inv_can_manage_users').checked=false;
       await renderUsers();
     }
   }catch(e){showAlert('خطا: '+(e.message||'نامشخص'));}
