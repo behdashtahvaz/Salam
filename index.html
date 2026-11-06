@@ -2285,7 +2285,7 @@ function showMigrationGuide(){
   var overlay=document.createElement('div');
   overlay.id='migration_modal';
   overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
-  var sqlText="-- ۱. حذف محدودیت قدیمی (مهم‌ترین)\nALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;\n\n-- ۲. افزودن ستون‌های دسترسی\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_events BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;\n\n-- ۳. افزودن ستون‌های roles\nALTER TABLE roles ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT '';\nALTER TABLE roles ADD COLUMN IF NOT EXISTS station TEXT NOT NULL DEFAULT '';\n\n-- ۴. فعال‌سازی uuid (اگر فعال نیست)\nCREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";";
+  var sqlText="-- ۱. حذف محدودیت قدیمی (مهم‌ترین)\nALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;\n\n-- ۲. افزودن ستون‌های دسترسی\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_users BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_events BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;\n\n-- ۳. افزودن ستون‌های roles\nALTER TABLE roles ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT '';\nALTER TABLE roles ADD COLUMN IF NOT EXISTS station TEXT NOT NULL DEFAULT '';\n\n-- ۴. فعال‌سازی uuid (اگر فعال نیست)\nCREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";";
   overlay.innerHTML='<div style="background:#fff;border-radius:12px;padding:24px;max-width:680px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3);margin:20px auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
       '<h2 style="margin:0;color:#e74c3c;font-size:18px">⚠️ راهنمای رفع خطا</h2>'+
@@ -3465,13 +3465,19 @@ function applyRoleBasedUI(){
   var meInCache=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
   var myProfile=meInCache||currentUser.profile||{};
   var hasShiftAccess=myProfile.can_manage_shifts===true||myProfile.can_manage_shifts==='true'||myProfile.can_manage_shifts===1;
+  var hasManageUsers=myProfile.can_manage_users===true||myProfile.can_manage_users==='true'||myProfile.can_manage_users===1;
   var canShifts=isAdmin||hasShiftAccess;
+  var canManageUsers=isAdmin||hasManageUsers;
   // مدیر همیشه همه را می‌بیند
   if(isAdmin)canShifts=true;
+  if(isAdmin)canManageUsers=true;
   // shift-access: تقویم ماموریت
   document.querySelectorAll('.shift-access').forEach(function(el){if(!canShifts)el.classList.add('hidden');else el.classList.remove('hidden');});
-  // roles-access و users-access: مدیریت نقش‌ها و مدیریت کاربران
-  document.querySelectorAll('.roles-access,.users-access').forEach(function(el){if(!canShifts)el.classList.add('hidden');else el.classList.remove('hidden');});
+  // ─── اصلاح: users-access (مدیریت کاربران) مستقل از can_manage_shifts — با can_manage_users هم نمایش داده شود ───
+  // users-access: مدیریت کاربران (نیاز به can_manage_users یا isAdmin)
+  document.querySelectorAll('.users-access').forEach(function(el){if(!canManageUsers)el.classList.add('hidden');else el.classList.remove('hidden');});
+  // roles-access: مدیریت نقش‌ها (نیاز به can_manage_users یا isAdmin — چون نقش‌ها به کاربران مربوط می‌شوند)
+  document.querySelectorAll('.roles-access').forEach(function(el){if(!canManageUsers)el.classList.add('hidden');else el.classList.remove('hidden');});
   // ─── نقش هماهنگ‌کننده (واضح و مستقل) ───
   // هماهنگ‌کننده = کاربری که یکی از این‌ها را دارد:
   //   ۱. دسترسی تأیید مرخصی (can_approve_leaves)
@@ -8136,7 +8142,7 @@ function editUserDetails(userId){
       if(errMsg.indexOf('row-level security')!==-1||errMsg.indexOf('RLS')!==-1){
         showAlert('خطا: RLS روی جدول profiles فعال است.\nاین SQL را اجرا کنید:\nALTER TABLE profiles DISABLE ROW LEVEL SECURITY;','error');
       }else if(errMsg.indexOf('column')!==-1&&errMsg.indexOf('does not exist')!==-1){
-        showAlert('خطا: ستون در دیتابیس وجود ندارد.\nاین SQL را اجرا کنید:\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;','error');
+        showAlert('خطا: ستون در دیتابیس وجود ندارد.\nاین SQL را در Supabase اجرا کنید:\n\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_users BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_shifts BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT false;\nALTER TABLE profiles ADD COLUMN IF NOT EXISTS can_manage_events BOOLEAN NOT NULL DEFAULT false;','error');
       }else if(errMsg.indexOf('تغییر اعمال نشد')!==-1){
         showAlert('خطا: تغییر اعمال نشد — احتمالاً RLS فعال است.\nاین SQL را اجرا کنید:\nALTER TABLE profiles DISABLE ROW LEVEL SECURITY;','error');
       }else{
