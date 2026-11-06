@@ -1336,9 +1336,9 @@ button,.btn{-webkit-touch-callout:none}
   
   <!-- ─── نوار فیلتر حرفه‌ای ─── -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:10px;background:var(--c-bg-alt);border-radius:8px">
-    <div class="form-group" style="margin:0;flex:0 0 auto"><label style="font-size:11px">دسته:</label><select id="ann_filter_cat" onchange="renderAnnouncements()" style="padding:6px 10px;font-size:13px"><option value="">همه</option><option value="urgent">🚨 فوری</option><option value="administrative">🏢 اداری</option><option value="training">🎓 آموزشی</option><option value="occasion">🎉 مناسبت</option><option value="general">📋 عمومی</option></select></div>
-    <div class="form-group" style="margin:0;flex:1;min-width:180px"><label style="font-size:11px">جست‌وجو:</label><input type="text" id="ann_search" placeholder="در عنوان و متن..." oninput="debounceAnnSearch()" style="padding:6px 10px;font-size:13px"></div>
-    <div class="form-group" style="margin:0;flex:0 0 auto"><label style="font-size:11px">وضعیت:</label><select id="ann_filter_status" onchange="renderAnnouncements()" style="padding:6px 10px;font-size:13px"><option value="">همه</option><option value="new">📝 جدید (خوانده‌نشده)</option><option value="pinned">📌 سنجاق‌شده</option><option value="urgent">🚨 فوری</option><option value="expiring">⏳ در حال انقضا</option></select></div>
+    <div class="form-group" style="margin:0;flex:0 0 auto"><label style="font-size:11px">دسته:</label><select id="ann_filter_cat" style="padding:6px 10px;font-size:13px"><option value="">همه</option><option value="urgent">🚨 فوری</option><option value="administrative">🏢 اداری</option><option value="training">🎓 آموزشی</option><option value="occasion">🎉 مناسبت</option><option value="general">📋 عمومی</option></select></div>
+    <div class="form-group" style="margin:0;flex:1;min-width:180px"><label style="font-size:11px">جست‌وجو:</label><input type="text" id="ann_search" placeholder="در عنوان و متن..." style="padding:6px 10px;font-size:13px"></div>
+    <div class="form-group" style="margin:0;flex:0 0 auto"><label style="font-size:11px">وضعیت:</label><select id="ann_filter_status" style="padding:6px 10px;font-size:13px"><option value="">همه</option><option value="new">📝 جدید (خوانده‌نشده)</option><option value="pinned">📌 سنجاق‌شده</option><option value="urgent">🚨 فوری</option><option value="expiring">⏳ در حال انقضا</option></select></div>
   </div>
   
   <!-- ─── لیست اعلانات ─── -->
@@ -1392,9 +1392,9 @@ button,.btn{-webkit-touch-callout:none}
     <h2 style="margin:0">📝 فرم خوداظهاری روزانه</h2>
   </div>
   <div class="form-row">
-    <div class="form-group"><label>پرسنل:</label><select id="log_person_id" class="person-dropdown" onchange="syncLog()"></select></div>
+    <div class="form-group"><label>پرسنل:</label><select id="log_person_id" class="person-dropdown"></select></div>
     <div class="form-group"><label>تاریخ شمسی:</label><input type="text" id="log_date" class="date-picker" placeholder="انتخاب تاریخ" readonly></div>
-    <div class="form-group"><label>وضعیت روز:</label><select id="log_status" onchange="toggleLogFields()"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور روزانه</option><option value="absence_hourly">⏰ عدم حضور ساعتی</option><option value="overtime">⚡ اضافه‌کار</option><option value="official_record" id="opt_official" style="display:none">🔍 کارکرد رسمی (فقط مدیر)</option></select></div>
+    <div class="form-group"><label>وضعیت روز:</label><select id="log_status"><option value="normal">✅ حضور</option><option value="absence">❌ عدم حضور روزانه</option><option value="absence_hourly">⏰ عدم حضور ساعتی</option><option value="overtime">⚡ اضافه‌کار</option><option value="official_record" id="opt_official" style="display:none">🔍 کارکرد رسمی (فقط مدیر)</option></select></div>
   </div>
   <!-- بنر نمایش نوع خوداظهاری کاربر انتخاب‌شده -->
   <div id="declaration_mode_banner" style="display:none;background:var(--c-info-light);border-right:4px solid var(--c-info);padding:10px 14px;border-radius:var(--c-radius-sm);margin-bottom:12px">
@@ -1436,7 +1436,7 @@ button,.btn{-webkit-touch-callout:none}
   </div>
   <!-- ═══ عدم حضور روزانه ═══ -->
   <div id="fields_absence" class="hidden">
-    <div class="form-group"><label>نوع عدم حضور روزانه:</label><select id="absence_type" onchange="toggleAbsenceFields()">
+    <div class="form-group"><label>نوع عدم حضور روزانه:</label><select id="absence_type">
       <option value="daily_leave">📅 مرخصی روزانه</option>
       <option value="sick_leave_daily">🩺 استعلاجی روزانه</option>
       <option value="absence_no_leave">❌ غیبت (بدون مرخصی)</option>
@@ -1579,7 +1579,7 @@ button,.btn{-webkit-touch-callout:none}
   <div class="form-row" style="margin-bottom:12px">
     <div class="form-group" style="flex:0 0 auto">
       <label>نوع:</label>
-      <select id="my_tasks_type" onchange="renderMyTasks()">
+      <select id="my_tasks_type">
         <option value="all">همه مأموریت‌ها</option>
         <option value="tasks">فقط مأموریت‌های مستقل</option>
         <option value="activities">فعالیت‌ها</option>
@@ -1587,7 +1587,7 @@ button,.btn{-webkit-touch-callout:none}
     </div>
     <div class="form-group">
       <label>فیلتر وضعیت:</label>
-      <select id="my_tasks_filter" onchange="renderMyTasks()">
+      <select id="my_tasks_filter">
         <option value="pending">در انتظار مأموریت</option>
         <option value="in_progress">در حال انجام</option>
         <option value="all">همه</option>
@@ -1639,7 +1639,7 @@ button,.btn{-webkit-touch-callout:none}
     <div class="form-group"><label>پرسنل:</label><select id="rep_person" class="person-dropdown"><option value="">همه کاربران</option></select></div>
     <div class="form-group"><label>جست‌وجو:</label><input type="text" id="rec_search" placeholder="محل، علت، شرح..."></div>
     <div class="form-group"><label>نوع اظهار:</label><select id="rec_type_filter"><option value="">همه</option><option value="normal">عادی</option><option value="absence">عدم حضور</option><option value="overtime">اضافه‌کاری</option></select></div>
-    <div class="form-group"><label>نوع بازه:</label><select id="rep_type" onchange="toggleReportDates()"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly" selected>ماهانه</option><option value="custom">بازه دلخواه</option></select></div>
+    <div class="form-group"><label>نوع بازه:</label><select id="rep_type"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly" selected>ماهانه</option><option value="custom">بازه دلخواه</option></select></div>
   </div>
   <div class="form-row">
     <div class="form-group"><label>حالت نمایش:</label><select id="rep_mode" onchange="onRepModeChange()"><option value="perperson" selected>👤 نفر به نفر</option><option value="percategory">📋 دسته‌بندی (عدم حضورها/اضافه‌کاری)</option></select></div>
@@ -2529,6 +2529,10 @@ async function saveRole(){
         updated_at:new Date().toISOString()
       }).eq('role_key',editingRoleKey).select();
       if(error)throw error;
+      // ─── N7: اگر هیچ رکوردی match نشد (data=[])، موفقیت کاذب نمایش نده ───
+      if(!data||!data.length){
+        throw new Error('نقش در دیتابیس وجود ندارد. ممکن است جدول roles هنوز ایجاد نشده باشد — ابتدا فایل migration را اجرا کنید.');
+      }
       await recordAudit('update','roles',data[0]?data[0].id:null,{role_key:editingRoleKey,label:label,color:color,category:category,station:station});
       showAlert('✅ نقش «'+label+'» به‌روزرسانی شد.','success');
     }else{
@@ -2542,6 +2546,10 @@ async function saveRole(){
         created_by:currentUser?currentUser.id:null
       }).select();
       if(error)throw error;
+      // ─── N7: اگر درج موفق نبود (data=[])، موفقیت کاذب نمایش نده ───
+      if(!data||!data.length){
+        throw new Error('نقش ذخیره نشد. ممکن است جدول roles هنوز ایجاد نشده باشد — ابتدا فایل migration را اجرا کنید.');
+      }
       await recordAudit('create','roles',data[0].id,{role_key:key,label:label,category:category,station:station});
       showAlert('✅ نقش «'+label+'» با کلید «'+key+'» ایجاد شد.','success');
     }
@@ -2735,8 +2743,12 @@ async function deleteRole(roleKey){
     if(usersWithRole.length){
       try{const{error:updErr}=await sb.from('profiles').update({role:'user'}).eq('role',roleKey);if(updErr)console.warn('update users role:',updErr);}catch(e){console.warn('profiles update:',e);}
     }
-    const{error}=await sb.from('roles').delete().eq('role_key',roleKey);
+    // ─── N7: استفاده از .select() برای دریافت رکوردهای حذف‌شده و چک موفقیت کاذب ───
+    const{data,error}=await sb.from('roles').delete().eq('role_key',roleKey).select();
     if(error)throw error;
+    if(!data||!data.length){
+      throw new Error('نقش در دیتابیس وجود ندارد. ممکن است جدول roles هنوز ایجاد نشده باشد — ابتدا فایل migration را اجرا کنید.');
+    }
     await recordAudit('delete','roles',null,{role_key:roleKey,migrated_users:usersWithRole.length});
     showAlert('✅ نقش «'+r.label+'» حذف شد.'+(usersWithRole.length?(' '+usersWithRole.length+' کاربر به «پرسنل» تغییر یافتند.'):''),'success');
     await loadRoles();
@@ -2949,7 +2961,20 @@ function describeLog(l){
   return s+(x?' — '+x:'')+sickInfo+verBadge;
 }
 function statusBadge(st){return'<span class="badge badge-'+esc(st)+'">'+esc(LEAVE_STATUS[st]||STATUS_LABEL[st]||st)+'</span>';}
-function getPersonName(id){var p=cachedPersons.filter(function(x){return x.id===id;})[0];return p?p.first_name+' '+p.last_name:'نامشخص';}
+// ─── S6: نقشه کش برای جست‌جوی O(1) کاربر با ID ───
+var _personsMap={};
+function rebuildPersonsMap(){
+  _personsMap={};
+  cachedPersons.forEach(function(p){_personsMap[p.id]=p;});
+}
+function getPersonName(id){
+  var p=_personsMap[id];
+  if(!p){
+    // fallback جست‌جوی خطی اگر نقشه هنوز ساخته نشده
+    p=cachedPersons.filter(function(x){return x.id===id;})[0];
+  }
+  return p?p.first_name+' '+p.last_name:'نامشخص';
+}
 function calcDuration(s,e){
   var a=timeToMinutes(s),b=timeToMinutes(e);
   if(!isFinite(a)||!isFinite(b)||a<0||b<0)return 0;
@@ -2973,17 +2998,26 @@ function formatMins(m){
 
 /* ═════ Supabase Data Layer ═════ */
 async function loadAllPersons(){
-  try{const{data,error}=await sb.from('profiles').select('*').order('last_name').order('first_name');if(error)throw error;cachedPersons=data||[];
-    // قبل از حذف فیلدهای حساس، پروفایل کامل کاربر فعلی را از دیتابیس بگیر
+  try{
+    const{data,error}=await sb.from('profiles').select('*').order('last_name').order('first_name');
+    if(error)throw error;
+    cachedPersons=data||[];
+    // ─── N14: استفاده از clone به‌جای کوئری دوم برای پروفایل کاربر فعلی ───
+    var me=null;
     if(currentUser&&currentUser.id){
-      try{
-        const{data:fullProfile,error:fpErr}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
-        if(!fpErr&&fullProfile){currentUser.profile=fullProfile;currentRole=fullProfile.role||'user';}
-      }catch(e){}
+      me=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
     }
-    // حذف فیلدهای حساس از حافظه مرورگر
+    // حذف فیلدهای حساس از حافظه مرورگر (cachedPersons)
     cachedPersons.forEach(function(p){delete p.password_hash;delete p.password_salt;delete p.recovery_salt;});
-    return cachedPersons;}catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
+    // پروفایل کاربر فعلی: clone از me (که قبل از حذف فیلدها گرفته شده) تا password_hash/salt حفظ شود
+    if(me){
+      currentUser.profile=Object.assign({},me); // shallow clone
+      currentRole=me.role||'user';
+    }
+    // ─── S6: بازسازی نقشه persons برای جست‌جوی O(1) ───
+    if(typeof rebuildPersonsMap==='function')rebuildPersonsMap();
+    return cachedPersons;
+  }catch(e){console.error('loadAllPersons:',e);cachedPersons=[];return[];}
 }
 async function loadLogs(personId,from,to){
   try{let q=sb.from('daily_logs').select('*');if(personId)q=q.eq('user_id',personId);if(from)q=q.gte('date',from);if(to)q=q.lte('date',to);const{data,error}=await q.order('date',{ascending:false});if(error)throw error;return data||[];}catch(e){console.error('loadLogs:',e);throw e;}
@@ -3002,7 +3036,15 @@ async function saveLogToDB(log){
   try{
     var data,error;
     if(log.id&&log.id.startsWith('tmp-')){const{id,...rest}=log;({data,error}=await sb.from('daily_logs').insert(rest).select());}
-    else if(log.id){({data,error}=await sb.from('daily_logs').update({status:log.status,data:log.data}).eq('id',log.id).select());}
+    else if(log.id){
+      // ─── N4: در ویرایش، user_id و date هم ذخیره شوند (اگر تغییر کرده باشند) ───
+      var updateObj={status:log.status,data:log.data};
+      if(log.user_id!==undefined)updateObj.user_id=log.user_id;
+      if(log.date!==undefined)updateObj.date=log.date;
+      if(log.submitted_by!==undefined)updateObj.submitted_by=log.submitted_by;
+      if(log.submitted_by_name!==undefined)updateObj.submitted_by_name=log.submitted_by_name;
+      ({data,error}=await sb.from('daily_logs').update(updateObj).eq('id',log.id).select());
+    }
     else throw new Error('شناسه اظهار معتبر نیست.');
     if(error){
       var em=error.message||'';
@@ -3158,6 +3200,8 @@ function clearLocalSession(){
   // ─── پاک‌سازی همه cache‌ها برای جلوگیری از نشتی داده‌ها بین session‌ها ───
   cachedPersons=[];cachedRoles=[];cachedSubordinates=[];cachedWorkHours=[];cachedDeclModeHistory=[];
   _declModeMap=null; // ریست نقشه کش تاریخچه
+  _personsMap={}; // ریست نقشه persons
+  _lastActsFetch=0;_lastActsData=[]; // ریست کش فعالیت‌ها
   unreadNotifications=[];activeAlerts=[];pendingDiscData=null;
   rm_recipients=[];_splitParts=[];
   resetPwdTargetId=null;window._editingLogOriginal=null;sectionHistory=[];
@@ -3906,37 +3950,35 @@ async function dismissNotification(id){
 
 async function updateBadges(){
   // Skip if elements don't exist
-  if(!$('tasks_badge')&&!$('notif_badge'))return;
-  // وظایف من
-  var myTasks=await loadMyTasks('pending');
-  // وظایف + فعالیت‌ها در یک badge واحد (چون ادغام شده‌اند)
-  var myActs=await loadActiveActivitiesForCountdown();
-  var totalPending=myTasks.length+myActs.length;
+  if(!$('tasks_badge')&&!$('notif_badge')&&!$('programs_badge')&&!$('admin_approvals_badge'))return;
+  // وظایف من — فقط اگر badge موجود است
   var tb=$('tasks_badge');
   if(tb){
+    var myTasks=await loadMyTasks('pending');
+    // وظایف + فعالیت‌ها در یک badge واحد (چون ادغام شده‌اند)
+    var myActs=await loadActiveActivitiesForCountdown();
+    var totalPending=myTasks.length+myActs.length;
     if(totalPending>0){tb.textContent=totalPending;tb.classList.remove('hidden');}
     else tb.classList.add('hidden');
   }
-  // برنامه‌های فعال
-  if(currentUser.profile&&(currentUser.profile.can_create_programs||currentRole==='admin'||currentRole==='super_admin')){
+  // ─── N12: برنامه‌های فعال — فقط اگر badge موجود است ───
+  var pb=$('programs_badge');
+  if(pb&&currentUser.profile&&(currentUser.profile.can_create_programs||currentRole==='admin'||currentRole==='super_admin')){
     var myProgs=await loadPrograms();
     var activeProgs=myProgs.filter(function(p){return p.status==='active';});
-    var pb=$('programs_badge');
-    if(pb){
-      if(activeProgs.length>0){pb.textContent=activeProgs.length;pb.classList.remove('hidden');}
-      else pb.classList.add('hidden');
-    }
+    if(activeProgs.length>0){pb.textContent=activeProgs.length;pb.classList.remove('hidden');}
+    else pb.classList.add('hidden');
   }
-  // هماهنگ‌کننده/مدیر: درخواست‌های در انتظار (coordinator_pending + pending + manager_pending)
-  var isCoord=isCoordinatorRole();
-  var isAdmin=currentRole==='admin'||currentRole==='super_admin';
-  if(isCoord||isAdmin){
-    var allLeaves=await loadLeaves();
-    var coordPending=allLeaves.filter(function(l){return l.status==='coordinator_pending';}).length;
-    var adminPending=allLeaves.filter(function(l){return l.status==='pending'||l.status==='manager_pending';}).length;
-    var totalApprovals=coordPending+adminPending;
-    var ab2=$('admin_approvals_badge');
-    if(ab2){
+  // ─── N12: هماهنگ‌کننده/مدیر: درخواست‌های در انتظار — فقط اگر badge موجود است ───
+  var ab2=$('admin_approvals_badge');
+  if(ab2){
+    var isCoord=isCoordinatorRole();
+    var isAdmin=currentRole==='admin'||currentRole==='super_admin';
+    if(isCoord||isAdmin){
+      var allLeaves=await loadLeaves();
+      var coordPending=allLeaves.filter(function(l){return l.status==='coordinator_pending';}).length;
+      var adminPending=allLeaves.filter(function(l){return l.status==='pending'||l.status==='manager_pending';}).length;
+      var totalApprovals=coordPending+adminPending;
       if(totalApprovals>0){ab2.textContent=totalApprovals;ab2.classList.remove('hidden');}
       else ab2.classList.add('hidden');
     }
@@ -4498,10 +4540,10 @@ function showDayDetail(dateStr,personId){
   // بارگذاری داده‌ها
   (async function(){
     try{
-      // ۱) مناسبت‌ها و رویدادها
+      // ۱) مناسبت‌ها و رویدادها — فقط همان سال (N8)
       var dayEvents=[];
       try{
-        const{data,error}=await sb.from('calendar_events').select('*');
+        const{data,error}=await sb.from('calendar_events').select('*').eq('event_year',p.jy);
         if(!error)dayEvents=(data||[]).filter(function(e){
           try{return e.date===dateStr||normJ(e.date)===dateStr;}catch(x){return false;}
         });
@@ -5730,6 +5772,14 @@ async function savePresenceAndShowDiscrepancies(){
   var personId=$('log_person_id')?$('log_person_id').value:'';
   if(!entryT||!exitT||!dateStr||!personId){showAlert('ساعت ورود، خروج، تاریخ و پرسنل الزامی است.','error');return;}
   if(entryT==='--:--'||exitT==='--:--'){showAlert('ساعت ورود و خروج را انتخاب کنید.','error');return;}
+  // ─── N6: اعتبارسنجی تاریخ شمسی ───
+  if(!isValidJalaliDate(dateStr)){showAlert('تاریخ نامعتبر است.','error');return;}
+  // ─── N5: چک personMode — کاربر در حالت کارت‌زنی نباید از این فرم ثبت کند ───
+  var personMode=getPersonDeclarationMode(personId,dateStr);
+  if(personMode!=='time_based'){
+    showAlert('این کاربر در حالت کارت‌زنی (مکمل) است — ثبت حضور از این فرم مجاز نیست. برای ویرایش از دکمه ویرایش در لیست رکوردها استفاده کنید.','error');
+    return;
+  }
   if(!validateTimeOrder(entryT,exitT,'ساعات ورود/خروج'))return;
   // ─── هشدار روز غیر کاری (پنجشنبه، جمعه، یا تعطیل رسمی) ───
   var dateP=parseJalali(dateStr);
@@ -5769,8 +5819,15 @@ async function savePresenceAndShowDiscrepancies(){
       existingNormal=existing.filter(function(l){return l.status==='normal';})[0];
       existingOfficial=existing.filter(function(l){return l.status==='official_record';})[0];
     }
-    // ─── اگر رکورد official_record موجود است، آپدیت کن (نه اضافه‌کردن رکورد normal جدا) ───
-    var useRecord=existingNormal||existingOfficial;
+    // ─── N2: اگر رکورد official_record موجود است، نباید با این فرم بازنویسی شود ───
+    // (تخریب فیلدهای official_status، verification_status، official_note و...)
+    if(existingOfficial){
+      showAlert('⚠️ این روز دارای کارکرد رسمی است. برای ویرایش از دکمه ویرایش در لیست رکوردها استفاده کنید.','error');
+      hideLoading();
+      return;
+    }
+    // ─── اگر رکورد normal موجود است، آپدیت کن (نه اضافه‌کردن رکورد normal جدا) ───
+    var useRecord=existingNormal;
     var presenceLog;
     if(useRecord){
       // رکورد موجود → آپدیت
@@ -5778,7 +5835,7 @@ async function savePresenceAndShowDiscrepancies(){
         id:useRecord.id,  // آی‌دی موجود → saveLogToDB آن را به‌عنوان آپدیت شناسایی می‌کند
         user_id:personId,
         date:normJ(dateStr),
-        status:useRecord.status, // حفظ وضعیت قبلی (normal یا official_record)
+        status:'normal',
         data:{discrepancy:'',fields:{entry_time:entryT,exit_time:exitT,topic:topic}}
       };
     }else{
@@ -6092,6 +6149,8 @@ async function saveDailyLog(){
       var oeT=$('official_entry_time').value,oxT=$('official_exit_time').value;
       if(!need(oeT&&oxT,'ساعت ورود و خروج رسمی الزامی است.'))return;
       if(!validateTimeOrder(oeT,oxT,'ساعات رسمی'))return;
+      // ─── N9: بررسی تداخل زمانی برای کارکرد رسمی با ساعت‌دار ───
+      if(!await checkTimeOverlap(actualPersonId,dateStr,oeT,oxT,'کارکرد رسمی'))return;
       f.official_entry_time=oeT;f.official_exit_time=oxT;
       s=oeT;e=oxT;
     }else if(os==='mission'){
@@ -7064,18 +7123,12 @@ async function renderMyTasks(){
     if(type==='all'||type==='tasks'){
       var tasks;
       if(supervisorMode&&subIds.length>0){
-        // ─── اصلاح N+1: یک کوئری in() به‌جای حلقه (P15/N15) ───
-        tasks=await loadMyTasks('all'); // وظایف خودش
+        // ─── N13: فقط یک کوئری in() شامل خود + زیرمجموعه‌ها (حذف loadMyTasks تکراری) ───
         try{
           var allIds=[currentUser.id].concat(subIds);
           const{data,error}=await sb.from('tasks').select('*').in('assignee_id',allIds);
-          if(!error&&data){
-            // حذف تکراری‌ها (وظایف خودش قبلاً بارگذاری شده)
-            var existingIds={};
-            tasks.forEach(function(t){existingIds[t.id]=true;});
-            data.forEach(function(t){if(!existingIds[t.id])tasks.push(t);});
-          }
-        }catch(e){console.warn('load tasks for subordinates:',e);}
+          tasks=error?[]:(data||[]);
+        }catch(e){console.warn('load tasks for subordinates:',e);tasks=[];}
       }else{
         tasks=await loadMyTasks('all');
       }
@@ -7462,6 +7515,8 @@ async function createInvitation(){
   if(!password){showAlert('رمز عبور الزامی است.');return;}
   if(password!==password2){showAlert('رمز و تکرار آن یکسان نیستند.');return;}
   if(!isPasswordStrong(password)){showAlert('رمز خیلی کوتاه است. حداقل ۴ کاراکتر وارد کنید.');return;}
+  // ─── N1: چک نقش خالی — جلوگیری از ساخت کاربر بدون نقش ───
+  if(!role){showAlert('نقش را انتخاب کنید.','error');return;}
   if(currentRole!=='admin'&&currentRole!=='super_admin'){showAlert('دسترسی غیرمجاز.');return;}
   // مدیر (بدون تفویض) فقط می‌تواند کاربر عادی بسازد
   if(currentRole==='admin'&&!currentUser.profile.can_manage_users&&role!=='user'){showAlert('مدیر بدون تفویض اختیار فقط می‌تواند کاربر عادی بسازد.');return;}
@@ -8399,13 +8454,13 @@ function openMissingDayDiscrepancy(){
         var log=existing[0];
         var logData=log.data||{};
         logData.discrepancy=text;
+        // ─── N3: saveLogToDB داخلاً recordAudit با شناسه واقعی انجام می‌دهد — نیازی به recordAudit خارجی نیست ───
         await saveLogToDB({id:log.id,user_id:log.user_id,date:log.date,status:log.status,data:logData});
-        await recordAudit('update','daily_logs',log.id,{discrepancy:text,reason:'missing_day_discrepancy'});
       }else{
         // رکورد وجود ندارد → رکورد جدید با وضعیت normal و مغایرت بساز
         var newLog={id:'tmp-'+genUUID(),user_id:userId,date:normJ(dateStr),status:'normal',data:{discrepancy:text,fields:{}},submitted_by:currentUser.id,submitted_by_name:currentUser.profile.first_name+' '+currentUser.profile.last_name};
-        var saved=await saveLogToDB(newLog);
-        await recordAudit('create','daily_logs',saved?saved.id:'unknown',{user_id:userId,date:dateStr,discrepancy:text,reason:'missing_day_discrepancy'});
+        // ─── N3: saveLogToDB داخلاً recordAudit انجام می‌دهد — نیازی به recordAudit خارجی نیست ───
+        await saveLogToDB(newLog);
       }
       // ارسال اعلان به کاربر
       var managerName=currentUser.profile.first_name+' '+currentUser.profile.last_name;
@@ -8472,8 +8527,8 @@ async function quickDiscrepancyNotify(logId){
       // ذخیره مغایرت در لاگ
       var logData=log.data||{};
       logData.discrepancy=text;
+      // ─── N3: saveLogToDB داخلاً recordAudit انجام می‌دهد — نیازی به recordAudit خارجی نیست ───
       await saveLogToDB({id:logId,user_id:log.user_id,date:log.date,status:log.status,data:logData});
-      await recordAudit('update','daily_logs',logId,{discrepancy:text});
       // ارسال اعلان به کاربر
       var managerName=currentUser.profile.first_name+' '+currentUser.profile.last_name;
       var dateDisplay=log.date+' ('+dayName(log.date)+')';
@@ -8965,8 +9020,21 @@ async function loadMyActivities(){
   try{const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',currentUser.id).order('deadline',{ascending:true});if(error)throw error;return data||[];}catch(e){console.error('loadMyActivities:',e);return[];}
 }
 // بارگذاری فعالیت‌های فعال برای نوار شمارش معکوس (pending + در جریان + تأخیر)
+// ─── N11: کش ۳ ثانیه‌ای برای جلوگیری از کوئری تکراری در هر بار refresh داشبورد/badges ───
+var _lastActsFetch=0;
+var _lastActsData=[];
 async function loadActiveActivitiesForCountdown(){
-  try{const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',currentUser.id).in('status',['pending','in_progress']).order('deadline',{ascending:true});if(error)throw error;return data||[];}catch(e){console.error('loadActiveActivities:',e);return[];}
+  // کش: اگر در ۳ ثانیه اخیر بارگذاری شده، از کش استفاده کن
+  if(Date.now()-_lastActsFetch<3000&&_lastActsData.length>=0){
+    return _lastActsData;
+  }
+  try{
+    const{data,error}=await sb.from('program_activities').select('*,programs!inner(id,title)').eq('assignee_id',currentUser.id).in('status',['pending','in_progress']).order('deadline',{ascending:true});
+    if(error)throw error;
+    _lastActsData=data||[];
+    _lastActsFetch=Date.now();
+    return _lastActsData;
+  }catch(e){console.error('loadActiveActivities:',e);return[];}
 }
 
 async function createProgram(){
@@ -11032,6 +11100,7 @@ function init(){
   delegate('daily_logs_list_container',function(a,id){if(a==='edit')editLog(id);else if(a==='delete')deleteLog(id);});
   // leave_req bindings حذف شدند — بخش leave_req از HTML حذف شده
   on('my_tasks_filter','change',renderMyTasks);
+  on('my_tasks_type','change',renderMyTasks);
   // my_act_filter: ادغام‌شده در my_tasks — دیگر مستقل نیست
   on('btn_create_program','click',createProgram);
   on('btn_reset_program','click',resetProgramForm);
@@ -11064,7 +11133,9 @@ function init(){
   on('btn_save_ann','click',saveAnnouncement);
   on('btn_reset_ann','click',resetAnnouncementForm);
   on('ann_filter_cat','change',renderAnnouncements);
-  on('ann_search','input',renderAnnouncements);
+  on('ann_filter_status','change',renderAnnouncements);
+  // ─── N15: ann_search از debounce استفاده می‌کند (نه فوری) ───
+  on('ann_search','input',debounceAnnSearch);
   // Calendar Events
   on('btn_upload_events','click',uploadEventsExcel);
   on('btn_download_template','click',downloadEventsTemplate);
