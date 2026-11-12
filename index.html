@@ -1245,7 +1245,7 @@ button,.btn{-webkit-touch-callout:none}
       <div class="nav-group-title toggle-title" onclick="toggleNavSection2(this)">🎯 وظایف و مأموریت‌ها <span class="nav-chevron">▾</span></div>
       <div class="nav-section-body">
         <button class="nav-item" data-target="my_tasks"><span class="ico">✅</span><span class="lbl">وظایف من</span><span class="nav-badge hidden" id="tasks_badge">۰</span></button>
-        <button class="nav-item shift-access" data-target="shift_schedule"><span class="ico">🗓️</span><span class="lbl">تقویم ماموریت</span></button>
+        <button class="nav-item shift-access" data-target="shift_schedule"><span class="ico">🗓️</span><span class="lbl">تقویم مأموریت</span></button>
 
       </div>
     </div>
@@ -1585,12 +1585,12 @@ button,.btn{-webkit-touch-callout:none}
 
 <!-- بخش درخواست مرخصی حذف شد -->
 
-<!-- ═══ تقویم ماموریت — تقویم خام برای تخصیص مأموریت ═══ -->
+<!-- ═══ تقویم مأموریت — تقویم خام برای تخصیص مأموریت ═══ -->
 <div id="section-shift_schedule" class="card hidden">
-  <h2>📅 تقویم ماموریت</h2>
+  <h2>📅 تقویم مأموریت</h2>
   <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:16px;line-height:1.7">
     روی هر روز کلیک کنید تا مشخص کنید چه کسی، کجا، چه کاری و در چه ساعتی انجام دهد. مأموریت‌های ثبت‌شده در کارکرد پرسنل و تقویم ماهانه هر نفر نمایش داده می‌شوند و به‌صورت خودکار برایشان پیام ارسال می‌شود.<br>
-    <b>دسترسی:</b> این بخش مختص مدیر و کاربرانی است که مدیر دسترسی «📅 تقویم ماموریت» را به آن‌ها تفویض کرده باشد.
+    <b>دسترسی:</b> این بخش مختص مدیر و کاربرانی است که مدیر دسترسی «📅 تقویم مأموریت» را به آن‌ها تفویض کرده باشد.
   </p>
   <div class="form-row" style="align-items:flex-end;margin-bottom:12px">
     <div class="form-group" style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
@@ -1870,7 +1870,7 @@ button,.btn{-webkit-touch-callout:none}
     <label style="color:var(--c-info,#1a5276)">🔑 دسترسی‌های اولیه کاربر</label>
     <small style="display:block;margin-bottom:8px;color:var(--c-text-muted);font-size:11px">دسترسی‌های قابل‌تفویض به این کاربر. بعداً از فرم ویرایش قابل تغییر است.</small>
     <div style="display:flex;flex-wrap:wrap;gap:6px 16px">
-      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_manage_shifts"> 📅 تقویم ماموریت (تعریف مأموریت)</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_manage_shifts"> 📅 تقویم مأموریت (تعریف مأموریت)</label>
       <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_view_reports"> 📊 گزارش کارکرد همه پرسنل</label>
       <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="inv_can_manage_users"> 🎫 دسترسی مدیریت کاربران (ایجاد، ویرایش، حذف)</label>
     </div>
@@ -3472,7 +3472,7 @@ function applyRoleBasedUI(){
   // events-access: admin/super_admin یا کاربر با can_manage_events
   var canEvents=isAdmin||(currentUser.profile&&currentUser.profile.can_manage_events);
   document.querySelectorAll('.events-access').forEach(function(el){el.classList.toggle('hidden',!canEvents);});
-  // ─── دسترسی‌های قابل تفویض: تقویم ماموریت، مدیریت نقش‌ها، مدیریت کاربران ───
+  // ─── دسترسی‌های قابل تفویض: تقویم مأموریت، مدیریت نقش‌ها، مدیریت کاربران ───
   var meInCache=cachedPersons.filter(function(p){return p.id===currentUser.id;})[0];
   var myProfile=meInCache||currentUser.profile||{};
   var hasShiftAccess=myProfile.can_manage_shifts===true||myProfile.can_manage_shifts==='true'||myProfile.can_manage_shifts===1;
@@ -3482,7 +3482,7 @@ function applyRoleBasedUI(){
   // مدیر همیشه همه را می‌بیند
   if(isAdmin)canShifts=true;
   if(isAdmin)canManageUsers=true;
-  // shift-access: تقویم ماموریت
+  // shift-access: تقویم مأموریت
   document.querySelectorAll('.shift-access').forEach(function(el){if(!canShifts)el.classList.add('hidden');else el.classList.remove('hidden');});
   // ─── اصلاح: users-access (مدیریت کاربران) مستقل از can_manage_shifts — با can_manage_users هم نمایش داده شود ───
   // users-access: مدیریت کاربران (نیاز به can_manage_users یا isAdmin)
@@ -4760,7 +4760,7 @@ function showDayDetail(dateStr,personId){
       }else{
         html+='<p style="margin-top:8px;font-size:12px;color:var(--c-text-muted)">سوپرادمین ثبت کارکرد ثبت نمی‌کند.</p>';
       }
-      // دکمه ساخت مأموریت برای این روز — فقط مدیر یا کاربر با دسترسی تقویم ماموریت
+      // دکمه ساخت مأموریت برای این روز — فقط مدیر یا کاربر با دسترسی تقویم مأموریت
       var todayTs2=jalaliToTimestamp(getTodayJalali());
       if(jalaliToTimestamp(dateStr)>=todayTs2&&_canManageShifts){
         html+='<button class="btn btn-sm btn-info" style="margin-top:8px;margin-right:8px" onclick="closeDayDetail();createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>';
@@ -4772,7 +4772,7 @@ function showDayDetail(dateStr,personId){
       html+='<div style="border-top:1px solid var(--c-border);padding-top:16px;margin-bottom:16px">';
       html+='<h3 style="margin:0 0 8px;font-size:15px">👥 همکاران — عدم حضور این روز</h3>';
       if(!colleagueAbsences.length){
-        html+='<p style="color:var(--c-text-muted);font-size:13px;padding:8px 0">✅ عدم حضری توسط همکاران برای این روز ثبت نشده است.</p>';
+        html+='<p style="color:var(--c-text-muted);font-size:13px;padding:8px 0">✅ عدم حضور توسط همکاران برای این روز ثبت نشده است.</p>';
       }else{
         html+='<div style="font-size:12px;color:var(--c-text-muted);margin-bottom:8px">'+colleagueAbsences.length+' همکار:</div>';
         colleagueAbsences.forEach(function(a){
@@ -4859,7 +4859,7 @@ async function saveManualEvent(dateStr,year){
 }
 // ═══ ساخت مأموریت مستقیم روی یک روز (بدون برنامه) ═══
 function createDayMission(dateStr){
-  // فقط مدیر یا کاربر با دسترسی تقویم ماموریت می‌تواند مأموریت بسازد
+  // فقط مدیر یا کاربر با دسترسی تقویم مأموریت می‌تواند مأموریت بسازد
   var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
   if(!canManageShifts){
     showAlert('شما دسترسی تعریف مأموریت ندارید.','error');
@@ -7520,7 +7520,7 @@ async function completeTask(id){
 /* ═════ Coordinator: مدیریت وظایف زیرمجموعه — حذف شد ═════ */
 /* توابع createTask, renderCoordinatorTasks, cancelTask حذف شدند.
    بخش coordinator_tasks از HTML و سایدبار حذف شده است.
-   تعریف مأموریت اکنون از طریق «تقویم ماموریت» → createDayMission انجام می‌شود. */
+   تعریف مأموریت اکنون از طریق «تقویم مأموریت» → createDayMission انجام می‌شود. */
 
 /* ═════ Admin approvals (تأیید نهایی با قابلیت partial) ═════ */
 async function renderApprovals(){
@@ -8087,7 +8087,7 @@ function editUserDetails(userId){
       '<label style="color:var(--c-info,#1a5276)">🔑 دسترسی‌های کاربر</label>'+
       '<small style="display:block;margin-bottom:8px;color:var(--c-text-muted);font-size:11px">دسترسی‌های قابل‌تفویض به این کاربر. تغییرات با ذخیره اعمال می‌شود.</small>'+
       '<div style="display:flex;flex-wrap:wrap;gap:6px 16px">'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_shifts" '+(p.can_manage_shifts?'checked':'')+'> 📅 تقویم ماموریت (تعریف مأموریت)</label>'+
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_shifts" '+(p.can_manage_shifts?'checked':'')+'> 📅 تقویم مأموریت (تعریف مأموریت)</label>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_view_reports" '+(p.can_view_reports?'checked':'')+'> 📊 گزارش کارکرد همه پرسنل</label>'+
         (isAdmin?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_manage_users" '+(p.can_manage_users?'checked':'')+'> 🎫 دسترسی مدیریت کاربران (ایجاد، ویرایش، حذف)</label>':'')+
         (currentDisplayRole==='guest'?'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="ed_can_log" '+(p.can_log?'checked':'')+'> 📝 ثبت کارکرد</label>':'')+
@@ -8183,7 +8183,7 @@ function editUserDetails(userId){
         updates.can_schedule_tasks=false;
       }
     }
-    // دسترسی‌های ساده‌شده — تقویم ماموریت، گزارش، و مدیریت کاربران
+    // دسترسی‌های ساده‌شده — تقویم مأموریت، گزارش، و مدیریت کاربران
     var newCanShifts=$('ed_can_manage_shifts')?$('ed_can_manage_shifts').checked:false;
     var oldCanShifts=p.can_manage_shifts||false;
     if(newCanShifts!==oldCanShifts){
@@ -9401,7 +9401,7 @@ async function showColleaguesAbsencePopup(){
   if(!absences.length){
     html+='<div style="text-align:center;padding:20px;color:var(--c-text-muted);font-size:13px">'+
       '<div style="font-size:36px;margin-bottom:8px">✅</div>'+
-      'همه همکاران امروز در مرکز حضور دارند<br>یا عدم حضری ثبت نشده است.</div>';
+      'همه همکاران امروز در مرکز حضور دارند<br>یا عدم حضور ثبت نشده است.</div>';
   }else{
     html+='<div style="font-size:12px;color:var(--c-text-muted);margin-bottom:12px">'+absences.length+' همکار امروز عدم حضور ثبت کرده‌اند:</div>';
     absences.forEach(function(a){
@@ -10316,7 +10316,7 @@ function clearProgramReportFilters(){
 
 
 // تقویم ماهانه در داشبورد — نمایش همه کارها و اطلاعات
-// ═════ تقویم ماموریت — تقویم خام برای تخصیص مأموریت ═════
+// ═════ تقویم مأموریت — تقویم خام برای تخصیص مأموریت ═════
 function shiftCalNav(dir){
   var m=parseInt($('shift_cal_month').value,10);
   var y=parseInt($('shift_cal_year').value,10);
@@ -10403,7 +10403,7 @@ async function renderShiftCalendar(){
         var personName=getPersonName(t.assignee_id);
         cellContent+='<div style="font-size:9px;color:'+stColor+';margin-top:1px;padding:1px 3px;border-radius:3px;background:'+var_c_info_light+';cursor:pointer;border-right:2px solid '+stColor+'" onclick="event.stopPropagation();editShiftTask(\''+t.id+'\')">'+stIcon+' '+esc(personName.split(' ')[0])+' '+esc(timeStr)+'</div>';
       });
-      // دکمه افزودن مأموریت (فقط برای روزهای آینده و فقط مدیر یا کاربر با دسترسی تقویم ماموریت)
+      // دکمه افزودن مأموریت (فقط برای روزهای آینده و فقط مدیر یا کاربر با دسترسی تقویم مأموریت)
       var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
       if(!isPast&&canManageShifts){
         cellContent+='<div style="margin-top:2px"><button class="btn btn-sm" style="padding:2px 8px;font-size:10px;min-height:auto" onclick="event.stopPropagation();createDayMission(\''+ds+'\')">➕</button></div>';
@@ -10430,7 +10430,7 @@ async function renderShiftCalendar(){
     c.innerHTML=h;
   }catch(e){c.innerHTML='<p>خطا: '+esc(e.message)+'</p>';}
 }
-// ویرایش/حذف مأموریت از تقویم ماموریت (فقط مدیر یا کاربر با دسترسی can_manage_shifts)
+// ویرایش/حذف مأموریت از تقویم مأموریت (فقط مدیر یا کاربر با دسترسی can_manage_shifts)
 async function editShiftTask(taskId){
   var canManageShifts=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_manage_shifts);
   if(!canManageShifts){showAlert('شما دسترسی ویرایش/حذف مأموریت ندارید.','error');return;}
