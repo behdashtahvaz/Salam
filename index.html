@@ -10797,13 +10797,36 @@ async function loadMyAnnouncementViews(){
   try{
     const{data,error}=await sb.from('announcement_views').select('announcement_id').eq('user_id',currentUser.id);
     if(error)throw error;
-    return new Set((data||[]).map(function(v){return v.announcement_id;}));
-  }catch(e){return new Set();}
+    var dbSet=new Set((data||[]).map(function(v){return v.announcement_id;}));
+    // ─── ادغام با کش محلی (sessionStorage) ───
+    if(_viewedAnnIds){
+      Object.keys(_viewedAnnIds).forEach(function(id){dbSet.add(id);});
+    }
+    return dbSet;
+  }catch(e){
+    // اگر DB کار نکرد، فقط کش محلی را برگردان
+    var localSet=new Set();
+    if(_viewedAnnIds){
+      Object.keys(_viewedAnnIds).forEach(function(id){localSet.add(id);});
+    }
+    return localSet;
+  }
 }
 
 async function markAnnouncementSeen(id){
-  try{await sb.from('announcement_views').upsert({announcement_id:id,user_id:currentUser.id},{onConflict:'announcement_id,user_id'});}catch(e){}
+  // ─── کش محلی: حتی اگر DB کار نکرد، اعلان خوانده‌شده بماند ───
+  if(!_viewedAnnIds)_viewedAnnIds={};
+  _viewedAnnIds[id]=true;
+  try{sessionStorage.setItem('viewed_announcements',JSON.stringify(Object.keys(_viewedAnnIds)));}catch(e){}
+  // تلاش برای ذخیره در DB
+  try{await sb.from('announcement_views').upsert({announcement_id:id,user_id:currentUser.id},{onConflict:'announcement_id,user_id'});}catch(e){console.warn('markAnnouncementSeen failed (cached locally):',e);}
 }
+// ─── کش محلی اعلانات دیده‌شده ───
+var _viewedAnnIds={};
+try{
+  var _savedAnn=JSON.parse(sessionStorage.getItem('viewed_announcements')||'[]');
+  _savedAnn.forEach(function(id){_viewedAnnIds[id]=true;});
+}catch(e){}
 
 // ─── debounce برای جست‌وجوی اعلانات ───
 var _annSearchTimer=null;
