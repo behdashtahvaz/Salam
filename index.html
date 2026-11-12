@@ -3811,7 +3811,7 @@ function showSearchResults(results){
   results.forEach(function(p){
     var item=document.createElement('div');
     item.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--c-border)';
-    item.textContent=p.first_name+' '+p.last_name+' - '+p.personnel_id;
+    item.textContent=p.first_name+' '+p.last_name+' ('+getRoleLabel(p.role)+')';
     item.onmouseover=function(){this.style.background='var(--c-primary-light)';};
     item.onmouseout=function(){this.style.background='';};
     item.onclick=function(){
@@ -3921,7 +3921,7 @@ function showForwardBox(notifId){
     var o='<option value="">انتخاب کاربر...</option>';
     cachedPersons.forEach(function(p){
       if(p.id!==currentUser.id){
-        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';
       }
     });
     sel.innerHTML=o;
@@ -4243,7 +4243,7 @@ function populateAssigneeDropdown(dropdownId){
       }else{
         o+='<optgroup label="——— سایر کاربران ———">';
         coordinators.forEach(function(p){
-          o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+          o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';
         });
         o+='</optgroup>';
       }
@@ -4251,7 +4251,7 @@ function populateAssigneeDropdown(dropdownId){
       o+='<optgroup label="——— هماهنگ‌کننده‌ها ———">';
       coordinators.forEach(function(p){
         var subCount=cachedPersons.filter(function(s){return s.parent_id===p.id;}).length;
-        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+(subCount?' ('+subCount+' زیرمجموعه)':'')+'</option>';
+        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+(subCount?'، '+subCount+' زیرمجموعه)':')')+'</option>';
       });
       o+='</optgroup>';
     }
@@ -4262,7 +4262,7 @@ function populateAssigneeDropdown(dropdownId){
     }else{
       o+='<optgroup label="——— زیرمجموعه‌های شما ———">';
       cachedSubordinates.forEach(function(p){
-        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+        o+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';
       });
       o+='</optgroup>';
     }
@@ -4306,13 +4306,13 @@ function populatePersonDropdown(dropdownId,autoFirst){
     var others=persons.filter(function(p){return p.id!==currentUser.id;});
     var o='';
     if(me.length){
-      o+='<option value="'+esc(me[0].id)+'">'+esc(me[0].first_name+' '+me[0].last_name+' - '+me[0].personnel_id)+' 👤</option>';
+      o+='<option value="'+esc(me[0].id)+'">'+esc(me[0].first_name+' '+me[0].last_name)+' ('+esc(getRoleLabel(me[0].role))+') 👤</option>';
     }
     if(others.length){
       // ─── اصلاح N12: «تفویض‌شده‌ها» یادگار حذف‌شده است، برچسب صحیح «سایر پرسنل» ───
       o+='<optgroup label="——— سایر پرسنل ———">';
       others.forEach(function(p){
-        o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+        o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';
       });
       o+='</optgroup>';
     }
@@ -4359,7 +4359,7 @@ function populateRecipientDropdown(){
     var o='<option value="">— انتخاب کاربر —</option>';
     cachedPersons.filter(function(p){return p.id!==currentUser.id;}).forEach(function(p){
       var roleLabel=p.role==='admin'?' [مدیر]':p.role==='super_admin'?' [سوپرادمین]':isCoordinatorRole()&&p.role==='user'?'':'';
-      o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleLabel+'</option>';
+      o+='<option value="'+esc(p.id)+'">'+esc(p.first_name+' '+p.last_name)+roleLabel+'</option>';
     });
     select.innerHTML=o;
   }
@@ -4781,7 +4781,7 @@ function showDayDetail(dateStr,personId){
           html+='<div style="background:'+bg+';border-right:3px solid '+border+';border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px">'+
             '<div style="display:flex;justify-content:space-between;align-items:center">'+
               '<div style="font-weight:600">'+a.icon+' '+esc(a.name)+'</div>'+
-              '<div style="font-size:10px;color:var(--c-text-muted)">'+esc(a.personnelId)+'</div>'+
+              '<div style="font-size:10px;color:var(--c-text-muted);background:var(--c-card);padding:2px 6px;border-radius:6px">'+esc(a.roleLabel||'')+'</div>'+
             '</div>'+
             '<div style="color:var(--c-text);margin-top:2px">'+esc(a.type)+(a.time?' — '+a.time:'')+'</div>'+
             (a.reason?'<div style="font-size:11px;color:var(--c-text-muted);margin-top:1px">'+esc(a.reason)+'</div>':'')+
@@ -6682,7 +6682,6 @@ function renderHierarchyTree(){
     if(person.role==='user'&&(person.can_approve_leaves||person.can_schedule_tasks))roleLabel='مسئول واحد';
     var h='<div style="margin-right:'+indent+'px;padding:6px 10px;border-right:2px solid var(--c-border);margin-bottom:4px">';
     h+='<span style="font-weight:700">'+esc(person.first_name+' '+person.last_name)+'</span>';
-    h+=' <span style="font-size:11px;color:var(--c-text-muted)">('+esc(person.personnel_id)+')</span>';
     h+=' <span class="badge badge-'+(person.role==='admin'?'admin':'normal')+'" style="font-size:10px">'+esc(roleLabel)+'</span>';
     h+=' <span style="font-size:11px">'+modeIcon+'</span>';
     if(depth===0)h+=' <span style="font-size:10px;color:var(--c-info)">🌟 سرشاخه</span>';
@@ -6703,13 +6702,13 @@ function populateHierarchyDropdowns(){
   var uo='<option value="">— انتخاب کاربر —</option>';
   users.forEach(function(p){
     var roleTag=p.role==='admin'?' [مدیر]':p.can_approve_leaves?' [مسئول واحد]':'';
-    uo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
+    uo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+roleTag+'</option>';
   });
   userSel.innerHTML=uo;
   var po='<option value="">— سرشاخه (بدون والد) —</option>';
   users.forEach(function(p){
     var roleTag=p.role==='admin'?' [مدیر]':p.can_approve_leaves?' [مسئول واحد]':'';
-    po+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+roleTag+'</option>';
+    po+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+roleTag+'</option>';
   });
   parentSel.innerHTML=po;
   var declSel=$('decl_mode_user');
@@ -7689,7 +7688,7 @@ async function renderMsgArchive(){
       // ─── حفظ فیلتر قبلی هنگام رندر مجدد (N13) ───
       var prevFilter=filterSel.value;
       var fo='<option value="">همه</option><option value="broadcast">عمومی</option>';
-      cachedPersons.forEach(function(p){fo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+'</option>';});
+      cachedPersons.forEach(function(p){fo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';});
       filterSel.innerHTML=fo;
       if(prevFilter)filterSel.value=prevFilter;
     }
@@ -9372,6 +9371,7 @@ async function loadDayColleagueAbsences(dateStr){
         userId:person.id,
         name:person.first_name+' '+person.last_name,
         personnelId:person.personnel_id,
+        roleLabel:getRoleLabel(person.role),
         type:typeLabel,
         icon:icon,
         time:timeStr,
@@ -9410,7 +9410,7 @@ async function showColleaguesAbsencePopup(){
       html+='<div style="background:'+bg+';border-right:3px solid '+border+';border-radius:8px;padding:10px 12px;margin-bottom:8px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center">'+
           '<div style="font-weight:600;font-size:13px">'+a.icon+' '+esc(a.name)+'</div>'+
-          '<div style="font-size:11px;color:var(--c-text-muted)">'+esc(a.personnelId)+'</div>'+
+          '<div style="font-size:10px;color:var(--c-text-muted);background:var(--c-card);padding:2px 8px;border-radius:8px">'+esc(a.roleLabel||'')+'</div>'+
         '</div>'+
         '<div style="font-size:12px;color:var(--c-text);margin-top:4px">'+esc(a.type)+(a.time?' — '+a.time:'')+'</div>'+
         (a.reason?'<div style="font-size:11px;color:var(--c-text-muted);margin-top:2px">'+esc(a.reason)+'</div>':'')+
@@ -9994,7 +9994,7 @@ function populateProgramReportFilters(){
   if(userSel){
     var uo='<option value="">همه کاربران</option>';
     cachedPersons.forEach(function(p){
-      uo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name+' - '+p.personnel_id)+'</option>';
+      uo+='<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' ('+esc(getRoleLabel(p.role))+')</option>';
     });
     userSel.innerHTML=uo;
   }
