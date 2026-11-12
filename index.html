@@ -2181,7 +2181,10 @@ button,.btn{-webkit-touch-callout:none}
   <div class="notif-modal-box">
     <div class="notif-modal-header">
       <div>📢 شما پیام‌های ناخوانده دارید</div>
-      <button class="btn btn-sm" onclick="$('notif_modal').classList.add('hidden')" title="بستن">✕</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-success" onclick="dismissAllNotifications()" title="همه را خوانده‌شده علامت بزن">✅ تأیید همه</button>
+        <button class="btn btn-sm" onclick="$('notif_modal').classList.add('hidden')" title="بستن">✕</button>
+      </div>
     </div>
     <div class="notif-modal-body" id="notif_modal_body"></div>
   </div>
@@ -4030,6 +4033,35 @@ async function dismissNotification(id){
   if(unreadNotifications.length===0)$('notif_modal').classList.add('hidden');
   else showNotificationsModal();
   updateNotifBadge();
+}
+// ═══ تأیید همه و بستن — همه پیام‌های ناخوانده را خوانده‌شده علامت بزن ═══
+async function dismissAllNotifications(){
+  if(!unreadNotifications.length)return;
+  showLoading('تأیید همه...');
+  try{
+    var ids=unreadNotifications.map(function(n){return n.id;});
+    // تلاش با batch insert
+    try{
+      const{error}=await sb.from('notification_reads').upsert(
+        ids.map(function(id){return {notification_id:id,user_id:currentUser.id};}),
+        {onConflict:'notification_id,user_id'}
+      );
+      if(error)throw error;
+    }catch(batchErr){
+      // اگر batch کار نکرد، یکی یکی
+      console.warn('batch insert failed, trying one by one:',batchErr);
+      for(var i=0;i<ids.length;i++){
+        try{await markNotificationRead(ids[i]);}catch(e){}
+      }
+    }
+    unreadNotifications=[];
+    $('notif_modal').classList.add('hidden');
+    updateNotifBadge();
+    showAlert('✅ همه پیام‌ها خوانده‌شده علامت‌گذاری شدند.','success');
+  }catch(e){
+    showAlert('خطا در تأیید پیام‌ها: '+e.message,'error');
+  }
+  hideLoading();
 }
 
 async function updateBadges(){
