@@ -3856,8 +3856,22 @@ function toggleReminderPattern(){
 
 /* ═════ Notifications Modal ═════ */
 var unreadNotifications=[];
+// ─── کش محلی پیام‌های خوانده‌شده (برای جلوگیری از نمایش مجدد اگر DB کار نکرد) ───
+var _dismissedNotifIds={};
+try{
+  var _saved=JSON.parse(sessionStorage.getItem('dismissed_notifs')||'[]');
+  _saved.forEach(function(id){_dismissedNotifIds[id]=true;});
+}catch(e){}
+function _saveDismissedNotifs(){
+  try{sessionStorage.setItem('dismissed_notifs',JSON.stringify(Object.keys(_dismissedNotifIds)));}catch(e){}
+}
 async function checkUnreadNotifications(){
-  try{unreadNotifications=await loadUnreadNotifications();updateNotifBadge();}
+  try{
+    var all=await loadUnreadNotifications();
+    // فیلتر: پیام‌هایی که در این session خوانده‌شده علامت‌گذاری شده‌اند را نشان نده
+    unreadNotifications=all.filter(function(n){return !_dismissedNotifIds[n.id];});
+    updateNotifBadge();
+  }
   catch(e){console.error('checkUnreadNotifications:',e);}
 }
 function updateNotifBadge(){
@@ -4028,7 +4042,11 @@ async function loadNotifThread(notifId){
   }catch(e){threadDiv.innerHTML='<p style="color:var(--c-danger);font-size:12px">خطا: '+esc(e.message)+'</p>';}
 }
 async function dismissNotification(id){
-  await markNotificationRead(id);
+  // ─── کش محلی: حتی اگر DB کار نکرد، badge حذف شود ───
+  _dismissedNotifIds[id]=true;
+  _saveDismissedNotifs();
+  // تلاش برای ذخیره در DB
+  try{await markNotificationRead(id);}catch(e){console.warn('markNotificationRead failed (cached locally):',e);}
   unreadNotifications=unreadNotifications.filter(function(n){return n.id!==id;});
   if(unreadNotifications.length===0)$('notif_modal').classList.add('hidden');
   else showNotificationsModal();
@@ -4040,7 +4058,10 @@ async function dismissAllNotifications(){
   showLoading('تأیید همه...');
   try{
     var ids=unreadNotifications.map(function(n){return n.id;});
-    // تلاش با batch insert
+    // ─── کش محلی: همه را خوانده‌شده علامت بزن (حتی اگر DB کار نکرد) ───
+    ids.forEach(function(id){_dismissedNotifIds[id]=true;});
+    _saveDismissedNotifs();
+    // تلاش با batch upsert در DB
     try{
       const{error}=await sb.from('notification_reads').upsert(
         ids.map(function(id){return {notification_id:id,user_id:currentUser.id};}),
@@ -4048,10 +4069,9 @@ async function dismissAllNotifications(){
       );
       if(error)throw error;
     }catch(batchErr){
-      // اگر batch کار نکرد، یکی یکی
       console.warn('batch insert failed, trying one by one:',batchErr);
       for(var i=0;i<ids.length;i++){
-        try{await markNotificationRead(ids[i]);}catch(e){}
+        try{await markNotificationRead(ids[i]);}catch(e){console.warn('individual markRead failed:',e);}
       }
     }
     unreadNotifications=[];
@@ -4059,7 +4079,11 @@ async function dismissAllNotifications(){
     updateNotifBadge();
     showAlert('✅ همه پیام‌ها خوانده‌شده علامت‌گذاری شدند.','success');
   }catch(e){
-    showAlert('خطا در تأیید پیام‌ها: '+e.message,'error');
+    // حتی اگر خطا داد، badge را پاک کن (چون کش محلی کار کرده)
+    unreadNotifications=[];
+    $('notif_modal').classList.add('hidden');
+    updateNotifBadge();
+    showAlert('✅ پیام‌ها در این جلسه خوانده‌شده علامت‌گذاری شدند.','info');
   }
   hideLoading();
 }
