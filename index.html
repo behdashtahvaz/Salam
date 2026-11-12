@@ -1476,10 +1476,17 @@ button,.btn{-webkit-touch-callout:none}
     <div id="abs_daily_fields" class="hidden"></div>
     <!-- فیلدهای استعلاجی — فقط هشدار ۳ روزه برای کاربر عادی -->
     <div id="abs_sick_fields" class="hidden">
+      <div class="form-group" style="flex:0 0 180px;margin-bottom:10px">
+        <label>تعداد روزهای استعلاجی:</label>
+        <input type="number" id="sick_num_days" min="1" max="30" value="1" onchange="onSickDaysChange()">
+        <small style="display:block;margin-top:4px;color:var(--c-text-muted);font-size:11px">اگر استعلاجی برای چند روز است، تعداد را وارد کنید. سامانه برای همه روزها رکورد می‌سازد.</small>
+      </div>
+      <div id="sick_days_preview" style="margin-bottom:10px"></div>
       <div style="background:var(--c-warning-light,#fef3c7);border:1px solid var(--c-warning,#f59e0b);border-radius:var(--c-radius-sm);padding:12px;margin-bottom:10px">
         <div style="font-weight:700;color:var(--c-warning,#b45309);margin-bottom:6px;font-size:13px">⚠️ مهلت تحویل مدارک استعلاجی</div>
         <p style="font-size:12px;color:var(--c-text);margin:0;line-height:1.7">
-          شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.<br>
+          شما <b>۳ روز</b> فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.<br>
+          مهلت از <b>روز اول استعلاجی</b> محاسبه می‌شود (نه هر روز جداگانه).<br>
           <b>در غیر این صورت، عدم کارکرد شما به مرخصی یا غیبت تغییر خواهد یافت.</b>
         </p>
         <div id="sick_admin_fields" class="hidden" style="margin-top:10px;border-top:1px solid var(--c-border);padding-top:10px">
@@ -3249,6 +3256,8 @@ function restoreSession(){
         if(typeof generateReminderAlerts==='function')generateReminderAlerts();
         if(typeof checkActiveAlerts==='function')setTimeout(checkActiveAlerts,1000);
         if(typeof updateAnnouncementsBadge==='function')updateAnnouncementsBadge();
+        // ─── پاپ‌آپ عدم حضور همکاران امروز (بعد از ۲.۵ ثانیه) ───
+        if(typeof showColleaguesAbsencePopup==='function')setTimeout(showColleaguesAbsencePopup,2500);
       }catch(e){console.warn('restoreSession load:',e);}
     },100);
     return true;
@@ -3321,6 +3330,8 @@ async function handleLogin(e){
       if(typeof generateReminderAlerts==='function')generateReminderAlerts();
       if(typeof checkActiveAlerts==='function'){setTimeout(checkActiveAlerts,1500);}
       if(typeof updateAnnouncementsBadge==='function')updateAnnouncementsBadge();
+      // ─── پاپ‌آپ عدم حضور همکاران امروز (بعد از ۲ ثانیه) ───
+      if(typeof showColleaguesAbsencePopup==='function')setTimeout(showColleaguesAbsencePopup,2000);
     }catch(e){console.warn('post-login:',e);}
     updateUserBox();
     applyRoleBasedUI();
@@ -4755,6 +4766,29 @@ function showDayDetail(dateStr,personId){
         html+='<button class="btn btn-sm btn-info" style="margin-top:8px;margin-right:8px" onclick="closeDayDetail();createDayMission(\''+dateStr+'\')">➕ ساخت مأموریت این روز</button>';
       }
       html+='</div>';
+      // ─── بخش ۲.۵: عدم حضور همکاران این روز ───
+      var colleagueAbsences=[];
+      try{colleagueAbsences=await loadDayColleagueAbsences(dateStr);}catch(e){}
+      html+='<div style="border-top:1px solid var(--c-border);padding-top:16px;margin-bottom:16px">';
+      html+='<h3 style="margin:0 0 8px;font-size:15px">👥 همکاران — عدم حضور این روز</h3>';
+      if(!colleagueAbsences.length){
+        html+='<p style="color:var(--c-text-muted);font-size:13px;padding:8px 0">✅ عدم حضری توسط همکاران برای این روز ثبت نشده است.</p>';
+      }else{
+        html+='<div style="font-size:12px;color:var(--c-text-muted);margin-bottom:8px">'+colleagueAbsences.length+' همکار:</div>';
+        colleagueAbsences.forEach(function(a){
+          var bg=a.icon==='🩺'?'var(--c-warning-light)':a.icon==='❌'?'var(--c-danger-light)':a.icon==='⏰'?'var(--c-info-light)':'var(--c-bg-alt)';
+          var border=a.icon==='🩺'?'var(--c-warning)':a.icon==='❌'?'var(--c-danger)':a.icon==='⏰'?'var(--c-info)':'var(--c-border)';
+          html+='<div style="background:'+bg+';border-right:3px solid '+border+';border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center">'+
+              '<div style="font-weight:600">'+a.icon+' '+esc(a.name)+'</div>'+
+              '<div style="font-size:10px;color:var(--c-text-muted)">'+esc(a.personnelId)+'</div>'+
+            '</div>'+
+            '<div style="color:var(--c-text);margin-top:2px">'+esc(a.type)+(a.time?' — '+a.time:'')+'</div>'+
+            (a.reason?'<div style="font-size:11px;color:var(--c-text-muted);margin-top:1px">'+esc(a.reason)+'</div>':'')+
+          '</div>';
+        });
+      }
+      html+='</div>';
       // ─── بخش ۳: وظایف و فعالیت‌های برنامه ───
       if(dayTasks.length||dayActs.length){
         html+='<div style="border-top:1px solid var(--c-border);padding-top:16px">';
@@ -6132,10 +6166,45 @@ function toggleAbsenceFields(){
     var adminFields=$('sick_admin_fields');
     var isAdmin=currentRole==='admin'||currentRole==='super_admin'||(currentUser.profile&&currentUser.profile.can_approve_leaves);
     if(adminFields)adminFields.classList.toggle('hidden',!isAdmin);
+    // ─── نمایش preview روزهای استعلاجی ───
+    onSickDaysChange();
   }else if(type==='absence_no_leave'){
     // فقط توضیحات — فیلد اضافی ندارد
   }else if(type==='1day_mission'){
     var el=$('abs_1day_mission_fields');if(el)el.classList.remove('hidden');
+  }
+}
+// ═══ پیش‌نمایش روزهای استعلاجی چند روزه ═══
+function onSickDaysChange(){
+  var preview=$('sick_days_preview');
+  if(!preview)return;
+  var numDays=parseInt($('sick_num_days')?$('sick_num_days').value:'1',10);
+  if(isNaN(numDays)||numDays<1)numDays=1;
+  if(numDays>30)numDays=30;
+  var dateStr=$('log_date')?$('log_date').value:'';
+  if(!dateStr||!isValidJalaliDate(dateStr)){
+    preview.innerHTML='';
+    return;
+  }
+  var startDate=normJ(dateStr);
+  var deadline=addDaysToJalali(startDate,3);
+  if(numDays===1){
+    preview.innerHTML='<div style="background:var(--c-info-light);padding:8px 12px;border-radius:8px;font-size:12px;color:var(--c-info)">'+
+      '📅 استعلاجی برای روز <b>'+startDate+'</b><br>'+
+      '⏰ مهلت تحویل مدارک: <b>'+deadline+'</b> (۳ روز از روز اول)</div>';
+  }else{
+    var endDate=addDaysToJalali(startDate,numDays-1);
+    var daysList=[];
+    for(var i=0;i<numDays;i++){
+      var d=addDaysToJalali(startDate,i);
+      var dn=dayName(d);
+      daysList.push(d+' ('+dn+')');
+    }
+    preview.innerHTML='<div style="background:var(--c-info-light);padding:10px 12px;border-radius:8px;font-size:12px;color:var(--c-info)">'+
+      '📅 استعلاجی '+numDays+' روزه از <b>'+startDate+'</b> تا <b>'+endDate+'</b><br>'+
+      '⏰ مهلت تحویل مدارک: <b>'+deadline+'</b> (۳ روز از روز اول)<br>'+
+      '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:11px">مشاهده همه روزها</summary>'+
+      '<div style="margin-top:4px;font-size:11px;line-height:1.8">'+daysList.join('، ')+'</div></details></div>';
   }
 }
 async function saveDailyLog(){
@@ -6314,12 +6383,18 @@ async function saveDailyLog(){
       }else if(t==='1day_mission'){
         f.location=val('m1_location');if(!need(f.location,'محل الزامی است.'))return;
       }
-      // ─── مدارک استعلاجی: فقط برای sick_leave_daily ───
+      // ─── مدارک استعلاجی: فقط برای sick_leave_daily (با پشتیبانی چند روزه) ───
       if(t==='sick_leave_daily'){
         f.has_doctor_order=val('sick_doctor_order')||'unknown';
         f.has_pharmacy_prescription=val('sick_pharmacy_prescription')||'unknown';
         f.prescription_number=val('sick_prescription_number')||'';
+        // ─── مهلت تحویل مدارک از روز اول استعلاجی محاسبه می‌شود ───
         f.sick_doc_deadline=addDaysToJalali(normJ(dateStr),3);
+        // تعداد روزهای استعلاجی
+        var sickNumDays=parseInt($('sick_num_days')?$('sick_num_days').value:'1',10);
+        if(isNaN(sickNumDays)||sickNumDays<1)sickNumDays=1;
+        if(sickNumDays>30)sickNumDays=30;
+        d.sick_num_days=sickNumDays; // ذخیره در data برای استفاده بعدی
         var _isWorkOfficer=_isAdmin||(currentUser.profile&&currentUser.profile.can_approve_leaves);
         if(_isWorkOfficer){
           if(f.has_doctor_order==='unknown'||f.has_pharmacy_prescription==='unknown'){
@@ -6351,25 +6426,67 @@ async function saveDailyLog(){
   }
   showLoading('ذخیره...');
   try{
-    var logObj={id:id||('tmp-'+genUUID()),user_id:actualPersonId,date:dateStr,status:status,data:d};
-    if(submittedBy){logObj.submitted_by=submittedBy;logObj.submitted_by_name=submittedByName;}
-    var savedLog=await saveLogToDB(logObj);
-    // پاک‌سازی رکوردهای تمام‌روز تکراری فقط پس از ذخیره موفق
+    // ─── استعلاجی چند روزه: اگر sick_leave_daily و تعداد روزها > 1، چند رکورد بساز ───
+    var sickDays=1;
+    if(status==='absence'&&d.absence_type==='sick_leave_daily'&&d.sick_num_days){
+      sickDays=parseInt(d.sick_num_days,10);
+      if(isNaN(sickDays)||sickDays<1)sickDays=1;
+      if(sickDays>30)sickDays=30;
+    }
+    var savedLog=null;
+    var savedCount=0;
+    var savedDates=[];
+    var sickStartDate=normJ(dateStr);
+    for(var di=0;di<sickDays;di++){
+      var currentDateStr=(di===0)?dateStr:addDaysToJalali(sickStartDate,di);
+      var currentDateNorm=normJ(currentDateStr);
+      // برای روزهای بعدی، فیلد sick_doc_deadline همان روز اول را نگه دار (همیشه از روز اول)
+      var dayData=JSON.parse(JSON.stringify(d)); // deep clone
+      if(di>0){
+        dayData.fields.sick_doc_deadline=f.sick_doc_deadline; // مهلت از روز اول
+      }
+      var dayLogObj={id:(di===0&&id)?id:('tmp-'+genUUID()),user_id:actualPersonId,date:currentDateNorm,status:status,data:dayData};
+      if(submittedBy){dayLogObj.submitted_by=submittedBy;dayLogObj.submitted_by_name=submittedByName;}
+      try{
+        var sl=await saveLogToDB(dayLogObj);
+        if(di===0)savedLog=sl;
+        savedCount++;
+        savedDates.push(currentDateNorm);
+        // پاک‌سازی رکوردهای تمام‌روز تکراری برای این روز
+        if(fullDay){
+          try{
+            var ex=await loadLogs(actualPersonId,currentDateNorm,currentDateNorm);
+            for(var ei=0;ei<ex.length;ei++){
+              if(ex[ei].id!==(sl?sl.id:'')&&ex[ei].status==='absence'&&ex[ei].data&&FULL_DAY.indexOf(ex[ei].data.absence_type)!==-1){
+                await deleteLogFromDB(ex[ei].id);
+              }
+            }
+          }catch(cleanupError){console.warn('cleanup:',cleanupError);}
+        }
+      }catch(saveErr){
+        if(di===0)throw saveErr; // اگر روز اول خطا داد، کل عملیات لغو
+        console.warn('sick day '+di+' save failed:',saveErr);
+      }
+    }
     var cleanupWarning='';
-    if(fullDay){try{var existing=await loadLogs(actualPersonId,dateStr,dateStr);for(var i=0;i<existing.length;i++){if(existing[i].id!==savedLog.id&&existing[i].status==='absence'&&existing[i].data&&FULL_DAY.indexOf(existing[i].data.absence_type)!==-1){await deleteLogFromDB(existing[i].id);await recordAudit('delete','daily_logs',existing[i].id,{reason:'duplicate_full_day_log',date:dateStr});}}}catch(cleanupError){console.warn('cleanup:',cleanupError);cleanupWarning=' پاک‌سازی رکوردهای تکراری کامل نشد.';}}
     $('log_date').value=dateStr;
-    showAlert(submittedBy?'کارکرد برای '+getPersonName(actualPersonId)+' ثبت شد. شناسه شما در گزارش ذخیره شد.':'✅ کارکرد ثبت شد.'+cleanupWarning,cleanupWarning?'error':'success');
+    if(sickDays>1){
+      showAlert('✅ استعلاجی '+sickDays+' روزه ثبت شد ('+savedCount+' روز از '+savedDates[0]+' تا '+savedDates[savedDates.length-1]+'). مهلت تحویل مدارک: '+f.sick_doc_deadline,'success');
+    }else{
+      showAlert(submittedBy?'کارکرد برای '+getPersonName(actualPersonId)+' ثبت شد. شناسه شما در گزارش ذخیره شد.':'✅ کارکرد ثبت شد.'+cleanupWarning,cleanupWarning?'error':'success');
+    }
     // ═══ هشدار مهلت تحویل مدارک استعلاجی ═══
     if(status==='absence'&&d.absence_type==='sick_leave_daily'){
       var sickDeadline=f.sick_doc_deadline||addDaysToJalali(normJ(dateStr),3);
+      var sickMsg='⚠️ مهلت تحویل مدارک استعلاجی\n\n';
+      if(sickDays>1){
+        sickMsg+='شما استعلاجی '+sickDays+' روزه ثبت کردید (از '+savedDates[0]+' تا '+savedDates[savedDates.length-1]+').\n\n';
+      }
+      sickMsg+='شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.\n\n'+
+        '📅 مهلت نهایی: '+sickDeadline+' (از روز اول استعلاجی)\n\n'+
+        '⛔ در غیر این صورت، به دلیل عدم تأیید مدارک استعلاجی، عدم کارکرد شما در سامانه به «مرخصی» یا «غیبت» تغییر خواهد یافت.';
       setTimeout(function(){
-        showAlert(
-          '⚠️ مهلت تحویل مدارک استعلاجی\n\n'+
-          'شما ۳ روز فرصت دارید تا اصل مدارک (نسخه داروخانه و ویزیت پزشک) را به مسئول کارکرد تحویل دهید.\n\n'+
-          '📅 مهلت نهایی: '+sickDeadline+'\n\n'+
-          '⛔ در غیر این صورت، به دلیل عدم تأیید مدارک استعلاجی، عدم کارکرد شما در سامانه به «مرخصی» یا «غیبت» تغییر خواهد یافت.',
-          'warning'
-        );
+        showAlert(sickMsg,'warning');
       },800);
       // ارسال نوتیفیکیشن به کاربر (اگر مدیر برای کاربر دیگر ثبت می‌کند)
       if(actualPersonId!==currentUser.id){
@@ -6452,6 +6569,9 @@ function resetDailyLogForm(){
   $('log_id').value='';$('log_status').value='normal';$('absence_type').value='daily_leave';
   if($('absence_type_hourly'))$('absence_type_hourly').value='hourly_leave';
   ['log_discrepancy','abs_reason','hl_reason','hl_general_desc','hm_location','hm_activity','m1_location','mh_location','mh_activity','abs_general_desc','ot_reason','ot_location','ot_topic','ot_description','normal_topic','official_mission_location','official_leave_type','official_note','sick_prescription_number'].forEach(function(k){if($(k))$(k).value='';});
+  // ─── ریست فیلد تعداد روزهای استعلاجی ───
+  if($('sick_num_days'))$('sick_num_days').value='1';
+  if($('sick_days_preview'))$('sick_days_preview').innerHTML='';
   // break_minutes حذف شد — فیلد استراحت از فرم حذف شده است
   if($('official_status'))$('official_status').value='present';
   if($('official_mission_type'))$('official_mission_type').value='home_visit';
@@ -9203,6 +9323,108 @@ async function loadActiveActivitiesForCountdown(){
     _lastActsFetch=Date.now();
     return _lastActsData;
   }catch(e){console.error('loadActiveActivities:',e);return[];}
+}
+
+// ═════ پاپ‌آپ عدم حضور همکاران ═════
+// بارگذاری عدم حضورهای یک روز برای همه پرسنل (به‌جز کاربر فعلی و سوپرادمین)
+async function loadDayColleagueAbsences(dateStr){
+  if(!dateStr||!isValidJalaliDate(dateStr))return[];
+  var dateNorm=normJ(dateStr);
+  try{
+    // بارگذاری همه لاگ‌های این روز
+    var allLogs=await loadLogs(null,dateNorm,dateNorm);
+    if(!allLogs||!allLogs.length)return[];
+    // فیلتر: فقط absence و overtime (نه normal — حضور عادی)
+    var absences=allLogs.filter(function(l){
+      return l.status==='absence'||l.status==='overtime';
+    });
+    // افزودن نام کاربر
+    var result=[];
+    absences.forEach(function(l){
+      if(l.user_id===currentUser.id)return; // خود کاربر را نشان نده
+      var person=_personsMap[l.user_id]||cachedPersons.filter(function(p){return p.id===l.user_id;})[0];
+      if(!person)return;
+      if(person.role==='super_admin')return; // سوپرادمین را نشان نده
+      if(person.status==='inactive'||person.status==='archived')return;
+      var typeLabel='';
+      var icon='';
+      var timeStr='';
+      var lf=(l.data&&l.data.fields)||{};
+      var lat=l.data&&l.data.absence_type;
+      if(l.status==='overtime'){
+        typeLabel='اضافه‌کاری';
+        icon='⚡';
+        timeStr=(lf.ot_start||'?')+' تا '+(lf.ot_end||'?');
+      }else if(lat){
+        typeLabel=ABS_LABEL[lat]||'عدم حضور';
+        if(lat==='daily_leave')icon='📅';
+        else if(lat==='sick_leave_daily')icon='🩺';
+        else if(lat==='absence_no_leave')icon='❌';
+        else if(lat==='1day_mission')icon='🔁';
+        else if(lat==='hourly_leave')icon='⏰';
+        else if(lat==='hourly_mission')icon='⏰';
+        else icon='📋';
+        if(lf.start_time&&lf.end_time){
+          timeStr=lf.start_time+' تا '+lf.end_time;
+        }
+      }
+      result.push({
+        userId:person.id,
+        name:person.first_name+' '+person.last_name,
+        personnelId:person.personnel_id,
+        type:typeLabel,
+        icon:icon,
+        time:timeStr,
+        reason:lf.reason||lf.ot_reason||lf.location||''
+      });
+    });
+    return result;
+  }catch(e){console.error('loadDayColleagueAbsences:',e);return[];}
+}
+// نمایش پاپ‌آپ عدم حضور همکاران امروز
+async function showColleaguesAbsencePopup(){
+  if(currentRole==='super_admin')return; // سوپرادمین نیازی ندارد
+  var todayStr=getTodayJalali();
+  var absences=await loadDayColleagueAbsences(todayStr);
+  // ساخت مودال
+  var old=document.getElementById('colleagues_absence_modal');
+  if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='colleagues_absence_modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  var html='<div style="background:var(--c-card);border-radius:16px;padding:0;max-width:480px;width:100%;margin-top:30px;box-shadow:var(--c-shadow-lg);overflow:hidden">'+
+    '<div style="background:var(--c-primary);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">'+
+      '<div style="font-weight:700;font-size:15px">👥 وضعیت همکاران امروز ('+todayStr+')</div>'+
+      '<button class="btn btn-sm" onclick="document.getElementById(\'colleagues_absence_modal\').remove()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">✕</button>'+
+    '</div>'+
+    '<div style="padding:16px 20px;max-height:60vh;overflow-y:auto">';
+  if(!absences.length){
+    html+='<div style="text-align:center;padding:20px;color:var(--c-text-muted);font-size:13px">'+
+      '<div style="font-size:36px;margin-bottom:8px">✅</div>'+
+      'همه همکاران امروز در مرکز حضور دارند<br>یا عدم حضری ثبت نشده است.</div>';
+  }else{
+    html+='<div style="font-size:12px;color:var(--c-text-muted);margin-bottom:12px">'+absences.length+' همکار امروز عدم حضور ثبت کرده‌اند:</div>';
+    absences.forEach(function(a){
+      var bg=a.icon==='🩺'?'var(--c-warning-light)':a.icon==='❌'?'var(--c-danger-light)':a.icon==='⏰'?'var(--c-info-light)':'var(--c-bg-alt)';
+      var border=a.icon==='🩺'?'var(--c-warning)':a.icon==='❌'?'var(--c-danger)':a.icon==='⏰'?'var(--c-info)':'var(--c-border)';
+      html+='<div style="background:'+bg+';border-right:3px solid '+border+';border-radius:8px;padding:10px 12px;margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<div style="font-weight:600;font-size:13px">'+a.icon+' '+esc(a.name)+'</div>'+
+          '<div style="font-size:11px;color:var(--c-text-muted)">'+esc(a.personnelId)+'</div>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--c-text);margin-top:4px">'+esc(a.type)+(a.time?' — '+a.time:'')+'</div>'+
+        (a.reason?'<div style="font-size:11px;color:var(--c-text-muted);margin-top:2px">'+esc(a.reason)+'</div>':'')+
+      '</div>';
+    });
+  }
+  html+='</div>'+
+    '<div style="padding:10px 20px;border-top:1px solid var(--c-border);text-align:center">'+
+      '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'colleagues_absence_modal\').remove()">بستن</button>'+
+    '</div>'+
+  '</div>';
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
 }
 
 async function createProgram(){
